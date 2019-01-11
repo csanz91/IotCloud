@@ -121,7 +121,6 @@ mqttclient.username_pw_set(token, "_")
 def onConnect(self, mosq, obj, rc):
     # Setup subscriptions
     mqttclient.subscribe(valuesTopic)
-    mqttclient.subscribe("#")
     mqttclient.message_callback_add(valuesTopic, onValue)
     mqttclient.message_callback_add(stateTopic, onState)
     mqttclient.message_callback_add(statusTopic, onStatus)
