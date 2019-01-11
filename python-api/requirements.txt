@@ -1,0 +1,11 @@
+falcon
+gunicorn
+pretend
+python-jose-cryptodome==1.3.2
+six
+pymongo
+falcon-auth
+auth0-python
+-e libs/influx
+-e libs/docker_secrets
+python-dateutil
