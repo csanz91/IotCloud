@@ -1,0 +1,6 @@
+influxdb
+paho-mqtt
+python-dateutil
+requests
+-e libs/influx
+-e libs/docker_secrets
