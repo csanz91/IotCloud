@@ -1,0 +1,113 @@
+version: '3.3'
+services:
+  api:
+    build: ./python-api
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./python-api/source:/app/source
+      - ./python-api/logs:/app/logs
+    env_file:
+      - 'variables.env'
+    environment:
+      MONGODB_HOST: mongodb
+      INFLUXDB_HOST: influxdb
+    secrets:
+      - api_secrets
+
+  influx_mqtt_gateway:
+    build: ./python-gateway
+    env_file:
+      - 'variables.env'
+    restart: always
+    volumes:
+      - ./python-gateway/source:/app/source
+      - ./python-gateway/logs:/app/logs
+    secrets:
+      - gateway_secrets
+
+  modules:
+    build: ./python-modules
+    env_file:
+      - 'variables.env'
+    restart: always
+    volumes:
+      - ./python-modules/source:/app/source
+      - ./python-modules/logs:/app/logs
+    secrets:
+      - modules_secrets
+
+  home:
+    build: ./go-home
+    env_file:
+      - 'variables.env'
+    restart: always
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./go-home/source:/app/source
+      - ./go-home/logs:/app/logs
+    secrets:
+      - home_secrets
+
+  mongodb:
+    restart: always
+    image: mongo
+    hostname: docker
+    volumes:
+      - ./mongodb:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+
+  influxdb:
+    image: influxdb:latest
+    
+    env_file:
+      - 'variables.env'
+    volumes:
+      # Mount for influxdb data directory
+      - ./influxdb/data:/var/lib/influxdb
+      # Mount for influxdb configuration
+      #- ./influxdb/config/:/etc/influxdb/
+    ports:
+      # The API for InfluxDB is served on port 8086
+      - "8086:8086"
+        #- "8082:8082"
+    restart: always
+
+  grafana:
+    user: $ID
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/config:/etc/grafana
+      - ./certs:/grafana/certs
+      - ./grafana/log:/var/log/grafana
+
+  mosquitto:
+    image: jllopis/mosquitto
+    restart: always
+    volumes:
+      - ./mosquitto/data:/var/lib/mosquitto
+      - ./mosquitto/log:/var/log/mosquitto
+      - ./mosquitto/config:/etc/mosquitto
+      - ./mosquitto/mosquitto.d:/etc/mosquitto.d
+      - ./certs:/etc/mosquitto/certs
+    ports:
+      - "8883:8883"
+      - "1883:1883"
+
+secrets:
+  modules_secrets:
+      file: ./python-modules/secrets
+  home_secrets:
+      file: ./go-home/secrets
+  api_secrets:
+      file: ./python-api/secrets
+  gateway_secrets:
+      file: ./python-gateway/secrets
+

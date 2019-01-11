@@ -1,0 +1,6 @@
+version: '3.3'
+services:
+  api:
+    environment:
+      MONGODB_HOST: mongodb
+      INFLUXDB_HOST: influxdb
