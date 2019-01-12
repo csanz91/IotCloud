@@ -5,6 +5,7 @@ import datetime
 from dateutil import tz
 
 import gateway
+import schedule
 
 logger = logging.getLogger()
 
@@ -27,8 +28,7 @@ class Thermostat():
         self.heating = False
         self.alarm = False
         self.state = False
-        self.schedule = [[], [], [], [], [], [], []]
-        self.scheduleRunning = False
+        self.schedule = schedule.Schedule(self.setState, self.setSetpoint)
 
         # Default settings
         self.startHeatingAt = int(time.time())
@@ -67,8 +67,8 @@ class Thermostat():
             pass
 
         try:
-            self.schedule = metadata['schedule']
-            logger.info("schedule updated: %s" % self.schedule)
+            self.schedule.schedule = metadata['schedule']
+            logger.info("schedule updated: %s" % self.schedule.schedule)
         except:
             pass
 
@@ -115,35 +115,10 @@ class Thermostat():
     def setSetpoint(self, mqttClient, setpoint):
         mqttClient.publish(self.topicHeader+"aux/setpoint", setpoint, qos=1, retain=True)
 
-    def runSchedule(self, mqttClient):
-        now = datetime.datetime.today()
-        localZone = tz.gettz("Europe/Madrid")
-        nowAware = now.replace(tzinfo=tz.UTC)
-        nowNaive = nowAware.astimezone(localZone)
-        today = nowNaive.weekday() # Mon: 0, Sun: 6
-        currentMinute = nowNaive.hour * 60 + nowNaive.minute
-        
-        todaySchedule = self.schedule[today]
-        logger.info("currentMinute: %s, todaySchedule: %s" % (currentMinute, todaySchedule))
-        for scheduleElement in todaySchedule:
-            # If schedule is activated
-            if currentMinute >= scheduleElement[0] and currentMinute < scheduleElement[0] + scheduleElement[1]:
-                # If the schedule wasnt active
-                if not self.scheduleRunning:
-                    self.scheduleRunning = True
-                    self.setState(mqttClient, True)
-                    self.setSetpoint(mqttClient, scheduleElement[2])
-                return
-
-        # If the schudele is not active anymore, shut it down
-        if self.scheduleRunning:
-            self.scheduleRunning = False
-            self.setState(mqttClient, False)
-
     def engine(self, mqttClient, influxDb):
 
         # Check the schedule
-        self.runSchedule(mqttClient)
+        self.schedule.runSchedule(mqttClient)
 
         # The thermostat cannot run if there is an alarm active or if it is not active
         if self.alarm or not self.state:
