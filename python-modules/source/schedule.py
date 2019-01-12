@@ -6,7 +6,7 @@ from dateutil import tz
 logger = logging.getLogger()
 
 class Schedule():
-    def __init__(self, setState, setValue=None):
+    def __init__(self, setState, setValue=lambda a,b: None):
         self.schedule = [[], [], [], [], [], [], []]
         self.scheduleRunning = False
         self.setState = setState
