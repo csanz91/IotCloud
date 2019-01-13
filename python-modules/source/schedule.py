@@ -21,7 +21,7 @@ class Schedule():
         currentMinute = nowNaive.hour * 60 + nowNaive.minute
         
         todaySchedule = self.schedule[today]
-        logger.info("currentMinute: %s, todaySchedule: %s" % (currentMinute, todaySchedule))
+        logger.debug("currentMinute: %s, todaySchedule: %s" % (currentMinute, todaySchedule))
         for scheduleElement in todaySchedule:
             # If schedule is activated
             if currentMinute >= scheduleElement[0] and currentMinute < scheduleElement[0] + scheduleElement[1]:
