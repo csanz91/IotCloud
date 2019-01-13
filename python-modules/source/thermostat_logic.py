@@ -100,6 +100,8 @@ class Thermostat():
         tempReference = 0.0
         factorsSum = 0.0
         for temperatureReferenceTopic, factor in self.temperatureReferences.items():
+            if not factor:
+                continue
             try:
                 temperature = values[temperatureReferenceTopic]
                 # If the temperature value was received more than 15 minutes ago, discard it
