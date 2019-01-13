@@ -136,7 +136,9 @@ class Thermostat():
             logger.warning("Some of the core values are not valid. tempReference: %s, setpoint: %s" % (tempReference, self.setpoint))
             return
 
-        gateway.saveReference(influxDb, self.tags, tempReference)
+        if self.tempReferenceMem != tempReference:
+            gateway.saveReference(influxDb, self.tags, tempReference)
+            self.tempReferenceMem = tempReference
 
         # If the heating has been running for more than [maxHeatingTime] there could be
         # something wrong. Trigger the alarm to protect the instalation.
