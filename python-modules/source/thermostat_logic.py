@@ -6,22 +6,19 @@ from dateutil import tz
 
 import gateway
 import schedule
+import utils
 
 logger = logging.getLogger()
 
-# Thermostats variables
-thermostats = {}
-thermostatsValues = {}
 
 class Thermostat():
     def __init__(self, tags, mqttClient):
 
         # Aux variables
         self.tags = tags
-        self.topicHeader = "{version}/{locationId}/{deviceId}/{sensorId}/".format(version=tags['version'],
-                                                                                  locationId=tags['locationId'],
-                                                                                  deviceId=tags['deviceId'],
-                                                                                  sensorId=tags['sensorId'])
+        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(locationId=tags["locationId"],
+                                                                           deviceId=tags["deviceId"])
+        self.topicHeader = self.deviceTopicHeader+tags["sensorId"]+"/"
 
         # Runtime variables
         self.temperatureReferences = {}
@@ -36,10 +33,14 @@ class Thermostat():
         self.hysteresisHigh = -0.1
         self.hysteresisLow = -0.8
         self.maxHeatingTime = 3600 * 8 # 8 hours
+        self.metadata = {}
+        self.aux = {}
+        self.tempReferenceMem = 0.0
 
         # Subscribe to the relevant topics
         self.addTempReference(mqttClient, self.topicHeader+"value", 2)
         mqttClient.subscribe(self.topicHeader+"state")
+        mqttClient.subscribe(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
 
     def addTempReference(self, mqttClient, temperatureReferenceTopic, factor):
@@ -48,53 +49,67 @@ class Thermostat():
         self.temperatureReferences[temperatureReferenceTopic] = factor
 
     def updateSettings(self, mqttClient, metadata):
+        self.metadata = metadata
         try:
             self.hysteresisHigh = float(metadata['hysteresisHigh'])
-            logger.info("hysteresisHigh updated: %s" % self.hysteresisHigh)
         except:
             pass
 
         try:
             self.hysteresisLow = float(metadata['hysteresisLow'])
-            logger.info("hysteresisLow updated: %s" % self.hysteresisLow)
         except:
             pass
 
         try:
             self.maxHeatingTime = int(metadata['maxHeatingTime'])
-            logger.info("maxHeatingTime updated: %s" % self.maxHeatingTime)
         except:
             pass
 
         try:
             self.schedule.schedule = metadata['schedule']
-            logger.info("schedule updated: %s" % self.schedule.schedule)
         except:
             pass
 
         try:
-            logger.info(metadata['temperatureReferences'])
             for temperatureReferenceTopic, factor in metadata['temperatureReferences'].items():
                 self.addTempReference(mqttClient, temperatureReferenceTopic, factor)
-                logger.info("temperature references updated: %s" % temperatureReferenceTopic)
         except:
             logger.error("Excepcion: ", exc_info=True)
             pass
 
-    def calculateTempReference(self):
+    def updateAux(self, mqttClient, aux):
+        self.aux = aux
+        try:
+            self.heating = utils.decodeBoolean(aux['heating'])
+        except:
+            pass
+
+        try:
+            self.setpoint = float(aux['setpoint'])
+        except:
+            pass
+
+        try:
+            assert aux["ackAlarm"]
+            self.setAlarm(mqttClient, False)
+            del aux["ackAlarm"]
+        except:
+            pass
+
+    def calculateTempReference(self, values):
         tempReference = 0.0
         factorsSum = 0.0
         for temperatureReferenceTopic, factor in self.temperatureReferences.items():
             try:
-                temperature = thermostatsValues[temperatureReferenceTopic]
+                temperature = values[temperatureReferenceTopic]
                 # If the temperature value was received more than 15 minutes ago, discard it
-                if temperature['timestamp']+60*15 < int(time.time()):
+                if temperature.timestamp+60*15 < int(time.time()):
                     logger.warn("Expired temperature value from the topic: %s" % temperatureReferenceTopic)
                     continue
                 factorsSum += factor
-                tempReference += temperature['value']*factor
+                tempReference += temperature.value*factor
             # The sensor was not found
-            except KeyError:
+            except (KeyError, TypeError):
                 logger.warning("Temperature value from the topic: %s not available" % temperatureReferenceTopic)
         if tempReference and factorsSum:
             tempReference = tempReference / factorsSum
@@ -115,8 +130,7 @@ class Thermostat():
     def setSetpoint(self, mqttClient, setpoint):
         mqttClient.publish(self.topicHeader+"aux/setpoint", setpoint, qos=1, retain=True)
 
-    def engine(self, mqttClient, influxDb):
-
+    def engine(self, mqttClient, influxDb, values):
         # Check the schedule
         self.schedule.runSchedule(mqttClient)
 
@@ -128,8 +142,8 @@ class Thermostat():
                 self.setHeating(mqttClient, False)
             return
 
-        tempReference = self.calculateTempReference()
-        logger.info("tempReference: %s, setpoint: %s" % (tempReference, self.setpoint))
+        tempReference = self.calculateTempReference(values)
+        logger.debug("tempReference: %s, setpoint: %s" % (tempReference, self.setpoint))
 
         # These values are needed to be able to run the algorithm
         if not tempReference or not self.setpoint:
