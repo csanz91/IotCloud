@@ -9,10 +9,6 @@ import schedule
 
 logger = logging.getLogger()
 
-# Thermostats variables
-thermostats = {}
-thermostatsValues = {}
-
 class Switch():
     def __init__(self, tags, mqttClient):
 
@@ -25,6 +21,8 @@ class Switch():
         # Runtime variables
         self.state = False
         self.schedule = schedule.Schedule(self.setState)
+        self.metadata = {}
+        self.aux = {}
 
         # Subscribe to the relevant topics
         mqttClient.subscribe(self.deviceTopicHeader+"status")
@@ -32,12 +30,15 @@ class Switch():
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
 
     def updateSettings(self, mqttClient, metadata):
-
+        self.metadata = metadata
         try:
             self.schedule.schedule = metadata['schedule']
             logger.info("schedule updated: %s" % self.schedule.schedule)
         except:
             pass
+
+    def updateAux(self, mqttClient, aux):
+        self.aux = aux
 
     def setState(self, mqttClient, state):
         mqttClient.publish(self.topicHeader+"setState", state, qos=1, retain=True)
