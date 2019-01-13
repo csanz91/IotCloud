@@ -42,6 +42,8 @@ class Sensor():
 
 devices = defaultdict(Device)
 values = defaultdict(Value)
+modules = {"switch": switch_logic.Switch,
+           "thermostat": thermostat_logic.Thermostat}
 
 def calculateDeviceHash(topic):
     """ Calculate the device hash from the topic
@@ -104,15 +106,11 @@ def onAux(client, userdata, msg):
         deviceHash = calculateDeviceHash(msg.topic)
         tags = getTags(msg.topic)
     
-        # New thermostat. Create the instance and get the metadata from the api
-        if tags["endpoint"] == 'thermostat' and not devices[deviceHash].sensors[tags["sensorId"]].instance:
-            devices[deviceHash].sensors[tags["sensorId"]].instance = thermostat_logic.Thermostat(tags, client)
+        # New module. Create the instance and get the metadata from the api
+        if tags["endpoint"] in modules.keys() and not devices[deviceHash].sensors[tags["sensorId"]].instance:
+            devices[deviceHash].sensors[tags["sensorId"]].instance = modules[tags["endpoint"]](tags, client)
             sensorData = api.getSensor(tags["locationId"], tags["deviceId"], tags["sensorId"])
             devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
-
-        # New Switch, create a new instance
-        elif tags["endpoint"] == 'switch' and not devices[deviceHash].sensors[tags["sensorId"]].instance:
-            devices[deviceHash].sensors[tags["sensorId"]].instance = switch_logic.Switch(tags, client)
 
         # Add the value received to the aux dict
         else:
