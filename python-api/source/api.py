@@ -34,7 +34,7 @@ from weather.weather_api import Weather
 cfg = {
     'alg': ['RS256'],
     'audience': getDocketSecrets("auth0_audience"),
-    'domain': getDocketSecrets("auth0_domain"), # llevaba https
+    'domain': getDocketSecrets("auth0_full_domain"),
     'jwks_uri': getDocketSecrets("auth0_jwks_uri")
 }
 
