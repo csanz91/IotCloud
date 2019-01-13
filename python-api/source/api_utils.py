@@ -151,7 +151,7 @@ def m2mValidation(func):
         req = args[1]
 
         try:
-            req.context['auth']["scope"] == "read:devices"
+            assert req.context['auth']["scope"] == "read:devices"
         except:
             logger.warning("Unauthorized access attemp to the resource: %s"
                             " from the IP: %s, " % (req.url, req.remote_addr))
