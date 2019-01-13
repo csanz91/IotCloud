@@ -11,7 +11,7 @@ from docker_secrets import getDocketSecrets
 logger = logging.getLogger()
 handler = logging.handlers.RotatingFileHandler('../logs/influx_gateway.log', mode='a', maxBytes=1024*1024*10, backupCount=2)
 formatter = logging.Formatter('%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
