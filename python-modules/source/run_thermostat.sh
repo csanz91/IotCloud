@@ -4,7 +4,7 @@ while :
 do
   date
   echo "--- Start Modules"
-  python thermostat_core.py
+  python modules.py
   RET=$?
   if [ ${RET} -ne 0 ];
   then
