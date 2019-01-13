@@ -57,11 +57,7 @@ func main() {
 	// Start the mqtt connection to talk with the devices
 	mqtt.Connect()
 
-	// Ask Google to reissue a SYNC command
-	requestResync()
-
 	// Startup the server
 	http.HandleFunc("/", handle)
 	http.ListenAndServe(":5001", nil)
-
 }
