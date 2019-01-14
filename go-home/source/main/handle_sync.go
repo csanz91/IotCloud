@@ -15,7 +15,7 @@ func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.Device
 		return
 	}
 
-	apiDevices, err := iotcloud.GetUserDevices(authToken)
+	apiDevices, userID, err := iotcloud.GetUserDevices(authToken, true)
 	if err != nil {
 		model.ReturnAPIErrorDeviceNotFound(w, dfReq.RequestID)
 		return
@@ -51,7 +51,7 @@ func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.Device
 	json.NewEncoder(w).Encode(model.DeviceResponseSync{
 		RequestID: dfReq.RequestID,
 		Payload: model.ResponsePayloadSync{
-			AgentUserID: agentID,
+			AgentUserID: userID,
 			Devices:     googleDevices,
 		},
 	})

@@ -105,13 +105,13 @@ func getAPIToken() (Auth0Token, error) {
 	return dfReq, nil
 }
 
-func getDevices(userID string) ([]Device, error) {
+func getDevices(userID string, disableCache bool) ([]Device, error) {
 
 	currentTimestamp := time.Now().Unix()
 	// Try to get the devices first from the cache
 	if deviceCached, ok := devicesCache[userID]; ok {
 		// If the cache is not expired
-		if deviceCached.timestamp > currentTimestamp-cacheMaxTime {
+		if !disableCache && deviceCached.timestamp > currentTimestamp-cacheMaxTime {
 			return deviceCached.Devices, nil
 		}
 	}
@@ -178,17 +178,17 @@ func getUserID(token string) (string, error) {
 }
 
 // GetUserDevices : From an auth0 token, retrieve all the sensors associated
-func GetUserDevices(token string) ([]Device, error) {
+func GetUserDevices(token string, disableCache bool) ([]Device, string, error) {
 	userID, err := getUserID(token)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	devices, err := getDevices(userID)
+	devices, err := getDevices(userID, disableCache)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return devices, nil
+	return devices, userID, nil
 }
 
 // UserInfo : Struct for the Auth0 userinfo response

@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	agentID = "homeAPI"
-	logger  = customlogger.GetInstance()
+	logger = customlogger.GetInstance()
 )
 
 func handle(w http.ResponseWriter, r *http.Request) {

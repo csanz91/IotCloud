@@ -36,7 +36,7 @@ func requestedDeviceExist(r *http.Request, devices []model.DeviceModel) error {
 		return errors.New("Auth failure")
 	}
 
-	apiDevices, err := iotcloud.GetUserDevices(authToken)
+	apiDevices, _, err := iotcloud.GetUserDevices(authToken, false)
 	if err != nil {
 		return errors.New("The sensor could not be found")
 	}
