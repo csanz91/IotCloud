@@ -3,6 +3,7 @@ import logging.config
 import time
 import datetime
 from dateutil import tz
+import copy
 
 import gateway
 import schedule
@@ -49,7 +50,6 @@ class Thermostat():
         self.temperatureReferences[temperatureReferenceTopic] = factor
 
     def updateSettings(self, mqttClient, metadata):
-        self.metadata = metadata
         try:
             self.hysteresisHigh = float(metadata['hysteresisHigh'])
         except:
@@ -77,8 +77,9 @@ class Thermostat():
             logger.error("Excepcion: ", exc_info=True)
             pass
 
+        self.metadata = copy.deepcopy(metadata)
+
     def updateAux(self, mqttClient, aux):
-        self.aux = aux
         try:
             self.heating = utils.decodeBoolean(aux['heating'])
         except:
@@ -95,6 +96,8 @@ class Thermostat():
             del aux["ackAlarm"]
         except:
             pass
+        
+        self.aux = copy.deepcopy(aux)
 
     def calculateTempReference(self, values):
         tempReference = 0.0
