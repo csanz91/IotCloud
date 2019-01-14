@@ -13,6 +13,7 @@ import copy
 import api_utils
 
 from dbcache import DBCache
+import request_home_resync
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +205,18 @@ def existsShare(db, sharedToUserId, ownerUserId, locationId):
          'locationId': locationId}
     )
     return bool(locationShare)
+
+@checkArgs("db", "locationId")
+def getLocationUsers(db, locationId):
+    logger.info(locationId)
+    usersIds = db.locationsAuthorizations.find(
+        {"locationId": locationId,
+         "validated": True},
+        {"ownerUserId": True,
+        "sharedToUserId": True,
+        "_id": False}
+    )
+    return list(usersIds)
 
 @checkArgs("db", "userId")
 def getPendingValidateShares(db, userId):
@@ -452,13 +465,16 @@ def deleteLocation(db, userId, locationId):
 
         # Clear the cache as the data is not longer updated
         cache.clearCache(userId)
+
+    # Resync the Google home devices
+    request_home_resync.resync(db, userId, locationId)
+
     return True
 
 
 #####################################################
 ## Location Permissions Operations
 #####################################################
-
 
 @checkArgs("db", "userId", "locationId")
 def selectLocationShares(db, userId, locationId):
@@ -475,6 +491,12 @@ def validateLocationPermissions(db, shareId):
 
     updatedData = {'validated': True}
     result = updateUserLocationShare(db, shareId, updatedData)
+
+    # Resync the Google home devices for the user
+    if result:
+        share = selectShare(db, shareId)
+        request_home_resync.resync(db, share['ownerUserId'], share['locationId'])
+
     return result
 
 #####################################################
@@ -544,6 +566,10 @@ def insertDevice(db,
 
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
+
+    # Resync the Google home devices
+    request_home_resync.resync(db, userId, locationId)
+
     return _id
 
 @checkArgs("db", "userId", "locationId", "deviceId")
@@ -633,6 +659,10 @@ def deleteDevice(db, userId, locationId, deviceId):
 
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
+
+    # Resync the Google home devices
+    request_home_resync.resync(db, userId, locationId)
+
     return True
 
 
