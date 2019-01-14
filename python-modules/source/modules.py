@@ -153,15 +153,12 @@ def run(mqttClient):
                     sensor.instance.state = sensor.state
                     if sensor.metadata != sensor.instance.metadata:
                         sensor.instance.updateSettings(mqttClient, sensor.metadata)
-                    
-                    if "ackAlarm" in sensor.aux:
-                        logger.info("ackAlarm: %s" % sensor.aux["ackAlarm"])
                     if sensor.aux != sensor.instance.aux:
                         sensor.instance.updateAux(mqttClient, sensor.aux)
                     # Run the engine
                     sensor.instance.engine(mqttClient, influxDb, values)
 
-    Timer(10.0, run, [mqttClient]).start()
+    Timer(1.0, run, [mqttClient]).start()
 
 run(mqttclient)
 
