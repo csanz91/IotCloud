@@ -5,7 +5,8 @@ import paho.mqtt.client as mqtt
 
 import influx
 from docker_secrets import getDocketSecrets
-
+import utils
+import thermostat_gw
 
 # Logging setup
 logger = logging.getLogger()
@@ -15,96 +16,87 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-def decodeTopic(topic):
-    subtopics = topic.split('/')
-    endpoint = subtopics[-1]
-    if endpoint == "status":
-        version, locationId, deviceId, _ = subtopics
-        tags = {"version": version,
-            "locationId": locationId,
-            "deviceId": deviceId}
-
-    elif endpoint in ["state", "value"]:
-        version, locationId, deviceId, sensorId, _ = subtopics
-        tags = {"version": version,
-            "locationId": locationId,
-            "deviceId": deviceId,
-            "sensorId": sensorId}
-    else:
-        raise ValueError("The endpoint: %s is not recognized" % endpoint)
-
-    return tags
 
 # Mqtt callbacks
 def onValue(client, userdata, msg):
     # Avoid string values as mathematical operations cant
     # be made afterwards
-    value = msg.payload
     try:
-        value = float(value)
-    except ValueError:
-        logger.error('The value received: %s is not valid' % value)
-        return
-
-    try:
-        tags = decodeTopic(msg.topic)
-    except (ValueError, AttributeError):
-        logger.error('The topic: %s is malformed. Ignoring data' % msg.topic)
+        value = float(msg.payload)
+        tags, _ = utils.decodeTopic(msg.topic)
+    except:
+        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
         return
 
     fields = {"value": value}
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields)
+    influxDb.writeData(measurement, tags, fields, retentionPolicy="raw")
 
 def onState(client, userdata, msg):
-
-    value = msg.payload
     try:
-        assert value.lower() in ["true", "false"]
-    except (AssertionError, AttributeError):
-        logging.error('The value received: %s is not valid' % value)
+        state = utils.decodeBoolean(msg.payload)
+        tags, _ = utils.decodeTopic(msg.topic)
+    except:
+        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
         return
 
-    try:
-        tags = decodeTopic(msg.topic)
-    except (ValueError, AttributeError):
-        logger.error('The topic: %s is malformed. Ignoring data' % msg.topic)
-        return
-
-    state = value.lower()=="true"
     fields = {"state": state}
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields)
+    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
 
 def onStatus(client, userdata, msg):
-
-    value = msg.payload
     try:
-        assert value.lower() in ["online", "offline"]
-    except (AssertionError, AttributeError):
-        logging.error('The value received: %s is not valid' % value)
+        status = utils.decodeStatus(msg.payload)
+        tags, _ = utils.decodeTopic(msg.topic)
+    except:
+        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
         return
 
-    try:
-        tags = decodeTopic(msg.topic)
-    except (ValueError, AttributeError):
-        logger.error('The topic: %s is malformed. Ignoring data' % msg.topic)
-        return
-
-    status = value.lower()=="online"
-    logger.info("Saving status: %s from the topic: %s" % (status, msg.topic))
     fields = {"status": status}
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields)
+    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
 
+def init(influxDb):
+    """
+    From the docs: If you attempt to create a retention policy identical to one that 
+        already exists, InfluxDB does not return an error. If you attempt to create a 
+        retention policy with the same name as an existing retention policy but with 
+        differing attributes, InfluxDB returns an error.
+    -i.e. If we want to edit some of the following values, do it in the Influx cli.
 
-def onMessage(client, userdata, msg):
-    logger.info('Received data from the topic: %s' % msg.topic)
+    The values received will be stored for 45 days at their original resolution, 
+        and they are aggregated every:
+            -hour and stored for 1 year,
+            -day and stored for 3 years,
+    """
+    # Setup the retention policies
+    influxDb.client.create_retention_policy('raw', '45d', 1, default=True)
+    influxDb.client.create_retention_policy('1year', '365d', 1)
+    influxDb.client.create_retention_policy('3years', '1080d', 1)
+
+    influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1h" ON %s BEGIN
+                                SELECT mean("value") AS "value"
+                                INTO "1year"."downsampled_sensorsData_1h"
+                                FROM "raw"."sensorsData"
+                                GROUP BY time(1h), *
+                              END
+                          """ % os.environ['INFLUXDB_DB'])
+
+    influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON %s BEGIN
+                                SELECT mean("value") AS "value"
+                                INTO "3years"."downsampled_sensorsData_1d"
+                                FROM "1year"."downsampled_sensorsData_1h"
+                                GROUP BY time(1d), *
+                              END
+                            """ % os.environ['INFLUXDB_DB'])
 
 logger.info("Starting...")
 
 # Influx databse setup
 influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], username='', password='')
+
+# Initialize the database
+init(influxDb)
 
 # MQTT constants
 version = 'v1'
@@ -122,8 +114,14 @@ def onConnect(self, mosq, obj, rc):
     # Setup subscriptions
     mqttclient.subscribe(valuesTopic)
     mqttclient.message_callback_add(valuesTopic, onValue)
+
+    mqttclient.subscribe(stateTopic)
     mqttclient.message_callback_add(stateTopic, onState)
-    mqttclient.message_callback_add(statusTopic, onStatus)
+
+    mqttclient.subscribe(statusTopic)
+    mqttclient.message_callback_add(statusTopic, onStatus)    
+
+    thermostat_gw.onConnect(mqttclient, influxDb)
     
 mqttclient.on_connect = onConnect
 
