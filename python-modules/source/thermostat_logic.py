@@ -5,7 +5,6 @@ import datetime
 from dateutil import tz
 import copy
 
-import gateway
 import schedule
 import utils
 

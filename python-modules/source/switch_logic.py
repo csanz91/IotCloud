@@ -4,7 +4,6 @@ import time
 import datetime
 from dateutil import tz
 
-import gateway
 import schedule
 
 logger = logging.getLogger()
