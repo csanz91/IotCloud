@@ -81,7 +81,6 @@ func requestedDeviceExist(r *http.Request, devices []model.DeviceModel) error {
 
 func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 
-	logger.Printf(ID)
 	subIds := strings.Split(ID, "$")
 	deviceID := subIds[0]
 	sensorID := subIds[1]
