@@ -43,7 +43,6 @@ var onValue MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 			sensors[subtopics[2]] = deviceValues{
 				Sensors: map[string]sensorValues{},
 			}
-
 		}
 		sensor := sensors[subtopics[2]].Sensors[subtopics[3]]
 		sensor.Value = float32(value)
