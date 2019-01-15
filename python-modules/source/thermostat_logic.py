@@ -135,7 +135,7 @@ class Thermostat():
     def setSetpoint(self, mqttClient, setpoint):
         mqttClient.publish(self.topicHeader+"aux/setpoint", setpoint, qos=1, retain=True)
 
-    def engine(self, mqttClient, influxDb, values):
+    def engine(self, mqttClient, values):
         # Check the schedule
         self.schedule.runSchedule(mqttClient)
 
@@ -156,7 +156,7 @@ class Thermostat():
             return
 
         if self.tempReferenceMem != tempReference:
-            gateway.saveReference(influxDb, self.tags, tempReference)
+            utils.pushValue(mqttClient, self.tags, "tempReference", tempReference)
             self.tempReferenceMem = tempReference
 
         # If the heating has been running for more than [maxHeatingTime] there could be

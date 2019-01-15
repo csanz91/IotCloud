@@ -7,8 +7,6 @@ from collections import defaultdict
 from threading import Timer
 
 import paho.mqtt.client as mqtt
-import gateway
-import influx
 from docker_secrets import getDocketSecrets
 import thermostat_logic
 import switch_logic
@@ -122,9 +120,6 @@ def onAux(client, userdata, msg):
     
 logger.info("Starting...")
 
-# Influx databse setup
-influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], username='', password='')
-
 # IotHub api setup
 api = iothub_api.IothubApi()
 
@@ -156,7 +151,7 @@ def run(mqttClient):
                     if sensor.aux != sensor.instance.aux:
                         sensor.instance.updateAux(mqttClient, sensor.aux)
                     # Run the engine
-                    sensor.instance.engine(mqttClient, influxDb, values)
+                    sensor.instance.engine(mqttClient, values)
 
     Timer(1.0, run, [mqttClient]).start()
 
@@ -177,7 +172,5 @@ mqttclient.on_connect = onConnect
 # Connect
 mqttclient.connect('mosquitto')
 mqttclient.loop_forever(retry_first_connection=True)
-
-influxDb.close()
 
 logger.info("Exiting...")

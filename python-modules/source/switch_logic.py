@@ -43,7 +43,7 @@ class Switch():
     def setState(self, mqttClient, state):
         mqttClient.publish(self.topicHeader+"setState", state, qos=1, retain=True)
 
-    def engine(self, mqttClient, influxDb, values):
+    def engine(self, mqttClient, values):
 
         # Check the schedule
         self.schedule.runSchedule(mqttClient)
