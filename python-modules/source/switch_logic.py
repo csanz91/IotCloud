@@ -5,6 +5,7 @@ import datetime
 from dateutil import tz
 
 import schedule
+import timer
 
 logger = logging.getLogger()
 
@@ -20,6 +21,7 @@ class Switch():
         # Runtime variables
         self.state = False
         self.schedule = schedule.Schedule(self.setState)
+        self.timer = timer.Timer(self.setState)
         self.metadata = {}
         self.aux = {}
 
@@ -36,6 +38,12 @@ class Switch():
         except:
             pass
 
+        try:
+            self.timer.importSettings(metadata['timer']) 
+            logger.info("timer updated: %s" % metadata['timer'])
+        except:
+            pass
+
     def updateAux(self, mqttClient, aux):
         self.aux = aux
 
@@ -46,3 +54,5 @@ class Switch():
 
         # Check the schedule
         self.schedule.runSchedule(mqttClient)
+        # Check the timer
+        self.timer.runTimer(mqttClient)

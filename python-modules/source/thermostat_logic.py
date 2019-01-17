@@ -6,6 +6,7 @@ from dateutil import tz
 import copy
 
 import schedule
+import timer
 import utils
 
 logger = logging.getLogger()
@@ -26,6 +27,7 @@ class Thermostat():
         self.alarm = False
         self.state = False
         self.schedule = schedule.Schedule(self.setState, self.setSetpoint)
+        self.timer = timer.Timer(self.setState)
 
         # Default settings
         self.startHeatingAt = int(time.time())
@@ -74,6 +76,12 @@ class Thermostat():
                 self.addTempReference(mqttClient, temperatureReferenceTopic, factor)
         except:
             logger.error("Excepcion: ", exc_info=True)
+            pass
+
+        try:
+            self.timer.importSettings(metadata['timer']) 
+            logger.info("timer updated: %s" % metadata['timer'])
+        except:
             pass
 
         self.metadata = copy.deepcopy(metadata)
@@ -137,6 +145,8 @@ class Thermostat():
     def engine(self, mqttClient, values):
         # Check the schedule
         self.schedule.runSchedule(mqttClient)
+        # Check the timer
+        self.timer.runTimer(mqttClient)
 
         # The thermostat cannot run if there is an alarm active or if it is not active
         if self.alarm or not self.state:
