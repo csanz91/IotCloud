@@ -20,3 +20,10 @@ def decodeTopic(topic):
     tags["sensorId"] = subtopics[3]
 
     return tags, endpoint
+
+def calculateSensorHash(topic):
+    """ Calculate the sensor hash from the topic
+    """
+    subtopics = topic.split('/')
+    sensorHash = "|".join(subtopics[0:4])
+    return sensorHash

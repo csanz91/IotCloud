@@ -24,9 +24,21 @@ def onValue(client, userdata, msg):
     try:
         value = float(msg.payload)
         tags, _ = utils.decodeTopic(msg.topic)
+        sensorHash = utils.calculateSensorHash(msg.topic)
     except:
         logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
         return
+
+    try:
+        lastValue = lastValues[sensorHash]
+        assert lastValue-maxValueDelta < value < lastValue+maxValueDelta
+    except AssertionError:
+        logger.error("The value from the topic: %s is not valid. %s < %s < %s " %(msg.topic, lastValue-maxValueDelta, value, lastValue+maxValueDelta))
+        return
+    except KeyError:
+        pass
+
+    lastValues[sensorHash] = value
 
     fields = {"value": value}
     measurement = "sensorsData"
@@ -97,6 +109,12 @@ influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], u
 
 # Initialize the database
 init(influxDb)
+
+# Global values
+lastValues = {}
+
+# Constants
+maxValueDelta = 5.0
 
 # MQTT constants
 version = 'v1'
