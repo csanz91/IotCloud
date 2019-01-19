@@ -10,11 +10,13 @@ import api_utils
 import inspect
 from api_utils import grantLocationOwnerPermissions, Roles, getResponseModel
 from mqtt import generateMqttToken, MqttRoles
-import datetime
+from datetime import datetime, timedelta
 import datetime_utils
+import calendar
 
 
 logger = logging.getLogger(__name__)
+
 
 class LocationDevices():
 
@@ -25,15 +27,15 @@ class LocationDevices():
     def on_post(self, req, resp, userId, locationId):
 
         try:
-            
-            deviceId = dbinterface.insertDevice(self.db, 
-                                                    userId,
-                                                    locationId,
-                                                    req.media.get('deviceVersion'),
-                                                    req.media.get('deviceInternalId'),
-                                                    [json.loads(sensor) for sensor in req.media.get('sensors')],
-                                                    deviceTargetVersion = req.media.get('deviceTargetVersion', None)
-                                                    )
+
+            deviceId = dbinterface.insertDevice(self.db,
+                                                userId,
+                                                locationId,
+                                                req.media.get('deviceVersion'),
+                                                req.media.get('deviceInternalId'),
+                                                [json.loads(sensor) for sensor in req.media.get('sensors')],
+                                                deviceTargetVersion=req.media.get('deviceTargetVersion', None)
+                                                )
 
         except:
             logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
@@ -44,20 +46,20 @@ class LocationDevices():
 
         resp.media = getResponseModel(True, deviceId)
 
-
     @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId):
 
         try:
             devices = dbinterface.selectDevices(self.db, userId, locationId)
-            
+
         except:
             logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
         resp.media = getResponseModel(True, devices)
+
 
 class Devices():
 
@@ -67,15 +69,14 @@ class Devices():
     @grantLocationOwnerPermissions(Roles.editor)
     def on_put(self, req, resp, userId, locationId, deviceId):
 
-
         try:
-            result = dbinterface.updateDevice(self.db, 
-                                                userId,
-                                                locationId,
-                                                deviceId,
-                                                req.media.get('deviceVersion', None), 
-                                                req.media.get('deviceTargetVersion', None))
-            
+            result = dbinterface.updateDevice(self.db,
+                                              userId,
+                                              locationId,
+                                              deviceId,
+                                              req.media.get('deviceVersion', None),
+                                              req.media.get('deviceTargetVersion', None))
+
         except:
             logger.error("Exception. userId: %s, locationId %s, deviceId: %s" % (userId, locationId, deviceId), exc_info=True)
             raise falcon.HTTPBadRequest(
@@ -87,7 +88,7 @@ class Devices():
 
     @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId):
-        
+
         try:
             device = dbinterface.selectDevice(self.db, userId, locationId, deviceId)
         except:
@@ -95,7 +96,7 @@ class Devices():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True, device)
 
@@ -109,9 +110,10 @@ class Devices():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = api_utils.getResponseModel(result)
+
 
 class Sensors():
 
@@ -120,7 +122,7 @@ class Sensors():
 
     @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
-        
+
         try:
             sensor = dbinterface.selectSensor(self.db, userId, locationId, deviceId, sensorId)
         except:
@@ -128,25 +130,24 @@ class Sensors():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True, sensor)
 
     @grantLocationOwnerPermissions(Roles.editor)
     def on_put(self, req, resp, userId, locationId, deviceId, sensorId):
 
-
         try:
-            result = dbinterface.updateSensor(self.db, 
-                                                userId,
-                                                locationId,
-                                                deviceId,
-                                                sensorId,
-                                                req.media.get('sensorName', None), 
-                                                req.media.get('sensorMetadata', None), 
-                                                req.media.get('color', None),
-                                                req.media.get('orderIndex', None))
-            
+            result = dbinterface.updateSensor(self.db,
+                                              userId,
+                                              locationId,
+                                              deviceId,
+                                              sensorId,
+                                              req.media.get('sensorName', None),
+                                              req.media.get('sensorMetadata', None),
+                                              req.media.get('color', None),
+                                              req.media.get('orderIndex', None))
+
         except:
             logger.error("Exception. userId: %s, locationId %s, deviceId: %s, sensorId: %s" % (userId, locationId, deviceId, sensorId), exc_info=True)
             raise falcon.HTTPBadRequest(
@@ -156,6 +157,7 @@ class Sensors():
 
         resp.media = api_utils.getResponseModel(result)
 
+
 class OrderSensors():
 
     def __init__(self, db):
@@ -164,13 +166,12 @@ class OrderSensors():
     @grantLocationOwnerPermissions(Roles.editor)
     def on_post(self, req, resp, userId, locationId):
 
-
         try:
-            result = dbinterface.orderSensors(self.db, 
-                                                userId,
-                                                locationId,
-                                                req.media['newSensorsOrder'])
-            
+            result = dbinterface.orderSensors(self.db,
+                                              userId,
+                                              locationId,
+                                              req.media['newSensorsOrder'])
+
         except:
             logger.error("Exception. userId: %s, locationId %s, newSensorsOrder: %s" % (userId, locationId, req.media['newSensorsOrder']), exc_info=True)
             raise falcon.HTTPBadRequest(
@@ -179,6 +180,7 @@ class OrderSensors():
             )
 
         resp.media = api_utils.getResponseModel(result)
+
 
 class MqttDeviceToken():
 
@@ -234,7 +236,6 @@ class SensorDataTrend():
 
         logger.info("SensorDataTrend: %s" % sensorId)
 
-
         try:
             data = influxdb_interface.getData(self.influxdb, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=50)
             data = [float(value['value']) for value in data]
@@ -256,7 +257,7 @@ class SensorDataStats():
     @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
 
-        datetimeNow = datetime.datetime.now()
+        datetimeNow = datetime.now()
         todayLocalMidnightTimestamp, todayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(datetimeNow)
         thisWeekLocalMidnightTimestamp, thisWeekLocalEndDayTimestamp = datetime_utils.getThisWeekTimestamps(datetimeNow)
         thisMonthLocalMidnightTimestamp, thisMonthLocalEndDayTimestamp = datetime_utils.getThisMonthTimestamps(datetimeNow)
@@ -274,3 +275,43 @@ class SensorDataStats():
             )
 
         resp.media = getResponseModel(True, data)
+
+
+class SensorStateTime():
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @grantLocationOwnerPermissions(Roles.viewer)
+    def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
+
+        datetimeNow = datetime.now()
+        includeHeating = req.get_param_as_bool("includeHeating")
+
+        stateTimes = []
+        # Go back 10 days
+        for dayIndex in xrange(10):
+            # Get the timestamps from the selected period
+            pastDay = datetimeNow - timedelta(days=dayIndex)
+            pastDayLocalMidnightTimestamp, pastDayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(pastDay)
+
+            # If the last state is on and [pastDayLocalEndDayTimestamp] is in the future, we just need
+            # to count up to now, otherwise it will count until the end of the current day
+            pastDayLocalEndDayTimestamp = min(calendar.timegm(datetimeNow.timetuple()), pastDayLocalEndDayTimestamp)
+            try:
+                dataToAdd = {"timestamp": pastDayLocalMidnightTimestamp}
+                stateTime = influxdb_interface.getStateTime(self.influxdb, locationId, deviceId, sensorId, pastDayLocalMidnightTimestamp, pastDayLocalEndDayTimestamp)
+                dataToAdd["stateTime"] = stateTime
+                if includeHeating:
+                    heatingTime = influxdb_interface.getHeatingTime(self.influxdb, locationId, deviceId, sensorId, pastDayLocalMidnightTimestamp, pastDayLocalEndDayTimestamp)
+                    dataToAdd["heatingTime"] = heatingTime
+
+                stateTimes.append(dataToAdd)
+            except:
+                logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+                raise falcon.HTTPBadRequest(
+                    'Bad Request',
+                    'The request can not be completed.'
+                )
+
+        resp.media = getResponseModel(True, stateTimes)
