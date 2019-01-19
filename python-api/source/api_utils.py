@@ -82,7 +82,6 @@ def grantLocationOwnerPermissions(requiredRole):
                 if grantedRole >= requiredRole:
                     if grantedRole != api_utils.Roles.owner:
                         locationShare = dbinterface.selectUserLocationShare(db, userId, locationId)
-                        logger.info(locationShare)
                         kwargs['userId'] = locationShare['ownerUserId']
 
                     return func(self, *args, **kwargs)
