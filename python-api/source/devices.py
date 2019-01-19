@@ -202,6 +202,25 @@ class MqttDeviceToken():
 
         resp.media = getResponseModel(True, token)
 
+class LastSeen():
+
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @grantLocationOwnerPermissions(Roles.editor)
+    def on_get(self, req, resp, userId, locationId, deviceId):
+
+        try:
+            lastSeen = influxdb_interface.getDeviceLastTimeSeen(self.influxdb, locationId, deviceId)
+        except:
+            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = getResponseModel(True, lastSeen)
 
 class SensorData():
     def __init__(self, influxdb, mongodb):

@@ -1,6 +1,7 @@
 import logging
 from dateutil import parser
 import calendar
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +49,23 @@ def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestam
 def getDeviceLastTimeSeen(influxClient, locationId, deviceId):
 
     query = ''' SELECT 
-                    last("value") as lastSeen,
-                FROM sensorsData WHERE 
+                    last(status) as lastStatus
+                FROM "3years"."sensorsData" WHERE 
                     locationId='%s' AND deviceId='%s'
                 ''' % (locationId, deviceId)
 
-    results = influxClient.query(query)
-    if not results:
-        return
+    statusResults = influxClient.query(query)
+    if not statusResults:
+        return 0
 
-    lastTimeSeen = list(results.get_points())[0]["time"]
-    return lastTimeSeen
+    lastStatusSeen = list(statusResults.get_points())[0]
+    # If the device is online, return the current timestamp
+    if lastStatusSeen['lastStatus']:
+        return int(time.time())
+
+    # Otherwise, return the timestamp when the device disconnected
+    lastStatusSeenTimestamp = calendar.timegm(parser.parse(lastStatusSeen["time"]).timetuple())
+    return lastStatusSeenTimestamp
 
 def getStateTime(influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp):
 
