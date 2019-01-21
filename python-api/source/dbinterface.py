@@ -627,7 +627,6 @@ def updateSensor(db,
                         "orderIndex"]
 
     updatedData = {field: args[field] for field in fieldsToUpdate if field in args and args[field]}
-    logger.info(updatedData) 
     if not updatedData:
         return True
         
