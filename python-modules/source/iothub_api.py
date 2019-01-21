@@ -81,7 +81,7 @@ class IothubApi():
 
     def getUserSensor(self, userId, locationId, deviceId, sensorId):
        
-        devices = self.get("users/{userId}/sensors".format(userId=userId, auth=True))
+        devices = self.get("users/{userId}/sensors".format(userId=userId), auth=True)
 
         for device in devices:
             if deviceId == device["deviceId"]:
@@ -95,6 +95,6 @@ class IothubApi():
         sensor = self.get("locations/{locationId}/devices/{deviceId}/sensors/{sensorId}".format(locationId=locationId,
                                                                                                  deviceId=deviceId,
                                                                                                  sensorId=sensorId, 
-                                                                                                 auth=True))
+                                                                                                 ), auth=True)
 
         return sensor
