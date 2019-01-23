@@ -67,14 +67,16 @@ class IothubApi():
         # and if we are not able to get the token after 1 try we abandon
         for numRetries in xrange(2):
             r = self.session.get(self.iothubApiUrl+url, headers=headers, timeout=30)
-            if r.status_code == requests.codes.unauthorized:
-                # Get the auth token
-                authenticationResult = self.authenticate()
-                if numRetries == 1 or not authenticationResult:
-                    return
-                # Send again the data with the new token
-                headers = self.getAuthHeader()
+            if r.status_code != requests.codes.unauthorized:
+                break
 
+            # Get the auth token
+            authenticationResult = self.authenticate()
+            if numRetries == 1 or not authenticationResult:
+                return
+            # Send again the data with the new token
+            headers = self.getAuthHeader()
+            
         # Check if the response is well formed
         result = self.validateResponse(r)
         return result
