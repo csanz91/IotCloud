@@ -253,8 +253,6 @@ class SensorDataTrend():
         finalTimestamp = int(time.time())
         initialTimestamp = finalTimestamp - 3600*6
 
-        logger.info("SensorDataTrend: %s" % sensorId)
-
         try:
             data = influxdb_interface.getData(self.influxdb, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=50)
             data = [float(value['value']) for value in data]

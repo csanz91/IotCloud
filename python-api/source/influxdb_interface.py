@@ -7,8 +7,6 @@ logger = logging.getLogger(__name__)
 
 def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=200):
 
-    logger.info(sensorId)
-
     intervalSeconds = finalTimestamp - initialTimestamp
     groupBySeconds = max(-(-intervalSeconds / maxValues-1), 1)
 
