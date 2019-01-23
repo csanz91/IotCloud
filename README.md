@@ -1,2 +1,2 @@
 # IotCloud
-IotCloud is an Iot plattform
+IotCloud is a platform where you can automate your house easily and in an inexpensive way.
