@@ -90,6 +90,8 @@ class IothubApi():
                 for sensor in device["sensors"]:
                     if sensor["sensorId"] == sensorId:
                         return sensor
+                break
+                
         return {}
 
     def getSensor(self, locationId, deviceId, sensorId):
