@@ -110,7 +110,7 @@ class InfluxClient():
                         continue
 
      
-                logger.info("sending %s values" % len(dataToSend))
+                logger.debug("sending %s values" % len(dataToSend))
             
                 if dataToSend:
                     try:
