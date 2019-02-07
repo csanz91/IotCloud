@@ -1,11 +1,13 @@
 import logging
 import logging.config
 import os
+from collections import defaultdict
 import paho.mqtt.client as mqtt
 
 import influx
 from docker_secrets import getDocketSecrets
 import utils
+import max_list
 import thermostat_gw
 import totalizer_gw
 
@@ -31,15 +33,10 @@ def onValue(client, userdata, msg):
         return
 
     try:
-        lastValue = lastValues[sensorHash]
-        assert lastValue-maxValueDelta < value < lastValue+maxValueDelta
-    except AssertionError:
-        logger.error("The value from the topic: %s is not valid. %s < %s < %s " %(msg.topic, lastValue-maxValueDelta, value, lastValue+maxValueDelta))
+        lastValues[sensorHash].addValueSafe(value)
+    except ValueError as e:
+        logger.error(e.msg)
         return
-    except KeyError:
-        pass
-
-    lastValues[sensorHash] = value
 
     fields = {"value": value}
     measurement = "sensorsData"
@@ -112,7 +109,7 @@ influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], u
 init(influxDb)
 
 # Global values
-lastValues = {}
+lastValues = defaultdict(lambda: max_list.MaxSizeList(10))
 
 # Constants
 maxValueDelta = 5.0
