@@ -27,3 +27,11 @@ def calculateSensorHash(topic):
     subtopics = topic.split('/')
     sensorHash = "|".join(subtopics[0:4])
     return sensorHash
+
+def notIsNaN(num):
+    assert num == num
+
+def parseFloat(value):
+    parsedFloat = float(value)
+    notIsNaN(parsedFloat)
+    return parsedFloat

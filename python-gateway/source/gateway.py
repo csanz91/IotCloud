@@ -22,7 +22,7 @@ def onValue(client, userdata, msg):
     # Avoid string values as mathematical operations cant
     # be made afterwards
     try:
-        value = float(msg.payload)
+        value = utils.parseFloat(msg.payload)
         tags, _ = utils.decodeTopic(msg.topic)
         sensorHash = utils.calculateSensorHash(msg.topic)
     except:
