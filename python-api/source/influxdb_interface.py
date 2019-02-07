@@ -129,3 +129,53 @@ def calculateActiveTime(results, initialTimestamp, finalTimestamp):
         previousStateTimestamp = timestamp
 
     return activeTime
+
+
+def getTotalizerCurrentRate(influxClient, locationId, sensorId):
+
+    query = ''' SELECT
+                    LAST("rate") as rate
+                FROM totalizerData WHERE 
+                    locationId='%s' AND sensorId='%s' AND time>= NOW() - 10m
+            ''' % (locationId, sensorId)
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+def getTotalizerTrendRate(influxClient, locationId, sensorId):
+
+    query = ''' SELECT
+                    rate
+                FROM totalizerData WHERE 
+                    locationId='%s' AND sensorId='%s' AND time>= NOW() - 6h
+            ''' % (locationId, sensorId)
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+def getHourlyAccumulation(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp):
+
+    query = ''' SELECT 
+                    SUM("value") as value
+                FROM sensorsData WHERE 
+                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                GROUP BY
+                    time(1h)
+                ORDER BY 
+                    time DESC
+                ''' % (locationId, sensorId, initialTimestamp, finalTimestamp)
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList

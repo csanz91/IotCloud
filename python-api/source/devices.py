@@ -332,3 +332,70 @@ class SensorStateTime():
                 )
 
         resp.media = getResponseModel(True, stateTimes)
+
+class TotalizerStats():
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @grantLocationOwnerPermissions(Roles.viewer)
+    def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
+
+        datetimeNow = datetime.utcnow()
+        timestampNow = calendar.timegm(datetimeNow.timetuple())
+        oneHourAgo = timestampNow - 3600
+        oneDayAgo = timestampNow - 3600 * 24
+
+        try:
+            currentRate = influxdb_interface.getTotalizerCurrentRate(self.influxdb, locationId, sensorId)
+            try:
+                currentRate = currentRate[0]["rate"]
+            except (TypeError, KeyError):
+                currentRate = 0
+
+            accumulatedLastHour = influxdb_interface.getHourlyAccumulation(self.influxdb, locationId, sensorId, oneHourAgo, timestampNow)
+            try:
+                accumulatedLastHour = accumulatedLastHour[0]["value"]
+            except (TypeError, KeyError):
+                accumulatedLastHour = 0
+
+            accumulatedLastDay = influxdb_interface.getHourlyAccumulation(self.influxdb, locationId, sensorId, oneDayAgo, timestampNow)
+            try:
+                accumulatedLastDay = sum(accumulated["value"] or 0.0 for accumulated in accumulatedLastDay) 
+            except (TypeError, KeyError):
+                accumulatedLastDay = 0
+
+            trendRate = influxdb_interface.getTotalizerTrendRate(self.influxdb, locationId, sensorId)
+            try:
+                trendRate =  [float(value['rate']) for value in trendRate]
+            except (TypeError, KeyError):
+                trendRate = 0
+
+            data = {"currentRate": currentRate, "accumulatedLastHour": accumulatedLastHour, "accumulatedLastDay": accumulatedLastDay, "trendRate": trendRate}
+        except:
+            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = getResponseModel(True, data)
+
+class HourlyAccumulation():
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @grantLocationOwnerPermissions(Roles.viewer)
+    def on_post(self, req, resp, userId, locationId, deviceId, sensorId):
+
+        try:
+            data = influxdb_interface.getHourlyAccumulation(self.influxdb, locationId, sensorId, req.media['initialTimestamp'], req.media['finalTimestamp'])
+        except:
+            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = getResponseModel(True, data)
