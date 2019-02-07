@@ -12,12 +12,12 @@ WORKDIR /src
 # Import the code from the context.
 COPY ./ ./
 
-COPY ./source/ $GOPATH/src/
+COPY ./src/ $GOPATH/src/
 
 # Build the executable to `/app`. Mark the build as statically linked.
 RUN CGO_ENABLED=0 go build \
     -installsuffix 'static' \
-    -o /app ./source/main/.
+    -o /app ./src/main/.
 
 RUN chmod +x /app
 

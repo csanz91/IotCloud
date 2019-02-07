@@ -46,7 +46,7 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./go-home/source:/app/source
+      - ./go-home/src:/app/src
       - ./go-home/logs:/app/logs
     secrets:
       - home_secrets

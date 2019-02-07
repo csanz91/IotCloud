@@ -9,8 +9,8 @@ type GoogleDeviceType struct {
 	Attributes map[string]interface{}
 }
 
-// DigitalType : Google Device definition for our digital types
-var DigitalType = GoogleDeviceType{
+// SwitchType : Google Device definition for our digital types
+var SwitchType = GoogleDeviceType{
 	Type:   "action.devices.types.SWITCH",
 	Traits: []string{"action.devices.traits.OnOff"},
 }
@@ -22,13 +22,21 @@ var ThermostatType = GoogleDeviceType{
 	Attributes: map[string]interface{}{"availableThermostatModes": "off,heat,on", "thermostatTemperatureUnit": "C"},
 }
 
+// ToogleType : Google Device definition for our toogle types
+var ToogleType = GoogleDeviceType{
+	Type:   "action.devices.types.DOOR",
+	Traits: []string{"action.devices.traits.OpenClose"},
+}
+
 // GetGoogleDeviceType : From our device type get the Google characteristics
 func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 	switch apiType {
-	case "digital":
-		return DigitalType, nil
+	case "switch":
+		return SwitchType, nil
 	case "thermostat":
 		return ThermostatType, nil
+	case "toogle":
+		return ToogleType, nil
 	default:
 		return GoogleDeviceType{}, errors.New("Device type not supported")
 	}
