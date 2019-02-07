@@ -7,6 +7,7 @@ import influx
 from docker_secrets import getDocketSecrets
 import utils
 import thermostat_gw
+import totalizer_gw
 
 # Logging setup
 logger = logging.getLogger()
@@ -140,6 +141,7 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(statusTopic, onStatus)    
 
     thermostat_gw.onConnect(mqttclient, influxDb)
+    totalizer_gw.onConnect(mqttclient, influxDb)
     
 mqttclient.on_connect = onConnect
 
