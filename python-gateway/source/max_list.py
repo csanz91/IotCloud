@@ -42,5 +42,5 @@ class MaxSizeList(object):
         try:
             assert median-maxValueDelta < newValue < median+maxValueDelta
         except AssertionError:
-            logger.error("The value from the topic: %s is not valid. %s < %s < %s " %(msg.topic, median-maxValueDelta, lastValue, median+maxValueDelta))
+            logger.error("The value is not valid. %s < %s < %s " %(median-maxValueDelta, newValue, median+maxValueDelta))
             raise ValueError("The value is outside the acceptable range")

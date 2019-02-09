@@ -34,8 +34,7 @@ def onValue(client, userdata, msg):
 
     try:
         lastValues[sensorHash].addValueSafe(value)
-    except ValueError as e:
-        logger.error(e.msg)
+    except ValueError:
         return
 
     fields = {"value": value}
