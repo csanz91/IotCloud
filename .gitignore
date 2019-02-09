@@ -116,6 +116,7 @@ secrets
 *.dll
 *.so
 *.dylib
+*.a
 
 # Test binary, built with `go test -c`
 *.test
