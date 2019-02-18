@@ -84,7 +84,7 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 					} else {
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
 					}
-					// Thermostat setpoint
+					// Toogle
 				} else if execution.Command == "action.devices.commands.OpenClose" {
 					openPercent := execution.Params["openPercent"].(float64)
 					var action string
@@ -94,11 +94,7 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 						action = "down"
 					}
 					if err := mqtt.SetAux(locationID, deviceID, sensorID, "setToogle", action); err == nil {
-						if err := mqtt.SetAux(locationID, deviceID, sensorID, "setToogle", "toogle"); err == nil {
-							responsesModels["pending"] = addID(responsesModels["pending"], ID)
-						} else {
-							responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
-						}
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
 					} else {
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
 					}
