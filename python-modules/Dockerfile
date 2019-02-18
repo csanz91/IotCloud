@@ -12,4 +12,4 @@ RUN pip install -r requirements.txt
 COPY ./ /app
 
 WORKDIR /app/source
-CMD [ "./run_thermostat.sh" ] 
+CMD [ "./run_modules.sh" ] 
