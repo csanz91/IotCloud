@@ -14,9 +14,11 @@ def resync(db, userId, locationId):
     if not locationUsers:
         threading.Thread(target=requestResync, args=(userId,)).start()
 
+    ownerUserId = None
     for share in locationUsers:
         threading.Thread(target=requestResync, args=(share["sharedToUserId"],)).start()
-    threading.Thread(target=requestResync, args=(share["ownerUserId"],)).start()
+        ownerUserId = share["ownerUserId"]
+    threading.Thread(target=requestResync, args=(ownerUserId,)).start()
 
 def requestResync(agentUserId):
     logger.info("Requesting resync for the userId: %s" % agentUserId)
