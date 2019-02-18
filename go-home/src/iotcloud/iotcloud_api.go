@@ -183,11 +183,11 @@ func GetUserDevices(token string, disableCache bool) ([]Device, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	devices, err := getDevices(userID, disableCache)
 	if err != nil {
 		return nil, "", err
 	}
-
 	return devices, userID, nil
 }
 
