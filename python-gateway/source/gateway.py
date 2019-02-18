@@ -10,6 +10,7 @@ import utils
 import max_list
 import thermostat_gw
 import totalizer_gw
+from cache_decorator import clear_cache
 
 # Logging setup
 logger = logging.getLogger()
@@ -33,7 +34,13 @@ def onValue(client, userdata, msg):
         return
 
     try:
-        lastValues[sensorHash].addValueSafe(value)
+        valueRange = max_list.getValueRange(influxDb, tags['locationId'], tags['sensorId'])
+    except:
+        logger.error("It was not possible to calculate the values range", exc_info=True)
+        valueRange = None
+
+    try:
+        lastValues[sensorHash].addValueSafe(value, valueRange)
     except ValueError:
         return
 
@@ -111,7 +118,7 @@ init(influxDb)
 lastValues = defaultdict(lambda: max_list.MaxSizeList(10))
 
 # Constants
-maxValueDelta = 5.0
+clear_cache()
 
 # MQTT constants
 version = 'v1'
