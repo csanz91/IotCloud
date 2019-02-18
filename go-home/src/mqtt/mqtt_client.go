@@ -41,6 +41,7 @@ var onValue MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 		// Initialize the sensors map if it was empty
 		if sensors[subtopics[2]].Sensors == nil {
 			sensors[subtopics[2]] = deviceValues{
+				Status:  sensors[subtopics[2]].Status,
 				Sensors: map[string]sensorValues{},
 			}
 		}
@@ -57,6 +58,7 @@ var onState MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 		// Initialize the sensors map if it was empty
 		if sensors[subtopics[2]].Sensors == nil {
 			sensors[subtopics[2]] = deviceValues{
+				Status:  sensors[subtopics[2]].Status,
 				Sensors: map[string]sensorValues{},
 			}
 		}
@@ -72,6 +74,7 @@ var onAux MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	// Initialize the [Sensors] map if it was empty
 	if sensors[subtopics[2]].Sensors == nil {
 		sensors[subtopics[2]] = deviceValues{
+			Status:  sensors[subtopics[2]].Status,
 			Sensors: map[string]sensorValues{},
 		}
 	}
