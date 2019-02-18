@@ -28,6 +28,12 @@ var ToogleType = GoogleDeviceType{
 	Traits: []string{"action.devices.traits.OpenClose"},
 }
 
+// AnalogType : Google Device definition for our toogle types
+var AnalogType = GoogleDeviceType{
+	Type:   "action.devices.types.SENSOR",
+	Traits: []string{"action.devices.traits.Sensor, action.devices.traits.SensorState"},
+}
+
 // GetGoogleDeviceType : From our device type get the Google characteristics
 func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 	switch apiType {
