@@ -84,7 +84,7 @@ class MqttAcl():
                 grantedLocationId = tokenData['locationId']
                 grantedDeviceId = tokenData['deviceId']
 
-                if grantedLocationId != locationIdRequested or grantedDeviceId != deviceIdRequested or (acc == 2 and endpoint not in ["value", "status", "setState", "state"] and subtopics[4]!="aux"):
+                if grantedLocationId != locationIdRequested or grantedDeviceId != deviceIdRequested or (acc == 2 and endpoint not in ["value", "status", "setState", "state", "ip"] and subtopics[4]!="aux"):
                     raiseUnauthorized()
 
             elif grantedRole!=MqttRoles.admin:
