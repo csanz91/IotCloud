@@ -179,3 +179,19 @@ def getHourlyAccumulation(influxClient, locationId, sensorId, initialTimestamp, 
 
     valuesList = list(results.get_points())
     return valuesList
+
+def getDeviceIP(influxClient, locationId, deviceId):
+
+    query = ''' SELECT 
+                     last(IP) as IP
+                FROM "raw"."devicesIPs" WHERE 
+                    locationId='%s' AND deviceId='%s'
+                ''' % (locationId, deviceId)
+
+    results = influxClient.query(query)
+    if not results:
+        return 0
+
+    ip = list(results.get_points())[0]["IP"]
+   
+    return ip

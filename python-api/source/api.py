@@ -20,7 +20,7 @@ import influx
 from user_management import (Login, RecoverPassword, UserManagement)
 from auth0_api import Auth0Api
 from locations import UserLocations, Locations, LocationsPermissions, LocationPermission
-from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation
+from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation, DeviceIP
 from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserToken
 from m2m import UserSensors, FindSensor
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
@@ -102,6 +102,7 @@ app.add_route("/api/v1/users/{userId}/locations/{locationId}/permissions", Locat
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}", Devices(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/mqttauth", MqttDeviceToken(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/lastseen", LastSeen(influx_client, db))
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/deviceip", DeviceIP(influx_client, db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", Sensors(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdata/{sensorId}", SensorData(influx_client, db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdatatrend/{sensorId}", SensorDataTrend(influx_client, db))
