@@ -22,9 +22,9 @@ from auth0_api import Auth0Api
 from locations import UserLocations, Locations, LocationsPermissions, LocationPermission
 from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation, DeviceIP
 from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserToken
-from m2m import UserSensors, FindSensor
+from m2m import UserSensors, FindSensor, LocationSunSchedule
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
-from weather.weather_api import Weather
+from weather.weather_api import Weather, SunSchedule
 
 ##############################################
 ## Configuration
@@ -93,6 +93,7 @@ app.add_route("/api/v1/users/{userId}/permissionvalidation", ValidateLocationPer
 app.add_route("/api/v1/users/{userId}/mqttauth", MqttUserToken())
 app.add_route("/api/v1/users/{userId}/locations", UserLocations(db))
 app.add_route("/api/v1/users/{userId}/weather", Weather())
+app.add_route("/api/v1/users/{userId}/sunschedule", SunSchedule())
 app.add_route("/api/v1/users/{userId}/sensors", UserSensors(db))
 app.add_route("/api/v1/users/{userId}/permissions/{shareId}", LocationPermission(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}", Locations(db))
@@ -111,7 +112,7 @@ app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/totalizerstats/{sensorId}", TotalizerStats(influx_client, db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/hourlyaccumulation/{sensorId}", HourlyAccumulation(influx_client, db))
 
-
+app.add_route("/api/v1/locations/{locationId}/sunschedule", LocationSunSchedule(db))
 app.add_route("/api/v1/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", FindSensor(db))
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())

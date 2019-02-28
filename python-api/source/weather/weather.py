@@ -3,12 +3,18 @@
 import requests
 import math
 from datetime import datetime
+import time 
 import pytz
 
 from stations_list import stationsList
 from location_list import locationsList
 from cache_decorator import cache_disk, clear_cache
 from docker_secrets import getDocketSecrets
+
+import sys 
+sys.path.append('..')
+import datetime_utils
+
 googleApiKey = getDocketSecrets("googleApiKey")
 aemetApiKey = getDocketSecrets("aemetApiKey")
 
@@ -126,6 +132,32 @@ def getTodayPredictedWeather(locationId):
 
     return weatherForToday
 
+@cache_disk(seconds=3600 * 12)
+def getTodaySunSchedule(locationId):
+    '''
+    From the locationId get the sunrise and the sunset,
+    convert them to minutes since midnight and return it as
+    a tuple (sunrise, sunset)
+    '''
+
+    predictedWeather = getAemetData(
+        u"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/horaria/{locationId}"
+        .format(locationId=locationId))
+    weatherForToday = predictedWeather[0]["prediccion"]["dia"][0]
+    timestamp = datetime_utils.toUtc(datetime.strptime(weatherForToday['fecha'], '%Y-%m-%d'))
+    sunrise = weatherForToday["orto"]
+    sunset = weatherForToday["ocaso"]
+
+    return timestamp, dateToMinutes(sunrise), dateToMinutes(sunset)
+
+def dateToMinutes(date):
+    '''
+    From a date string with the following format: 07:54
+    convert it to minutes since midnight
+    '''
+
+    hours, minutes = date.split(":")
+    return int(hours) * 60 + int(minutes)
 
 def getMeasurementFromPostalCode(postalCode, measurement):
     # 1. Get the postal code coordenates from google
@@ -133,10 +165,7 @@ def getMeasurementFromPostalCode(postalCode, measurement):
     # 2. Get the closest station to our coordenates
     stationId = getClosestStationId(postalCodeCoordenates)
     # 3. Get the current weather from the selected station
-    currentWeather = getCurrentWeather(stationId)
-
-    #currentHour = datetime.now().replace(minute=0, second=0, microsecond=0)
-    
+    currentWeather = getCurrentWeather(stationId)    
 
     # Get the last measurement
     lastMeasurement = currentWeather[-1]
@@ -166,6 +195,15 @@ def getMeasurementFromPostalCode(postalCode, measurement):
         "current": currentTemperature
     }
 
+def getSunScheduleFromPostalCode(postalCode):
+    # 1. Get the location name from the postal code
+    _, locationName = getLocationFromPostalCode(postalCode)
+    # 2. Get the closest station to our coordenates
+    locationId = getLocationId(locationName)
+    # 3. Get the sunset and the sunrise from the selected station
+    timestamp, sunrise, sunset = getTodaySunSchedule(locationId)    
+
+    return {"timestamp": timestamp, "sunrise": sunrise, "sunset": sunset}
 
 clear_cache()
 
