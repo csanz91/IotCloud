@@ -14,7 +14,7 @@ def decodeTopic(topic):
     tags = {"locationId": subtopics[1],
             "deviceId": subtopics[2]}
 
-    if endpoint == "status":
+    if len(subtopics)==3:
         return tags, endpoint
 
     tags["sensorId"] = subtopics[3]
