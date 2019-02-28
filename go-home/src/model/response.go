@@ -58,14 +58,14 @@ type ResponseDeviceModel struct {
 	Attributes      map[string]interface{} `json:"attributes"`
 }
 
-// DeviceNameModel : Struct for an Payload Command model
+// DeviceNameModel : Struct for a Payload Command model
 type DeviceNameModel struct {
 	DefaultNames []string `json:"defaultNames"`
 	Name         string   `json:"name"`
 	Nicknames    []string `json:"nicknames"`
 }
 
-// DeviceInfo : Struct for an Payload Command model
+// DeviceInfo : Struct for a Payload Command model
 type DeviceInfo struct {
 	Manufacturer string `json:"manufacturer"`
 	Model        string `json:"model"`
@@ -73,15 +73,24 @@ type DeviceInfo struct {
 	SwVersion    string `json:"swVersion"`
 }
 
+// SensorData : Struct for the sensor data model
+type SensorData struct {
+	Name               string  `json:"name"`
+	DataTypeKey        string  `json:"data_type_key"`
+	DefaultDeviceUnits string  `json:"default_device_units"`
+	DataValue          float32 `json:"data_value"`
+}
+
 // DeviceProperties : Struct for a Command execution model
 type DeviceProperties struct {
-	ON                            bool    `json:"on"`
-	Online                        bool    `json:"online"`
-	Brightness                    int     `json:"brightness"`
-	ThermostatMode                string  `json:"thermostatMode"`
-	ThermostatTemperatureSetpoint float32 `json:"thermostatTemperatureSetpoint"`
-	ThermostatTemperatureAmbient  float32 `json:"thermostatTemperatureAmbient"`
-	ThermostatHumidityAmbient     float32 `json:"thermostatHumidityAmbient"`
+	ON                            bool         `json:"on"`
+	Online                        bool         `json:"online"`
+	Brightness                    int          `json:"brightness"`
+	ThermostatMode                string       `json:"thermostatMode"`
+	ThermostatTemperatureSetpoint float32      `json:"thermostatTemperatureSetpoint"`
+	ThermostatTemperatureAmbient  float32      `json:"thermostatTemperatureAmbient"`
+	ThermostatHumidityAmbient     float32      `json:"thermostatHumidityAmbient"`
+	CurrentSensorData             []SensorData `json:"currentSensorData"`
 }
 
 // DevicePropertyColor : Struct for a Command execution model

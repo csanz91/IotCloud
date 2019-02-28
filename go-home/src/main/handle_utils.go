@@ -79,11 +79,50 @@ func requestedDeviceExist(r *http.Request, devices []model.DeviceModel) error {
 	return nil
 }
 
-func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
+func getSensor(r *http.Request, ID string) (iotcloud.Sensor, error) {
+	// Check the devices requested belong to the user
+	authToken, err := getTokenFromHeaders(r)
+	if err != nil {
+		return iotcloud.Sensor{}, errors.New("Auth failure")
+	}
 
+	apiDevices, _, err := iotcloud.GetUserDevices(authToken, false)
+	if err != nil {
+		return iotcloud.Sensor{}, errors.New("The sensor could not be found")
+	}
+
+	deviceID, sensorID := decodeID(ID)
+
+	// Try to match the requested device with one from the user
+	for _, apiDevice := range apiDevices {
+		if apiDevice.DeviceID == deviceID {
+			// Device found, now find the sensor
+			for sensorIndex, sensor := range apiDevice.Sensors {
+				if sensor.ID == sensorID {
+					return sensor, nil
+				}
+				// If all the sensors have been checked and no match
+				// has been found raise an error
+				if sensorIndex == len(apiDevice.Sensors)-1 {
+					return iotcloud.Sensor{}, errors.New("The sensor could not be found")
+				}
+			}
+		}
+	}
+
+	return iotcloud.Sensor{}, errors.New("The device could not be found")
+}
+
+func decodeID(ID string) (string, string) {
 	subIds := strings.Split(ID, "$")
 	deviceID := subIds[0]
 	sensorID := subIds[1]
+	return deviceID, sensorID
+}
+
+func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
+
+	deviceID, sensorID := decodeID(ID)
 
 	status, err := mqtt.GetStatus(deviceID)
 	if err != nil {
@@ -125,7 +164,38 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 		if err == nil {
 			deviceProperties.ThermostatTemperatureSetpoint = float32(setpoint)
 		}
+	} else if deviceType == "analog" {
+		value, err := mqtt.GetValue(deviceID, sensorID)
+		if err != nil {
+			return model.DeviceProperties{}, err
+		}
+
+		name, analogDataTypeKey, deviceUnits, err := getAnalogSensorDataAttr(sensorID)
+		if err != nil {
+			return model.DeviceProperties{}, err
+		}
+
+		deviceProperties.CurrentSensorData = []model.SensorData{
+			model.SensorData{
+				Name:               name,
+				DataTypeKey:        analogDataTypeKey,
+				DefaultDeviceUnits: deviceUnits,
+				DataValue:          value,
+			},
+		}
 	}
 
 	return deviceProperties, nil
+}
+
+func getAnalogSensorDataAttr(sensorID string) (string, string, string, error) {
+	analogType := sensorID[len(sensorID)-2:]
+	switch analogType {
+	case "T":
+		return "temperature", "temperature", "°C", nil
+	case "H":
+		return "humidity", "humidity", "%", nil
+	default:
+		return "", "", "", errors.New("Device type not supported")
+	}
 }

@@ -28,15 +28,35 @@ var ToogleType = GoogleDeviceType{
 	Traits: []string{"action.devices.traits.OpenClose"},
 }
 
+// dataTypesSupported : Struct for a dataTypesSupported model
+type dataTypesSupported struct {
+	Name              string                 `json:"name"`
+	DataType          map[string]interface{} `json:"data_type"`
+	DefaultDeviceUnit string                 `json:"default_device_unit"`
+}
+
 // AnalogType : Google Device definition for our toogle types
 var AnalogType = GoogleDeviceType{
 	Type:   "action.devices.types.SENSOR",
-	Traits: []string{"action.devices.traits.Sensor, action.devices.traits.SensorState"},
+	Traits: []string{"action.devices.traits.Sensor"},
+	Attributes: map[string]interface{}{"dataTypesSupported": []map[string]interface{}{
+		{"name": "temperature",
+			"data_type": []map[string]interface{}{
+				{"type_synonym": []string{"temperature"}, "lang": "en"},
+				{"type_synonym": []string{"temperatura"}, "lang": "es"}},
+			"default_device_unit": "°C"},
+		{"name": "humidity",
+			"data_type": []map[string]interface{}{
+				{"type_synonym": []string{"humidity"}, "lang": "en"},
+				{"type_synonym": []string{"humedad"}, "lang": "es"}},
+			"default_device_unit": "%"}}},
 }
 
 // GetGoogleDeviceType : From our device type get the Google characteristics
 func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 	switch apiType {
+	case "analog":
+		return AnalogType, nil
 	case "switch":
 		return SwitchType, nil
 	case "thermostat":
