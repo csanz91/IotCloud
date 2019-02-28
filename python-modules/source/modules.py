@@ -10,6 +10,7 @@ import paho.mqtt.client as mqtt
 from docker_secrets import getDocketSecrets
 import thermostat_logic
 import switch_logic
+import toogle_logic
 import iothub_api
 import utils
 
@@ -41,7 +42,8 @@ class Sensor():
 devices = defaultdict(Device)
 values = defaultdict(Value)
 modules = {"switch": switch_logic.Switch,
-           "thermostat": thermostat_logic.Thermostat}
+           "thermostat": thermostat_logic.Thermostat,
+           "Toogle": toogle_logic.Toogle}
 
 def calculateDeviceHash(topic):
     """ Calculate the device hash from the topic
