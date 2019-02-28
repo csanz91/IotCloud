@@ -741,14 +741,21 @@ def selectUserSensors(db, userId):
             devices.append(device)
     return devices
 
+@checkArgs("db", "locationId")
+def findLocation(db, locationId):
+
+    userData = db.usersData.find_one(
+                {"locations._id": locationId}
+            )
+
+    return userData["locations"][0]
+
 @checkArgs("db", "locationId", "deviceId", "sensorId")
 def findSensor(db, locationId, deviceId, sensorId):
 
-    userData = db.usersData.find_one(
-                {"locations._id": locationId},
-                {"locations.devices": True}
-            )
-    for device in userData["locations"][0]["devices"]:
+    location = findLocation(db, locationId)
+            
+    for device in location["devices"]:
         if device['deviceId']==deviceId:
             for sensor in device['sensors']:
                 if sensor['sensorId']==sensorId:
