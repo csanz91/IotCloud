@@ -72,6 +72,18 @@ def onStatus(client, userdata, msg):
     measurement = "sensorsData"
     influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
 
+def onIP(client, userdata, msg):
+    try:
+        IP = msg.payload
+        tags, _ = utils.decodeTopic(msg.topic)
+    except:
+        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
+        return
+
+    fields = {"IP": IP}
+    measurement = "devicesIPs"
+    influxDb.writeData(measurement, tags, fields, retentionPolicy="raw")
+
 def init(influxDb):
     """
     From the docs: If you attempt to create a retention policy identical to one that 
@@ -126,6 +138,7 @@ topicHeader= "{version}/+/+/".format(version=version)
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
 statusTopic = topicHeader + "status"
+IPTopic = topicHeader + "ip"
 
 # Setup MQTT client
 mqttclient = mqtt.Client()
@@ -141,7 +154,10 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(stateTopic, onState)
 
     mqttclient.subscribe(statusTopic)
-    mqttclient.message_callback_add(statusTopic, onStatus)    
+    mqttclient.message_callback_add(statusTopic, onStatus)
+
+    mqttclient.subscribe(IPTopic)
+    mqttclient.message_callback_add(IPTopic, onIP)   
 
     thermostat_gw.onConnect(mqttclient, influxDb)
     totalizer_gw.onConnect(mqttclient, influxDb)
