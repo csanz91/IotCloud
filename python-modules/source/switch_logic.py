@@ -20,7 +20,7 @@ class Switch():
 
         # Runtime variables
         self.state = False
-        self.schedule = schedule.Schedule(self.setState)
+        self.schedule = schedule.Schedule(tags["locationId"], self.setState)
         self.timer = timer.Timer(self.setState)
         self.metadata = {}
         self.aux = {}
@@ -33,7 +33,7 @@ class Switch():
     def updateSettings(self, mqttClient, metadata):
         self.metadata = metadata
         try:
-            self.schedule.schedule = metadata['schedule']
+            self.schedule.importSchedule(metadata)
             logger.info("schedule updated: %s" % self.schedule.schedule)
         except:
             pass

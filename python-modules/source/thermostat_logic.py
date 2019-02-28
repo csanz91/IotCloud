@@ -26,7 +26,7 @@ class Thermostat():
         self.heating = False
         self.alarm = False
         self.state = False
-        self.schedule = schedule.Schedule(self.setState, self.setSetpoint)
+        self.schedule = schedule.Schedule(tags["locationId"], self.setState, self.setSetpoint)
         self.timer = timer.Timer(self.setState)
 
         # Default settings
@@ -67,7 +67,7 @@ class Thermostat():
             pass
 
         try:
-            self.schedule.schedule = metadata['schedule']
+            self.schedule.importSchedule(metadata)
         except:
             pass
 

@@ -3,6 +3,7 @@ import logging.config
 
 import requests
 from docker_secrets import getDocketSecrets
+from cache_decorator import cache_disk
 
 logger = logging.getLogger()
 
@@ -102,3 +103,9 @@ class IothubApi():
                                                                                                  ), auth=True)
 
         return sensor
+
+    @cache_disk(seconds=3600 * 8)
+    def getLocationSunSchedule(self, locationId):
+       
+        sunSchedule = self.get("locations/{locationId}/sunschedule".format(locationId=locationId), auth=True)
+        return sunSchedule
