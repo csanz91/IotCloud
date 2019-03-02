@@ -24,6 +24,7 @@ class Thermostat():
         # Runtime variables
         self.temperatureReferences = {}
         self.heating = False
+        self.setHeatingMem = False
         self.alarm = False
         self.state = False
         self.schedule = schedule.Schedule(tags["locationId"], self.setState, self.setSetpoint)
@@ -129,7 +130,7 @@ class Thermostat():
         return tempReference
 
     def setHeating(self, mqttClient, heating):
-        self.heating = heating
+        self.setHeatingMem = heating
         mqttClient.publish(self.topicHeader+"aux/setHeating", heating, qos=1, retain=True)
 
     def setAlarm(self, mqttClient, alarm):
@@ -151,8 +152,8 @@ class Thermostat():
         # The thermostat cannot run if there is an alarm active or if it is not active
         if self.alarm or not self.state:
             logger.debug("Thermostat: %s not running because is stopped or an alarm is set" % self.topicHeader)
-            # If it was heating stop now. The device also evaluates this condition
-            if self.heating:
+            # Delete the retentive heating. The device also evaluates this condition
+            if self.heating or self.setHeatingMem:
                 self.setHeating(mqttClient, False)
             return
 
