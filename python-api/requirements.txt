@@ -9,3 +9,4 @@ auth0-python
 -e libs/influx
 -e libs/docker_secrets
 python-dateutil
+futures

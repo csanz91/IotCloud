@@ -14,4 +14,4 @@ COPY ./ /app
 WORKDIR /app/source
 
 EXPOSE 5000
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "api:app", "--reload"]
+CMD ["gunicorn", "--workers", "1", "--threads", "6", "-b", "0.0.0.0:5000", "api:app", "--reload"]
