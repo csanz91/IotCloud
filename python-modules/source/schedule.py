@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import datetime
+import time
 from dateutil import tz
 
 import iothub_api
@@ -81,8 +82,23 @@ class Schedule():
         # Even if we have the function cached everywhere, this check in memory can
         # improve things slightly because this function can be called many times
         if nowNaive > datetime.datetime.utcfromtimestamp(self.sunScheduleInfo["timestamp"]).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=24):
-            self.sunScheduleInfo = api.getLocationSunSchedule(self.locationId)
-        
+            try:
+                self.sunScheduleInfo = api.getLocationSunSchedule(self.locationId)
+            except:
+                # In case we are not able to recover the sun schedule:
+                # 
+                # If we have previous data stored, make it last more
+                if self.sunScheduleInfo["timestamp"]:
+                    self.sunScheduleInfo["timestamp"] += 3600
+                # If we dont have any data:
+                else:
+                    # Set the timestamp so the data will be fetched again in 1 hour
+                    self.sunScheduleInfo["timestamp"] = int(time.time()) - 23*3600
+                    # Set the sunrise at 08:00
+                    self.sunScheduleInfo["sunrise"] = 60 * 8
+                    # Set the sunset at 19:00
+                    self.sunScheduleInfo["sunset"] = 60 * 19
+
         self.runSunSchedule(mqttClient, today, currentMinute)
         self.runManualSchedule(mqttClient, today, currentMinute)
         
