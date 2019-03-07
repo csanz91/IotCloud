@@ -178,11 +178,11 @@ class Thermostat():
             return
         
         # The reference temperature is below the setpoint -> start heating
-        if not self.heating and tempReference < self.setpoint+self.hysteresisLow:
+        if not self.heating and tempReference <= self.setpoint+self.hysteresisLow:
             self.setHeating(mqttClient, True)
             self.startHeatingAt = int(time.time())
             logger.info("Start heating")
         # The reference temperature is above the setpoint -> stop heating
-        elif self.heating and tempReference > self.setpoint+self.hysteresisHigh:
+        elif self.heating and tempReference >= self.setpoint+self.hysteresisHigh:
             self.setHeating(mqttClient, False)
             logger.info("Stop heating")
