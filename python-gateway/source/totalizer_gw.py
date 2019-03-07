@@ -36,7 +36,7 @@ def onConnect(mqttclient, influxClient):
                         SELECT NON_NEGATIVE_DERIVATIVE(LAST("totalizer"), 1h) as rate
                         INTO "raw"."totalizerData"
                         FROM "raw"."totalizerData"
-                        GROUP BY time(3m), *
+                        GROUP BY time(10m), *
                         END
                     """ % os.environ['INFLUXDB_DB'])
 
