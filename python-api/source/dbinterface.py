@@ -401,7 +401,6 @@ def yieldLocations(db, userId, includeInherited=False):
         userData = selectUser(db, userId)
 
     for location in userData['locations']:
-        #location['role'] = api_utils.Roles.owner
         yield location
 
     if includeInherited:
