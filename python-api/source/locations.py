@@ -52,6 +52,9 @@ class Locations():
     def __init__(self, db):
         self.db = db
 
+    # As the locations are individual per user, anyone can edit
+    # their own location. To update a shared location field
+    # the requiered roles are checked inside each function
     @checkLocationPermissions(Roles.viewer)
     def on_put(self, req, resp, userId, locationId):
 
