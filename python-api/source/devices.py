@@ -146,7 +146,8 @@ class Sensors():
                                               req.media.get('sensorName', None),
                                               req.media.get('sensorMetadata', None),
                                               req.media.get('color', None),
-                                              req.media.get('orderIndex', None))
+                                              req.media.get('orderIndex', None),
+                                              req.media.get('roomId', None))
 
         except:
             logger.error("Exception. userId: %s, locationId %s, deviceId: %s, sensorId: %s" % (userId, locationId, deviceId, sensorId), exc_info=True)

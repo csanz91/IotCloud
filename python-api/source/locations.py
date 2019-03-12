@@ -182,3 +182,88 @@ class LocationPermission():
             ) 
 
         resp.media = api_utils.getResponseModel(result)
+
+
+class LocationRooms():
+
+    def __init__(self, db):
+        self.db = db
+
+    @checkLocationPermissions(Roles.editor)
+    def on_post(self, req, resp, userId, locationId):
+
+        try:
+            roomId = dbinterface.insertRoom(self.db, userId, locationId, req.media.get('roomName'))
+            
+        except:
+            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = api_utils.getResponseModel(True, roomId)
+
+    @checkLocationPermissions(Roles.viewer)
+    def on_get(self, req, resp, userId, locationId):
+        
+        try:
+            rooms = dbinterface.selectRooms(self.db, userId, locationId)
+        except:
+            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            ) 
+
+        resp.media = api_utils.getResponseModel(True, rooms)
+
+
+class LocationRoom():
+
+    def __init__(self, db):
+        self.db = db
+
+    @checkLocationPermissions(Roles.editor)
+    def on_put(self, req, resp, userId, locationId, roomId):
+
+        try:
+            result = dbinterface.updateRoom(self.db, userId, locationId, roomId, req.media)
+            
+        except:
+            logger.error("Exception. userId: %s, locationId %s, roomId: %s" % (userId, locationId, roomId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = api_utils.getResponseModel(result)
+
+    @checkLocationPermissions(Roles.viewer)
+    def on_get(self, req, resp, userId, locationId, roomId):
+        
+        try:
+            room = dbinterface.selectRoom(self.db, userId, locationId, roomId)
+        except:
+            logger.error("Exception. userId: %s, locationId %s, roomId: %s" % (userId, locationId, roomId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            ) 
+
+        resp.media = api_utils.getResponseModel(True, room)
+
+
+    @checkLocationPermissions(Roles.editor)
+    def on_delete(self, req, resp, userId, locationId, roomId):
+
+        try:
+            result = dbinterface.deleteRoom(self.db, userId, locationId, roomId)
+        except:
+            logger.error("Exception. userId: %s, locationId %s, roomId: %s" % (userId, locationId, roomId), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            ) 
+
+        resp.media = api_utils.getResponseModel(result)

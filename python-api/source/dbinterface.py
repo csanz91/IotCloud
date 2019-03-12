@@ -470,6 +470,92 @@ def deleteLocation(db, userId, locationId):
 
     return True
 
+@checkArgs("db", "userId", "locationId", "roomName")
+def insertRoom(db, userId, locationId, roomName):
+
+    ourLocationRole = selectUserLocationRole(db, userId, locationId)
+    if not ourLocationRole:
+        return False
+
+    locationShare = selectUserLocationShare(db, userId, locationId)
+    if locationShare:
+
+        if ourLocationRole < api_utils.Roles.editor:
+            return False
+
+        ownerUserId = locationShare['ownerUserId']
+        # Now we are going to edit the location of the other user
+        userId = ownerUserId
+
+    _id = str(ObjectId())
+    result = db.usersData.update_one(
+        {"_id": userId,
+        "locations._id": locationId},
+        {"$push":   {  "locations.$.rooms" :
+                        {
+                        "roomId": _id,
+                        "roomName": roomName,
+                        }
+                    }
+        }
+    )
+    validateDbResult(result)
+
+    cache.clearCache(userId)
+    return _id
+
+@checkArgs("db", "userId", "locationId", "roomId", "updatedData")
+def updateRoom(db, userId, locationId, roomId, updatedData):
+
+    allowedFieldsToUpdate = ["roomName"]
+    dataToUpdate = getDataToUpdate(updatedData, allowedFieldsToUpdate)
+
+    result = db.usersData.update_one(
+        {"_id": userId},
+        {"$set": {"locations.$[i].rooms.$[j].%s" % field: value for field, value in dataToUpdate.items()}},
+        array_filters= [
+            {"i._id": locationId},
+            {"j.roomId": roomId}
+        ]
+    )
+    validateDbResult(result)
+
+    # Clear the cache as the data is not longer updated
+    cache.clearCache(userId)
+    return True
+
+@checkArgs("db", "userId", "locationId", "roomId")
+def deleteRoom(db, userId, locationId, roomId):
+
+    result = db.usersData.update_many(
+        {"_id": userId, "locations._id": locationId},
+        {"$pull": {"locations.$.rooms": {"roomId": roomId}}}
+    )
+    validateDbResult(result)
+
+    # Clear the cache as the data is not longer updated
+    cache.clearCache(userId)
+
+    return True
+
+@checkArgs("db", "userId", "locationId")
+def selectRooms(db, userId, locationId):
+    location = selectLocation(db, userId, locationId)
+    try:
+        rooms = location['rooms']
+    except KeyError:
+        rooms = []
+    return rooms
+
+@checkArgs("db", "userId", "locationId", "roomId")
+def selectRoom(db, userId, locationId, roomId):
+
+    rooms = selectRooms(db, userId, locationId)
+    for room in rooms:
+        if room['roomId']==roomId:
+            return room
+
+    return {}
 
 #####################################################
 ## Location Permissions Operations
@@ -534,6 +620,7 @@ def insertDevice(db,
                         'sensorMetadata': sensor.get('sensorMetadata', None),
                         'color': sensor.get('color', "ff%06x" % random.randint(0, 0xFFFFFF)),
                         'orderIndex': orderIndex,
+                        'roomId': sensor['roomId'],
                         }
         )
 
@@ -612,7 +699,8 @@ def updateSensor(db,
                 sensorName=None, 
                 sensorMetadata=None,
                 color=None,
-                orderIndex=None):
+                orderIndex=None,
+                roomId=None):
 
     if orderIndex:
         sensorsOrder = getSensorsOrder(db, userId, locationId)
@@ -623,7 +711,8 @@ def updateSensor(db,
     fieldsToUpdate = [  "sensorName",
                         "sensorMetadata",
                         "color",
-                        "orderIndex"]
+                        "orderIndex",
+                        "roomId"]
 
     updatedData = {field: args[field] for field in fieldsToUpdate if field in args and args[field]}
     if not updatedData:

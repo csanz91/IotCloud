@@ -19,7 +19,7 @@ from docker_secrets import getDocketSecrets
 import influx
 from user_management import (Login, RecoverPassword, UserManagement)
 from auth0_api import Auth0Api
-from locations import UserLocations, Locations, LocationsPermissions, LocationPermission
+from locations import UserLocations, Locations, LocationsPermissions, LocationPermission, LocationRooms, LocationRoom
 from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation, DeviceIP
 from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserToken
 from m2m import UserSensors, FindSensor, LocationSunSchedule
@@ -100,6 +100,8 @@ app.add_route("/api/v1/users/{userId}/locations/{locationId}", Locations(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices", LocationDevices(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/permissions", LocationsPermissions(db))
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/rooms", LocationRooms(db))
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/rooms/{roomId}", LocationRoom(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}", Devices(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/mqttauth", MqttDeviceToken(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/lastseen", LastSeen(influx_client, db))
