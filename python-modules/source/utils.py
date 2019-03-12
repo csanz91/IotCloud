@@ -13,12 +13,12 @@ def decodeStatus(value):
     status = value.lower()=="online"
     return status
 
-def pushValue(mqttClient, tags, endpoint, value):
+def pushValue(mqttClient, tags, endpoint, value, retain=False):
     try:
         topic = "v1/{locationId}/{deviceId}/{sensorId}/aux/{endpoint}".format(locationId=tags["locationId"],
                                                                               deviceId=tags["deviceId"],
                                                                               sensorId=tags["sensorId"],
                                                                               endpoint=endpoint)
-        mqttClient.publish(topic, value)
+        mqttClient.publish(topic, value, retain=retain)
     except:
         logger.error("Cant publish the value: %s in the endpoint: %s" % (value, endpoint))
