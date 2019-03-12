@@ -208,7 +208,7 @@ class LastSeen():
         self.influxdb = influxdb
         self.db = mongodb
 
-    @grantLocationOwnerPermissions(Roles.editor)
+    @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId):
 
         try:
@@ -406,7 +406,7 @@ class DeviceIP():
         self.influxdb = influxdb
         self.db = mongodb
 
-    @grantLocationOwnerPermissions(Roles.editor)
+    @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId):
 
         try:
