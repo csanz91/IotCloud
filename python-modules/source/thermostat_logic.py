@@ -149,7 +149,7 @@ class Thermostat():
         # Check the timer
         self.timer.runTimer(mqttClient)
 
-        # The thermostat cannot run if there is an alarm active or if it is not active
+        # The thermostat cannot run if there is an active alarm or if it is not active
         if self.alarm or not self.state:
             logger.debug("Thermostat: %s not running because is stopped or an alarm is set" % self.topicHeader)
             # Delete the retentive heating. The device also evaluates this condition
@@ -166,7 +166,7 @@ class Thermostat():
             return
 
         if self.tempReferenceMem != tempReference:
-            utils.pushValue(mqttClient, self.tags, "tempReference", tempReference)
+            utils.pushValue(mqttClient, self.tags, "tempReference", tempReference, retain=True)
             self.tempReferenceMem = tempReference
 
         # If the heating has been running for more than [maxHeatingTime] there could be
