@@ -45,6 +45,13 @@ modules = {"switch": switch_logic.Switch,
            "thermostat": thermostat_logic.Thermostat,
            "Toogle": toogle_logic.Toogle}
 
+# Keep track of all the subscriptions. In case of reconnection they
+# will be necessary to restore the subscriptions.
+# I do not trust the clean_session=False because it does not
+# guarantee that all the subscriptions will be restored, this wrong 
+# behaviour has been proved by stoping the broker and restart it again
+subscriptionsList = []
+
 def calculateDeviceHash(topic):
     """ Calculate the device hash from the topic
     """
@@ -109,7 +116,7 @@ def onAux(client, userdata, msg):
         # New module. Create the instance and get the metadata from the api
         if tags["endpoint"] in modules.keys():
             if not devices[deviceHash].sensors[tags["sensorId"]].instance:
-                devices[deviceHash].sensors[tags["sensorId"]].instance = modules[tags["endpoint"]](tags, client)
+                devices[deviceHash].sensors[tags["sensorId"]].instance = modules[tags["endpoint"]](tags, client, subscriptionsList)
                 sensorData = api.getSensor(tags["locationId"], tags["deviceId"], tags["sensorId"])
                 devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
 
@@ -163,6 +170,10 @@ def onConnect(self, mosq, obj, rc):
     logger.info("connected")
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
+    # Restore the subscriptions
+    for subscription in subscriptionsList:
+        mqttclient.subscribe(subscription)
+
     mqttclient.message_callback_add(statusTopic, onStatus)
     mqttclient.message_callback_add(valuesTopic, onValue)
     mqttclient.message_callback_add(stateTopic, onState)

@@ -10,7 +10,7 @@ import timer
 logger = logging.getLogger()
 
 class Switch():
-    def __init__(self, tags, mqttClient):
+    def __init__(self, tags, mqttClient, subscriptionsList):
 
         # Aux variables
         self.tags = tags
@@ -27,8 +27,11 @@ class Switch():
 
         # Subscribe to the relevant topics
         mqttClient.subscribe(self.deviceTopicHeader+"status")
+        subscriptionsList.append(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"state")
+        subscriptionsList.append(self.topicHeader+"state")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
+        subscriptionsList.append(self.topicHeader+"updatedSensor")
 
     def updateSettings(self, mqttClient, metadata):
         self.metadata = metadata

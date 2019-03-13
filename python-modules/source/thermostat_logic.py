@@ -13,7 +13,7 @@ logger = logging.getLogger()
 
 
 class Thermostat():
-    def __init__(self, tags, mqttClient):
+    def __init__(self, tags, mqttClient, subscriptionsList):
 
         # Aux variables
         self.tags = tags
@@ -40,15 +40,21 @@ class Thermostat():
         self.aux = {}
         self.tempReferenceMem = 0.0
 
+        self.subscriptionsList = subscriptionsList
+
         # Subscribe to the relevant topics
         self.addTempReference(mqttClient, self.topicHeader+"value", 2)
         mqttClient.subscribe(self.topicHeader+"state")
+        subscriptionsList.append(self.topicHeader+"state")
         mqttClient.subscribe(self.deviceTopicHeader+"status")
+        subscriptionsList.append(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
+        subscriptionsList.append(self.topicHeader+"updatedSensor")
 
     def addTempReference(self, mqttClient, temperatureReferenceTopic, factor):
         if not temperatureReferenceTopic in self.temperatureReferences:
             mqttClient.subscribe(temperatureReferenceTopic)
+            self.subscriptionsList.append(temperatureReferenceTopic)
         self.temperatureReferences[temperatureReferenceTopic] = factor
 
     def updateSettings(self, mqttClient, metadata):
