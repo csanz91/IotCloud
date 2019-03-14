@@ -7,7 +7,6 @@ import (
 	"mqtt"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 // Aux function to add an ID to a response
@@ -47,9 +46,7 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 		for _, execution := range command.Execution {
 			for _, device := range command.Devices {
 				ID := device.ID
-				subIds := strings.Split(ID, "$")
-				deviceID := subIds[0]
-				sensorID := subIds[1]
+				deviceID, sensorID := decodeID(ID)
 				locationID := device.CustomData["locationId"].(string)
 				deviceType := device.CustomData["type"].(string)
 
@@ -84,6 +81,7 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 					} else {
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
 					}
+
 					// Toogle
 				} else if execution.Command == "action.devices.commands.OpenClose" {
 					openPercent := execution.Params["openPercent"].(float64)
@@ -111,6 +109,24 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 					thermostatMode := execution.Params["thermostatMode"].(string)
 					newState := thermostatMode == "heat" || thermostatMode == "on"
 					if err := mqtt.SetState(locationID, deviceID, sensorID, newState); err == nil {
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+					} else {
+						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+					}
+				} else if execution.Command == "action.devices.commands.ColorAbsolute" {
+					intColor := int(execution.Params["color"].(map[string]interface{})["spectrumRGB"].(float64))
+					color := "FF" + fmt.Sprintf("%06x", intColor)
+
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "setColor", color); err == nil {
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+					} else {
+						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+					}
+
+				} else if execution.Command == "action.devices.commands.BrightnessAbsolute" {
+					brightness := execution.Params["brightness"].(float64) / 100.0
+
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "setBrightness", fmt.Sprintf("%.2f", brightness)); err == nil {
 						responsesModels["pending"] = addID(responsesModels["pending"], ID)
 					} else {
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
