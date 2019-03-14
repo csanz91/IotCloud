@@ -214,7 +214,7 @@ type APIResponse struct {
 	Data   []Device `json:"data"`
 }
 
-// Device : Standar struct for a device received through the API
+// Device : Standard struct for a device received through the API
 type Device struct {
 	DeviceID              string   `json:"deviceId"`
 	RegistrationTimestamp int      `json:"utcDeviceFirstSeenTimestamp"`
@@ -224,12 +224,13 @@ type Device struct {
 	Sensors               []Sensor `json:"sensors"`
 }
 
-// Sensor : Standar struct for a sensor received through the API
+// Sensor : Standard struct for a sensor received through the API
 type Sensor struct {
 	ID       string                 `json:"sensorId"`
 	Name     string                 `json:"sensorName"`
 	Metadata map[string]interface{} `json:"sensorMetadata"`
 	Type     string                 `json:"sensorType"`
+	Room     string                 `json:"room"`
 }
 
 type deviceCacheModel struct {
