@@ -77,10 +77,10 @@ def getStateTime(influxClient, locationId, deviceId, sensorId, initialTimestamp,
     query = ''' SELECT 
                     state
                 FROM "3years"."sensorsData" WHERE 
-                    locationId='%s' AND deviceId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 ORDER BY
                     time DESC
-                ''' % (locationId, deviceId, sensorId, initialTimestampPrev, finalTimestamp)
+                ''' % (locationId, sensorId, initialTimestampPrev, finalTimestamp)
 
     results = influxClient.query(query)
     return calculateActiveTime(results, initialTimestamp, finalTimestamp)
@@ -97,10 +97,10 @@ def getHeatingTime(influxClient, locationId, deviceId, sensorId, initialTimestam
     query = ''' SELECT 
                     heating as state
                 FROM "3years"."thermostatData" WHERE 
-                    locationId='%s' AND deviceId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 ORDER BY
                     time DESC
-                ''' % (locationId, deviceId, sensorId, initialTimestampPrev, finalTimestamp)
+                ''' % (locationId, sensorId, initialTimestampPrev, finalTimestamp)
 
     results = influxClient.query(query)
     return calculateActiveTime(results, initialTimestamp, finalTimestamp)
