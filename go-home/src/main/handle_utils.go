@@ -183,6 +183,32 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 				DataValue:          value,
 			},
 		}
+	} else if deviceType == "ledRGB" {
+		// The LED data is encoded in the aux subtopic
+		auxValues, err := mqtt.GetAux(deviceID, sensorID)
+		if err != nil {
+			return model.DeviceProperties{}, err
+		}
+
+		// The brigthness is received as a float
+		brightness, err := strconv.ParseFloat(auxValues["brightness"], 32)
+		if err != nil {
+			brightness = 0.0
+		}
+		deviceProperties.Brightness = int(brightness * 100.0)
+
+		// The state is defined by the brightness
+		state = brightness != 0.0
+		deviceProperties.ON = state
+
+		// The color has the following format: "00AABBCC"
+		color := auxValues["color"]
+		// Remove the first two hex characters and parse it into an int
+		intColor, err := strconv.ParseUint(color[2:len(color)], 16, 32)
+		if err != nil {
+			intColor = 0
+		}
+		deviceProperties.Color = intColor
 	}
 
 	return deviceProperties, nil

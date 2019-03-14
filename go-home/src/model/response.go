@@ -86,6 +86,7 @@ type DeviceProperties struct {
 	ON                            bool         `json:"on"`
 	Online                        bool         `json:"online"`
 	Brightness                    int          `json:"brightness"`
+	Color                         uint64       `json:"spectrumRgb"`
 	ThermostatMode                string       `json:"thermostatMode"`
 	ThermostatTemperatureSetpoint float32      `json:"thermostatTemperatureSetpoint"`
 	ThermostatTemperatureAmbient  float32      `json:"thermostatTemperatureAmbient"`

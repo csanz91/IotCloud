@@ -52,6 +52,13 @@ var AnalogType = GoogleDeviceType{
 			"default_device_unit": "%"}}},
 }
 
+// RGBType : Google Device definition for our RGB type
+var RGBType = GoogleDeviceType{
+	Type:       "action.devices.types.LIGHT",
+	Traits:     []string{"action.devices.traits.OnOff", "action.devices.traits.Brightness", "action.devices.traits.ColorSetting"},
+	Attributes: map[string]interface{}{"colorModel": "rgb", "commandOnlyColorSetting": false},
+}
+
 // GetGoogleDeviceType : From our device type get the Google characteristics
 func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 	switch apiType {
@@ -63,6 +70,8 @@ func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 		return ThermostatType, nil
 	case "toogle":
 		return ToogleType, nil
+	case "ledRGB":
+		return RGBType, nil
 	default:
 		return GoogleDeviceType{}, errors.New("Device type not supported")
 	}
