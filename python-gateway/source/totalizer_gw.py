@@ -49,5 +49,6 @@ def onTotalizerValue(client, userdata, msg):
         return
 
     fields = {endpoint: value}
+    tagsToSave =  ["locationId", "sensorId"]
     measurement = "totalizerData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="raw")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")

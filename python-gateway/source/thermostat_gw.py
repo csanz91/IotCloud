@@ -40,8 +40,9 @@ def onThermostatValue(client, userdata, msg):
         return
 
     fields = {endpoint: value}
+    tagsToSave =  ["locationId", "sensorId"]
     measurement = "thermostatData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
 
 def onHeating(client, userdata, msg):
     try:
@@ -52,5 +53,6 @@ def onHeating(client, userdata, msg):
         return
 
     fields = {"heating": heating}
+    tagsToSave =  ["locationId", "sensorId"]
     measurement = "thermostatData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")

@@ -45,8 +45,9 @@ def onValue(client, userdata, msg):
         return
 
     fields = {"value": value}
+    tagsToSave =  ["locationId", "sensorId"]
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="raw")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
 
 def onState(client, userdata, msg):
     try:
@@ -57,8 +58,9 @@ def onState(client, userdata, msg):
         return
 
     fields = {"state": state}
+    tagsToSave =  ["locationId", "sensorId"]
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
 
 def onStatus(client, userdata, msg):
     try:
@@ -69,8 +71,9 @@ def onStatus(client, userdata, msg):
         return
 
     fields = {"status": status}
+    tagsToSave =  ["locationId", "deviceId"]
     measurement = "sensorsData"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="3years")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
 
 def onIP(client, userdata, msg):
     try:
@@ -81,8 +84,9 @@ def onIP(client, userdata, msg):
         return
 
     fields = {"IP": IP}
+    tagsToSave =  ["locationId", "deviceId"]
     measurement = "devicesIPs"
-    influxDb.writeData(measurement, tags, fields, retentionPolicy="raw")
+    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
 
 def init(influxDb):
     """

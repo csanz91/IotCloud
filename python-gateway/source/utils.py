@@ -21,6 +21,10 @@ def decodeTopic(topic):
 
     return tags, endpoint
 
+def selectTags(selectedTags, tags):
+    tagsToSave = {tag: tags[tag] for tag in selectedTags if tag in tags}
+    return tagsToSave
+
 def calculateSensorHash(topic):
     """ Calculate the sensor hash from the topic
     """
