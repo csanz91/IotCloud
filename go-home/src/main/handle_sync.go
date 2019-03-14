@@ -36,6 +36,7 @@ func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.Device
 					Name: sensor.Name,
 				},
 				WillReportState: false,
+				RoomHint:        sensor.Room,
 				DeviceInfo: model.DeviceInfo{
 					Manufacturer: "csm",
 					Model:        sensor.Type,
