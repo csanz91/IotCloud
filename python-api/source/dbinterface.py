@@ -824,8 +824,15 @@ def selectUserSensors(db, userId):
     devices = []
     user = selectUserInheritedData(db, userId)
     for location in user["locations"]:
+        rooms = {room["roomId"]: room["roomName"] for room in location["rooms"]}
         for device in location["devices"]:
             device['locationId'] = location['_id']
+            # Add the name of the room
+            for sensor in device["sensors"]:
+                try:
+                    sensor["room"] = rooms[sensor["roomId"]]
+                except KeyError:
+                    pass
             devices.append(device)
     return devices
 
