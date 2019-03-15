@@ -59,6 +59,12 @@ var RGBType = GoogleDeviceType{
 	Attributes: map[string]interface{}{"colorModel": "rgb", "commandOnlyColorSetting": false},
 }
 
+// LEDType : Google Device definition for our LED type
+var LEDType = GoogleDeviceType{
+	Type:   "action.devices.types.LIGHT",
+	Traits: []string{"action.devices.traits.OnOff", "action.devices.traits.Brightness"},
+}
+
 // GetGoogleDeviceType : From our device type get the Google characteristics
 func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 	switch apiType {
@@ -72,6 +78,8 @@ func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 		return ToogleType, nil
 	case "ledRGB":
 		return RGBType, nil
+	case "led":
+		return LEDType, nil
 	default:
 		return GoogleDeviceType{}, errors.New("Device type not supported")
 	}
