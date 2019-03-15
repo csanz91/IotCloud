@@ -35,7 +35,7 @@ type dataTypesSupported struct {
 	DefaultDeviceUnit string                 `json:"default_device_unit"`
 }
 
-// AnalogType : Google Device definition for our toogle types
+// AnalogType : Google Device definition for our analog types (not working)
 var AnalogType = GoogleDeviceType{
 	Type:   "action.devices.types.SENSOR",
 	Traits: []string{"action.devices.traits.Sensor"},
