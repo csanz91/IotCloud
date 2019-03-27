@@ -34,7 +34,8 @@ class LocationDevices():
                                                 req.media.get('deviceVersion'),
                                                 req.media.get('deviceInternalId'),
                                                 [json.loads(sensor) for sensor in req.media.get('sensors')],
-                                                deviceTargetVersion=req.media.get('deviceTargetVersion', None)
+                                                deviceTargetVersion=req.media.get('deviceTargetVersion', None),
+                                                deviceId=req.media.get('deviceId', None)
                                                 )
 
         except:

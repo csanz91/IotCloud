@@ -596,7 +596,8 @@ def insertDevice(db,
                 deviceInternalId,
                 receivedSensors,
                 deviceTargetVersion=None,
-                utcDeviceFirstSeenTimestamp=None):
+                utcDeviceFirstSeenTimestamp=None,
+                deviceId=None):
 
     if not utcDeviceFirstSeenTimestamp:
         utcDeviceFirstSeenTimestamp = int(time.time())
@@ -630,7 +631,7 @@ def insertDevice(db,
         {"$pull": {"locations.$.devices": {"deviceInternalId": deviceInternalId}}}
     )
 
-    _id = str(ObjectId())
+    _id = deviceId or str(ObjectId())
     result = db.usersData.update_one(
         {"_id": userId,
         "locations._id": locationId},
