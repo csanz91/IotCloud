@@ -120,8 +120,12 @@ class InfluxClient():
                     except:
                         logger.error("Exception when saving the data", exc_info=True)
 
+                        # If the batch fails try to send the values one by one
                         for value in dataToSend:
-                            queue.put(value)
+                            try:
+                                assert(self.client.write_points([value], time_precision='s', retention_policy=retentionPolicy))
+                            except:
+                                logger.error("Ignoring value: %s" % value)
 
 
 
