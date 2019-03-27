@@ -78,6 +78,7 @@ def onStatus(client, userdata, msg):
 def onIP(client, userdata, msg):
     try:
         IP = msg.payload
+        assert IP
         tags, _ = utils.decodeTopic(msg.topic)
     except:
         logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
