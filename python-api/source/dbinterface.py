@@ -332,7 +332,8 @@ def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitia
                         "devices": [],
                         "usersPermissions": [],
                         "color": color,
-                        "role": api_utils.Roles.owner
+                        "role": api_utils.Roles.owner,
+                        "rooms": []
                         }
                     }
         }
