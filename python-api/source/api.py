@@ -25,6 +25,7 @@ from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserTo
 from m2m import UserSensors, FindSensor, LocationSunSchedule
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather.weather_api import Weather, SunSchedule
+from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
 
 ##############################################
 ## Configuration
@@ -96,6 +97,9 @@ app.add_route("/api/v1/users/{userId}/weather", Weather())
 app.add_route("/api/v1/users/{userId}/sunschedule", SunSchedule())
 app.add_route("/api/v1/users/{userId}/sensors", UserSensors(db))
 app.add_route("/api/v1/users/{userId}/permissions/{shareId}", LocationPermission(db))
+app.add_route("/api/v1/users/{userId}/bitcoin/current", BitcoinCurrent())
+app.add_route("/api/v1/users/{userId}/bitcoin/historical", BitcoinHistorical())
+app.add_route("/api/v1/users/{userId}/bitcoin", BitcoinPrice())
 app.add_route("/api/v1/users/{userId}/locations/{locationId}", Locations(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices", LocationDevices(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db))
