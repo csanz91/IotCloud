@@ -62,7 +62,7 @@ services:
     command: mongod --smallfiles --logpath=/dev/null # --quiet
 
   influxdb:
-    image: influxdb:latest
+    image: influxdb:1.7
     
     env_file:
       - 'variables.env'
