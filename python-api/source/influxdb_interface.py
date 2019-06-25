@@ -136,7 +136,7 @@ def getTotalizerCurrentRate(influxClient, locationId, sensorId):
     query = ''' SELECT
                     LAST("rate") as rate
                 FROM totalizerData WHERE 
-                    locationId='%s' AND sensorId='%s' AND time>= NOW() - 10m
+                    locationId='%s' AND sensorId='%s' AND time>= NOW() - 12h
             ''' % (locationId, sensorId)
 
     results = influxClient.query(query)
