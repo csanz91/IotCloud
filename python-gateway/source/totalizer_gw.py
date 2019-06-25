@@ -32,11 +32,13 @@ def onConnect(mqttclient, influxClient):
                     """ % os.environ['INFLUXDB_DB'])
 
 
-    influxClient.client.query(""" CREATE CONTINUOUS QUERY "totalizer_rate" ON %s BEGIN
+    influxClient.client.query(""" CREATE CONTINUOUS QUERY "totalizer_rate" ON %s
+                        RESAMPLE EVERY 5m FOR 90m
+                        BEGIN
                         SELECT NON_NEGATIVE_DERIVATIVE(LAST("totalizer"), 1h) as rate
                         INTO "raw"."totalizerData"
                         FROM "raw"."totalizerData"
-                        GROUP BY time(10m), *
+                        GROUP BY time(20m), *
                         END
                     """ % os.environ['INFLUXDB_DB'])
 
