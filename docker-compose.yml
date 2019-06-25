@@ -80,7 +80,7 @@ services:
   grafana:
     user: $ID
     restart: always
-    image: grafana/grafana:latest
+    image: grafana/grafana:6.2.4
     ports:
       - 3000:3000
     volumes:
