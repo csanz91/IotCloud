@@ -13,6 +13,7 @@ def resync(db, userId, locationId):
     locationUsers = dbinterface.getLocationUsers(db, locationId)
     if not locationUsers:
         threading.Thread(target=requestResync, args=(userId,)).start()
+        return
 
     ownerUserId = None
     for share in locationUsers:
