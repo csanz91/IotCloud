@@ -310,7 +310,7 @@ def deleteUserLocationShare(db, userId, shareId):
 #####################################################
 
 @checkArgs("db", "userId", "locationName", "postalCode", "city")
-def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitialTimestamp=None, color=None):
+def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitialTimestamp=None, color=None, thirdPartiesVisible=True):
 
     if not utcLocationInitialTimestamp:
         utcLocationInitialTimestamp = int(time.time())
@@ -333,7 +333,8 @@ def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitia
                         "usersPermissions": [],
                         "color": color,
                         "role": api_utils.Roles.owner,
-                        "rooms": []
+                        "rooms": [],
+                        "thirdPartiesVisible": False
                         }
                     }
         }
@@ -344,10 +345,11 @@ def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitia
     return _id
 
 def getDataToUpdate(updatedData, allowedFieldsToUpdate):
-    updatedData = {field: updatedData[field] for field in allowedFieldsToUpdate if field in updatedData and updatedData[field]}
+    updatedData = {field: updatedData[field] for field in allowedFieldsToUpdate if field in updatedData}
     return updatedData
 
-individualLocationFields = ["locationName", "color"]
+individualLocationFields = ["locationName", "color", "thirdPartiesVisible"]
+sharedLocationFields = ["postalCode", "city"]
 
 @checkArgs("db", "userId", "locationId")
 def updateLocation(db, userId, locationId, updatedData):
@@ -373,10 +375,10 @@ def updateLocation(db, userId, locationId, updatedData):
 
         # Now we are going to edit the location of the other user
         userId = ownerUserId
-        allowedFieldsToUpdate = ["postalCode", "city"]
+        allowedFieldsToUpdate = sharedLocationFields
     else:
         # We are the owners of the location, we can edit all the fields
-        allowedFieldsToUpdate = ["locationName", "postalCode", "city", "color"]
+        allowedFieldsToUpdate = individualLocationFields + sharedLocationFields
 
     dataToUpdate = getDataToUpdate(updatedData, allowedFieldsToUpdate)
     if not dataToUpdate:
@@ -392,6 +394,11 @@ def updateLocation(db, userId, locationId, updatedData):
 
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
+
+    if "thirdPartiesVisible" in dataToUpdate:
+        # Resync the Google home devices
+        request_home_resync.resync(db, userId, locationId)
+
     return True
 
 # Yield to optimize when selecting only one location
@@ -826,6 +833,12 @@ def selectUserSensors(db, userId):
     devices = []
     user = selectUserInheritedData(db, userId)
     for location in user["locations"]:
+        # Only return the selected locations
+        try:
+            assert location['thirdPartiesVisible']
+        except (KeyError, AssertionError):
+            continue
+
         rooms = {room["roomId"]: room["roomName"] for room in location["rooms"]}
         for device in location["devices"]:
             device['locationId'] = location['_id']
