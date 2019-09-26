@@ -1,6 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 import requests
+from requests import adapters
+import ssl
+from urllib3 import poolmanager
 import math
 from datetime import datetime
 import time 
@@ -29,18 +32,35 @@ measurements = {
     }
 }
 
+# Requiered to fix the AEMET poor encription
+class TLSAdapter(adapters.HTTPAdapter):
+
+    def init_poolmanager(self, connections, maxsize, block=False):
+        """Create and initialize the urllib3 PoolManager."""
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+        self.poolmanager = poolmanager.PoolManager(
+                num_pools=connections,
+                maxsize=maxsize,
+                block=block,
+                ssl_version=ssl.PROTOCOL_TLS,
+                ssl_context=ctx)
+
+session = requests.session()
+session.mount('https://', TLSAdapter())
+
 ######################################
 ## Aemet functions
 ######################################
 
 
 def getAemetData(url):
-    response = requests.get(url, headers={'api_key': aemetApiKey})
+    response = session.get(url, headers={'api_key': aemetApiKey})
     result = response.json()
     assert result["estado"] == 200
     datosUrl = result["datos"]
 
-    datosResponse = requests.get(datosUrl)
+    datosResponse = session.get(datosUrl)
     datosResult = datosResponse.json()
     return datosResult
 
