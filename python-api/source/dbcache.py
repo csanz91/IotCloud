@@ -27,7 +27,6 @@ class DBCache:
         """
 
         key = self.getValidKey(key)
-        print "using cache"
         
         return self.cache[key]['value']
  
