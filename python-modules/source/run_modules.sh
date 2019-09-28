@@ -4,7 +4,9 @@ while :
 do
   date
   echo "--- Start Modules"
+  sleep 20
   python modules.py
+  echo "ending"
   RET=$?
   if [ ${RET} -ne 0 ];
   then
