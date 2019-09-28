@@ -20,16 +20,18 @@ logger = logging.getLogger(__name__)
 cache = DBCache()
 
 #####################################################
-## Auxiliar Functions
+# Auxiliar Functions
 #####################################################
 
+
 def joinDicts(d1, d2):
-    d = d1.copy()  
-    d.update(d2)   
+    d = d1.copy()
+    d.update(d2)
     return d
 
-def checkArgs(*argchecks):      
-    def checkAllArgs(func):  
+
+def checkArgs(*argchecks):
+    def checkAllArgs(func):
         def func_wrapper(*args, **kwargs):
             dArgs = joinDicts(dict(zip(inspect.getargspec(func).args, args)), kwargs)
             for arg in argchecks:
@@ -45,24 +47,25 @@ def validateDbResult(result):
     try:
         assert(result.acknowledged)
         if type(result) is DeleteResult:
-            assert(result.deleted_count==1)
+            assert(result.deleted_count == 1)
         elif type(result) is InsertOneResult:
             pass
         else:
-            assert(result.modified_count==1)
+            assert(result.modified_count == 1)
     except AssertionError:
         logger.error("The database operation could not be completed successfully")
         raise
 
 #####################################################
-## User Operations
+# User Operations
 #####################################################
 
+
 @checkArgs("db", "name", "lastName", "email", "language")
-def insertUser(db, name, lastName, email, wantUpdates, 
-                gdprAcceptance, language, utcAccountInitialTimestamp=None,
-                userId=None):
-    
+def insertUser(db, name, lastName, email, wantUpdates,
+               gdprAcceptance, language, utcAccountInitialTimestamp=None,
+               userId=None):
+
     if not utcAccountInitialTimestamp:
         utcAccountInitialTimestamp = int(time.time())
 
@@ -91,6 +94,7 @@ def insertUser(db, name, lastName, email, wantUpdates,
 
     return userId
 
+
 @checkArgs("db", "userId")
 def updateUser(db, userId, updatedData):
 
@@ -113,7 +117,23 @@ def updateUser(db, userId, updatedData):
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
 
-    return True 
+    return True
+
+
+@checkArgs("db", "userId", "firebaseToken")
+def setUserFirebaseToken(db, userId, firebaseToken):
+
+    result = db.usersData.update_one(
+        {"_id": userId},
+        {"$set": {"firebaseToken": firebaseToken}}
+    )
+    validateDbResult(result)
+
+    # Clear the cache as the data is not longer updated
+    cache.clearCache(userId)
+
+    return True
+
 
 @checkArgs("db", "userId")
 def selectUser(db, userId):
@@ -131,6 +151,7 @@ def selectUser(db, userId):
 
     return userData
 
+
 @checkArgs("db", "userId")
 def selectUserInheritedData(db, userId):
 
@@ -147,8 +168,9 @@ def selectUserInheritedData(db, userId):
 
     returnData = copy.deepcopy(userData)
     returnData['locations'] += list(getInheritedLocations(db, userId))
-        
+
     return returnData
+
 
 @checkArgs("db", "userId")
 def deleteUser(db, userId):
@@ -157,7 +179,7 @@ def deleteUser(db, userId):
     db.locationsAuthorizations.delete_many(
         {"$or": [{"sharedToUserId": userId}, {"ownerUserId": userId}]}
     )
-        
+
     result = db.usersData.delete_one(
         {"_id": userId}
     )
@@ -168,18 +190,19 @@ def deleteUser(db, userId):
 
     return True
 
+
 @checkArgs("db", "email")
 def findUserIdByEmail(db, email):
     userId = db.usersData.find_one(
-            {"email": email},
-            {"_id": True}
-        )
+        {"email": email},
+        {"_id": True}
+    )
 
     return userId["_id"]
 
 
 #####################################################
-## Users Locations Permissions Operations
+# Users Locations Permissions Operations
 #####################################################
 
 @checkArgs("db", "shareId")
@@ -189,6 +212,7 @@ def selectShare(db, shareId):
     )
     return locationShare
 
+
 @checkArgs("db", "userId")
 def selectLocationsShares(db, userId):
     otherUsersLocations = db.locationsAuthorizations.find(
@@ -197,14 +221,16 @@ def selectLocationsShares(db, userId):
     )
     return list(otherUsersLocations)
 
+
 @checkArgs("db", "sharedToUserId", "ownerUserId", "locationId")
 def existsShare(db, sharedToUserId, ownerUserId, locationId):
     locationShare = db.locationsAuthorizations.find_one(
         {'sharedToUserId': sharedToUserId,
-        'ownerUserId': ownerUserId,
+         'ownerUserId': ownerUserId,
          'locationId': locationId}
     )
     return bool(locationShare)
+
 
 @checkArgs("db", "locationId")
 def getLocationUsers(db, locationId):
@@ -213,42 +239,45 @@ def getLocationUsers(db, locationId):
         {"locationId": locationId,
          "validated": True},
         {"ownerUserId": True,
-        "sharedToUserId": True,
-        "_id": False}
+         "sharedToUserId": True,
+         "_id": False}
     )
     return list(usersIds)
+
 
 @checkArgs("db", "userId")
 def getPendingValidateShares(db, userId):
     pendingShares = db.locationsAuthorizations.find(
         {'sharedToUserId': userId,
-        'validated': False}
+         'validated': False}
     )
     return list(pendingShares)
 
+
 @checkArgs("db", "userId", "locationId")
 def selectUserLocationShare(db, userId, locationId):
-    
+
     locationsShares = selectLocationsShares(db, userId)
     for locationShare in locationsShares:
         sharedLocationId = locationShare['locationId']
-        if locationId!=sharedLocationId:
+        if locationId != sharedLocationId:
             continue
 
         return locationShare
 
+
 @checkArgs("db", "userId", "locationId")
 def selectUserLocationRole(db, userId, locationId):
-    
+
     # Check if the user is the owner of the location
-    if any(locationId==location["_id"] for location in selectLocations(db, userId)):
+    if any(locationId == location["_id"] for location in selectLocations(db, userId)):
         return api_utils.Roles.owner
 
     locationShare = selectUserLocationShare(db, userId, locationId)
     if not locationShare:
         return
     return locationShare['role']
-    
+
 
 @checkArgs("db", "shareId", "updatedData")
 def updateUserLocationShare(db, shareId, updatedData):
@@ -268,6 +297,7 @@ def updateUserLocationShare(db, shareId, updatedData):
 
     return True
 
+
 @checkArgs("db", "sharedToUserId", "ownerUserId", "locationId", "email", "role")
 def insertUserLocationShare(db, sharedToUserId, ownerUserId, locationId, email, role):
 
@@ -278,27 +308,28 @@ def insertUserLocationShare(db, sharedToUserId, ownerUserId, locationId, email, 
 
     _id = str(ObjectId())
     shareData = {"_id": _id,
-                "sharedToUserId": sharedToUserId, 
-                "ownerUserId": ownerUserId,
-                "locationId": locationId,
-                "email": email,
-                "validated": False,
-                "role": role}
+                 "sharedToUserId": sharedToUserId,
+                 "ownerUserId": ownerUserId,
+                 "locationId": locationId,
+                 "email": email,
+                 "validated": False,
+                 "role": role}
 
     # Copy the individual fields to the share
     for field in individualLocationFields:
-        shareData[field]=location[field] 
+        shareData[field] = location[field]
 
     result = db.locationsAuthorizations.insert_one(shareData)
     validateDbResult(result)
 
     return _id
 
+
 @checkArgs("db", "userId", "shareId")
 def deleteUserLocationShare(db, userId, shareId):
     result = db.locationsAuthorizations.delete_one(
         {"_id": shareId,
-        "$or": [{"sharedToUserId": userId}, {"ownerUserId": userId}]}
+         "$or": [{"sharedToUserId": userId}, {"ownerUserId": userId}]}
     )
     validateDbResult(result)
 
@@ -306,7 +337,7 @@ def deleteUserLocationShare(db, userId, shareId):
 
 
 #####################################################
-## Locations Operations
+# Locations Operations
 #####################################################
 
 @checkArgs("db", "userId", "locationName", "postalCode", "city")
@@ -321,35 +352,38 @@ def insertLocation(db, userId, locationName, postalCode, city, utcLocationInitia
     _id = str(ObjectId())
     result = db.usersData.update_one(
         {"_id": userId},
-        {"$push":   {  "locations" :
-                        {
-                        "_id": _id,
-                        "locationName": locationName,
-                        "postalCode": postalCode,
-                        "city": city,
-                        "utcLocationInitialTimestamp": utcLocationInitialTimestamp,
-                        "utcLocationUpdatedTimestamp": utcLocationInitialTimestamp,
-                        "devices": [],
-                        "usersPermissions": [],
-                        "color": color,
-                        "role": api_utils.Roles.owner,
-                        "rooms": [],
-                        "thirdPartiesVisible": False
-                        }
-                    }
-        }
+        {"$push":   {"locations":
+                     {
+                         "_id": _id,
+                         "locationName": locationName,
+                         "postalCode": postalCode,
+                         "city": city,
+                         "utcLocationInitialTimestamp": utcLocationInitialTimestamp,
+                         "utcLocationUpdatedTimestamp": utcLocationInitialTimestamp,
+                         "devices": [],
+                         "usersPermissions": [],
+                         "color": color,
+                         "role": api_utils.Roles.owner,
+                         "rooms": [],
+                         "thirdPartiesVisible": False
+                     }
+                     }
+         }
     )
     validateDbResult(result)
 
     cache.clearCache(userId)
     return _id
 
+
 def getDataToUpdate(updatedData, allowedFieldsToUpdate):
     updatedData = {field: updatedData[field] for field in allowedFieldsToUpdate if field in updatedData}
     return updatedData
 
+
 individualLocationFields = ["locationName", "color", "thirdPartiesVisible"]
 sharedLocationFields = ["postalCode", "city"]
+
 
 @checkArgs("db", "userId", "locationId")
 def updateLocation(db, userId, locationId, updatedData):
@@ -402,6 +436,8 @@ def updateLocation(db, userId, locationId, updatedData):
     return True
 
 # Yield to optimize when selecting only one location
+
+
 def yieldLocations(db, userId, includeInherited=False):
     try:
         userData = cache[userId]
@@ -418,7 +454,7 @@ def yieldLocations(db, userId, includeInherited=False):
 
 
 def getInheritedLocations(db, userId):
-    locationsShares = selectLocationsShares(db, userId) 
+    locationsShares = selectLocationsShares(db, userId)
     for locationShare in locationsShares:
         ownerUserId = locationShare['ownerUserId']
         locationId = locationShare['locationId']
@@ -429,9 +465,13 @@ def getInheritedLocations(db, userId):
         otherUserLocation['role'] = role
 
         for field in individualLocationFields:
-            otherUserLocation[field] = locationShare[field]
+            try:
+                otherUserLocation[field] = locationShare[field]
+            except KeyError:
+                pass
 
         yield otherUserLocation
+
 
 @checkArgs("db", "userId")
 def selectLocations(db, userId, includeInherited=False):
@@ -443,7 +483,7 @@ def selectLocations(db, userId, includeInherited=False):
 def selectLocation(db, userId, locationId, includeInherited=False):
     locations = yieldLocations(db, userId, includeInherited=includeInherited)
     for location in locations:
-        if location["_id"]==locationId:
+        if location["_id"] == locationId:
             return copy.deepcopy(location)
 
     return None
@@ -465,7 +505,7 @@ def deleteLocation(db, userId, locationId):
 
         result = db.usersData.update_one(
             {"_id": userId,
-            "locations._id": locationId},
+             "locations._id": locationId},
             {"$pull": {"locations": {"_id": locationId}}}
         )
         validateDbResult(result)
@@ -477,6 +517,7 @@ def deleteLocation(db, userId, locationId):
     request_home_resync.resync(db, userId, locationId)
 
     return True
+
 
 @checkArgs("db", "userId", "locationId", "roomName")
 def insertRoom(db, userId, locationId, roomName):
@@ -498,19 +539,20 @@ def insertRoom(db, userId, locationId, roomName):
     _id = str(ObjectId())
     result = db.usersData.update_one(
         {"_id": userId,
-        "locations._id": locationId},
-        {"$push":   {  "locations.$.rooms" :
-                        {
-                        "roomId": _id,
-                        "roomName": roomName,
-                        }
-                    }
-        }
+         "locations._id": locationId},
+        {"$push":   {"locations.$.rooms":
+                     {
+                         "roomId": _id,
+                         "roomName": roomName,
+                     }
+                     }
+         }
     )
     validateDbResult(result)
 
     cache.clearCache(userId)
     return _id
+
 
 @checkArgs("db", "userId", "locationId", "roomId", "updatedData")
 def updateRoom(db, userId, locationId, roomId, updatedData):
@@ -521,7 +563,7 @@ def updateRoom(db, userId, locationId, roomId, updatedData):
     result = db.usersData.update_one(
         {"_id": userId},
         {"$set": {"locations.$[i].rooms.$[j].%s" % field: value for field, value in dataToUpdate.items()}},
-        array_filters= [
+        array_filters=[
             {"i._id": locationId},
             {"j.roomId": roomId}
         ]
@@ -531,6 +573,7 @@ def updateRoom(db, userId, locationId, roomId, updatedData):
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
     return True
+
 
 @checkArgs("db", "userId", "locationId", "roomId")
 def deleteRoom(db, userId, locationId, roomId):
@@ -546,6 +589,7 @@ def deleteRoom(db, userId, locationId, roomId):
 
     return True
 
+
 @checkArgs("db", "userId", "locationId")
 def selectRooms(db, userId, locationId):
     location = selectLocation(db, userId, locationId)
@@ -555,26 +599,28 @@ def selectRooms(db, userId, locationId):
         rooms = []
     return rooms
 
+
 @checkArgs("db", "userId", "locationId", "roomId")
 def selectRoom(db, userId, locationId, roomId):
 
     rooms = selectRooms(db, userId, locationId)
     for room in rooms:
-        if room['roomId']==roomId:
+        if room['roomId'] == roomId:
             return room
 
     return {}
 
 #####################################################
-## Location Permissions Operations
+# Location Permissions Operations
 #####################################################
+
 
 @checkArgs("db", "userId", "locationId")
 def selectLocationShares(db, userId, locationId):
 
     locationShares = db.locationsAuthorizations.find(
         {'ownerUserId': userId,
-        'locationId': locationId}
+         'locationId': locationId}
     )
     return list(locationShares)
 
@@ -593,25 +639,26 @@ def validateLocationPermissions(db, shareId):
     return result
 
 #####################################################
-## Devices Operations
+# Devices Operations
 #####################################################
 
+
 @checkArgs("db", "userId", "locationId", "deviceVersion", "deviceInternalId", "receivedSensors")
-def insertDevice(db, 
-                userId, 
-                locationId, 
-                deviceVersion, 
-                deviceInternalId,
-                receivedSensors,
-                deviceTargetVersion=None,
-                utcDeviceFirstSeenTimestamp=None,
-                deviceId=None):
+def insertDevice(db,
+                 userId,
+                 locationId,
+                 deviceVersion,
+                 deviceInternalId,
+                 receivedSensors,
+                 deviceTargetVersion=None,
+                 utcDeviceFirstSeenTimestamp=None,
+                 deviceId=None):
 
     if not utcDeviceFirstSeenTimestamp:
         utcDeviceFirstSeenTimestamp = int(time.time())
 
     sensorsOrder = getSensorsOrder(db, userId, locationId)
-        
+
     sensors = []
     for sensor in receivedSensors:
         # Calculate the order index of the sensor
@@ -631,7 +678,7 @@ def insertDevice(db,
                         'orderIndex': orderIndex,
                         'roomId': sensor['roomId'],
                         }
-        )
+                       )
 
     # If the device existed in this location, remove it
     result = db.usersData.update_many(
@@ -642,20 +689,20 @@ def insertDevice(db,
     _id = deviceId or str(ObjectId())
     result = db.usersData.update_one(
         {"_id": userId,
-        "locations._id": locationId},
-        {"$push":   {  "locations.$.devices" :
-                        {
-                        "deviceId": _id,
-                        "deviceVersion": deviceVersion,
-                        "deviceTargetVersion": deviceTargetVersion,
-                        "deviceInternalId": deviceInternalId,
-                        "utcDeviceFirstSeenTimestamp": utcDeviceFirstSeenTimestamp,
-                        "utcDeviceUpdatedTimestamp": utcDeviceFirstSeenTimestamp,
-                        "utcDeviceLastSeenTimestamp": utcDeviceFirstSeenTimestamp,
-                        "sensors": sensors
-                        }
-                    }
-        }
+         "locations._id": locationId},
+        {"$push":   {"locations.$.devices":
+                     {
+                         "deviceId": _id,
+                         "deviceVersion": deviceVersion,
+                         "deviceTargetVersion": deviceTargetVersion,
+                         "deviceInternalId": deviceInternalId,
+                         "utcDeviceFirstSeenTimestamp": utcDeviceFirstSeenTimestamp,
+                         "utcDeviceUpdatedTimestamp": utcDeviceFirstSeenTimestamp,
+                         "utcDeviceLastSeenTimestamp": utcDeviceFirstSeenTimestamp,
+                         "sensors": sensors
+                     }
+                     }
+         }
     )
     validateDbResult(result)
 
@@ -667,13 +714,14 @@ def insertDevice(db,
 
     return _id
 
+
 @checkArgs("db", "userId", "locationId", "deviceId")
-def updateDevice(db, 
-                userId, 
-                locationId,
-                deviceId,
-                deviceVersion=None, 
-                deviceTargetVersion=None):
+def updateDevice(db,
+                 userId,
+                 locationId,
+                 deviceId,
+                 deviceVersion=None,
+                 deviceTargetVersion=None):
 
     args = locals()
     fieldsToUpdate = ["deviceVersion",
@@ -682,13 +730,13 @@ def updateDevice(db,
     updatedData = {field: args[field] for field in fieldsToUpdate if field in args and args[field]}
     if not updatedData:
         return True
-        
+
     updatedData['utcDeviceUpdatedTimestamp'] = int(time.time())
 
     result = db.usersData.update_one(
         {"_id": userId},
         {"$set": {"locations.$[i].devices.$[j].%s" % field: value for field, value in updatedData.items()}},
-        array_filters= [
+        array_filters=[
             {"i._id": locationId},
             {"j.deviceId": deviceId}
         ]
@@ -699,17 +747,18 @@ def updateDevice(db,
     cache.clearCache(userId)
     return True
 
+
 @checkArgs("db", "userId", "locationId", "deviceId", "sensorId")
-def updateSensor(db, 
-                userId, 
-                locationId,
-                deviceId,
-                sensorId,
-                sensorName=None, 
-                sensorMetadata=None,
-                color=None,
-                orderIndex=None,
-                roomId=None):
+def updateSensor(db,
+                 userId,
+                 locationId,
+                 deviceId,
+                 sensorId,
+                 sensorName=None,
+                 sensorMetadata=None,
+                 color=None,
+                 orderIndex=None,
+                 roomId=None):
 
     if orderIndex:
         sensorsOrder = getSensorsOrder(db, userId, locationId)
@@ -717,22 +766,22 @@ def updateSensor(db,
             raise ValueError("There is already a sensor in this order: %s" % orderIndex)
 
     args = locals()
-    fieldsToUpdate = [  "sensorName",
-                        "sensorMetadata",
-                        "color",
-                        "orderIndex",
-                        "roomId"]
+    fieldsToUpdate = ["sensorName",
+                      "sensorMetadata",
+                      "color",
+                      "orderIndex",
+                      "roomId"]
 
     updatedData = {field: args[field] for field in fieldsToUpdate if field in args and args[field]}
     if not updatedData:
         return True
-        
+
     updatedData['utcDeviceUpdatedTimestamp'] = int(time.time())
 
     result = db.usersData.update_one(
         {"_id": userId},
         {"$set": {"locations.$[i].devices.$[j].sensors.$[k].%s" % field: value for field, value in updatedData.items()}},
-        array_filters= [
+        array_filters=[
             {"i._id": locationId},
             {"j.deviceId": deviceId},
             {"k.sensorId": sensorId}
@@ -743,6 +792,7 @@ def updateSensor(db,
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
     return True
+
 
 @checkArgs("db", "userId", "locationId", "deviceId")
 def deleteDevice(db, userId, locationId, deviceId):
@@ -767,27 +817,30 @@ def selectDevices(db, userId, locationId):
     location = selectLocation(db, userId, locationId)
     return location['devices']
 
+
 @checkArgs("db", "userId", "locationId", "deviceId")
 def selectDevice(db, userId, locationId, deviceId):
 
     devices = selectDevices(db, userId, locationId)
     for device in devices:
-        if device['deviceId']==deviceId:
+        if device['deviceId'] == deviceId:
             return device
 
     return {}
+
 
 @checkArgs("db", "userId", "locationId", "deviceId", "sensorId")
 def selectSensor(db, userId, locationId, deviceId, sensorId):
 
     devices = selectDevices(db, userId, locationId)
     for device in devices:
-        if device['deviceId']==deviceId:
+        if device['deviceId'] == deviceId:
             for sensor in device['sensors']:
-                if sensor['sensorId']==sensorId:
+                if sensor['sensorId'] == sensorId:
                     return sensor
 
     return {}
+
 
 @checkArgs("db", "userId", "locationId")
 def getSensorsOrder(db, userId, locationId):
@@ -803,6 +856,7 @@ def getSensorsOrder(db, userId, locationId):
 
     return sensorsOrder
 
+
 @checkArgs("db", "userId", "locationId", "newSensorsOrder")
 def orderSensors(db, userId, locationId, newSensorsOrder):
 
@@ -815,7 +869,7 @@ def orderSensors(db, userId, locationId, newSensorsOrder):
         result = db.usersData.update_one(
             {"_id": userId},
             {"$set": {"locations.$[i].devices.$[j].sensors.$[k].%s" % field: value for field, value in updatedData.items()}},
-            array_filters= [
+            array_filters=[
                 {"i._id": locationId},
                 {"j.deviceId": deviceId},
                 {"k.sensorId": sensorId}
@@ -826,6 +880,7 @@ def orderSensors(db, userId, locationId, newSensorsOrder):
     # Clear the cache as the data is not longer updated
     cache.clearCache(userId)
     return True
+
 
 @checkArgs("db", "userId")
 def selectUserSensors(db, userId):
@@ -851,24 +906,38 @@ def selectUserSensors(db, userId):
             devices.append(device)
     return devices
 
+
 @checkArgs("db", "locationId")
 def findLocation(db, locationId):
 
     userData = db.usersData.find_one(
-                {"locations._id": locationId}
-            )
+        {"locations._id": locationId},
+        {"locations.$": True}
+    )
 
     return userData["locations"][0]
+
 
 @checkArgs("db", "locationId", "deviceId", "sensorId")
 def findSensor(db, locationId, deviceId, sensorId):
 
     location = findLocation(db, locationId)
-            
+
     for device in location["devices"]:
-        if device['deviceId']==deviceId:
+        if device['deviceId'] == deviceId:
             for sensor in device['sensors']:
-                if sensor['sensorId']==sensorId:
+                if sensor['sensorId'] == sensorId:
                     return sensor
 
     return {}
+
+
+@checkArgs("db", "locationId")
+def getUserFirebaseToken(db, locationId):
+
+    userData = db.usersData.find(
+        {"locations._id": locationId},
+        {"firebaseToken": True}
+    )
+
+    return [user["firebaseToken"] for user in userData]

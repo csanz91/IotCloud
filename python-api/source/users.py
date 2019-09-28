@@ -1,5 +1,5 @@
 import logging
-import inspect 
+import inspect
 
 import falcon
 from auth0.v3 import exceptions
@@ -11,6 +11,7 @@ from mqtt import generateMqttToken, MqttRoles
 
 
 logger = logging.getLogger(__name__)
+
 
 class Users():
 
@@ -28,10 +29,9 @@ class Users():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True, user)
-
 
     @checkUser
     def on_put(self, req, resp, userId):
@@ -39,7 +39,7 @@ class Users():
         try:
 
             # The relevant fields can not be edited. Auth0????
-            #if 'name' in req.media:
+            # if 'name' in req.media:
             #    self.auth0.updateUser(userId, {'given_name': req.media['name']})
 
             response = dbinterface.updateUser(self.db, userId, req.media)
@@ -49,7 +49,7 @@ class Users():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(response)
 
@@ -72,7 +72,7 @@ class Users():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(response)
 
@@ -92,7 +92,7 @@ class ValidateLocationPermissions():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True, pendingShares)
 
@@ -103,7 +103,7 @@ class ValidateLocationPermissions():
             # Check we are the user to validate the share
             shareId = req.media['shareId']
             locationShare = dbinterface.selectShare(self.db, shareId)
-            assert locationShare['sharedToUserId']==userId
+            assert locationShare['sharedToUserId'] == userId
 
             dbinterface.validateLocationPermissions(self.db, shareId)
         except:
@@ -111,9 +111,10 @@ class ValidateLocationPermissions():
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True)
+
 
 class ChangePassword():
 
@@ -131,13 +132,13 @@ class ChangePassword():
             raise falcon.HTTPBadRequest(
                 'Error',
                 e.message
-            ) 
+            )
         except:
             logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
             raise falcon.HTTPBadRequest(
                 'Bad Request',
                 'The request can not be completed.'
-            ) 
+            )
 
         resp.media = getResponseModel(True, response)
 
@@ -158,3 +159,26 @@ class MqttUserToken():
             )
 
         resp.media = getResponseModel(True, token)
+
+
+class FirebaseUserToken():
+
+    def __init__(self, db):
+        self.db = db
+
+    @checkUser
+    def on_post(self, req, resp, userId):
+
+        try:
+            # Check we are the user to validate the share
+            firebaseToken = req.media['firebaseToken']
+            dbinterface.setUserFirebaseToken(self.db, userId, firebaseToken)
+
+        except:
+            logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
+            raise falcon.HTTPBadRequest(
+                'Bad Request',
+                'The request can not be completed.'
+            )
+
+        resp.media = getResponseModel(True)
