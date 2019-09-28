@@ -37,7 +37,7 @@ class Switch():
         self.metadata = metadata
         try:
             self.schedule.importSchedule(metadata)
-            logger.info("schedule updated: %s" % self.schedule.schedule)
+            logger.info("%s: schedule updated: %s" % (self.deviceTopicHeader, self.schedule.schedule))
         except:
             pass
 
