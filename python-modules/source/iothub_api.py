@@ -55,7 +55,10 @@ class IothubApi():
             logger.warning("validateResponse: the response could not be json decoded. Response: %s" % response.text)
             raise
 
-        return result['data']
+        try:
+            return result['data']
+        except KeyError:
+            return True
 
     def get(self, url, auth=False):
 
@@ -77,13 +80,38 @@ class IothubApi():
                 return
             # Send again the data with the new token
             headers = self.getAuthHeader()
-            
+
+        # Check if the response is well formed
+        result = self.validateResponse(r)
+        return result
+
+    def post(self, url, data, auth=False):
+
+        headers = None
+        if auth:
+            headers = self.getAuthHeader()
+
+        # First we try to post de data without validating the token,
+        # if we get the unauthorized code then we ask for a new token,
+        # and if we are not able to get the token after 1 try we abandon
+        for numRetries in xrange(2):
+            r = self.session.post(self.iothubApiUrl+url, json=data, headers=headers, timeout=30)
+            if r.status_code != requests.codes.unauthorized:
+                break
+
+            # Get the auth token
+            authenticationResult = self.authenticate()
+            if numRetries == 1 or not authenticationResult:
+                return
+            # Send again the data with the new token
+            headers = self.getAuthHeader()
+
         # Check if the response is well formed
         result = self.validateResponse(r)
         return result
 
     def getUserSensor(self, userId, locationId, deviceId, sensorId):
-       
+
         devices = self.get("users/{userId}/sensors".format(userId=userId), auth=True)
 
         for device in devices:
@@ -92,20 +120,31 @@ class IothubApi():
                     if sensor["sensorId"] == sensorId:
                         return sensor
                 break
-                
+
         return {}
 
     def getSensor(self, locationId, deviceId, sensorId):
-       
+
         sensor = self.get("locations/{locationId}/devices/{deviceId}/sensors/{sensorId}".format(locationId=locationId,
-                                                                                                 deviceId=deviceId,
-                                                                                                 sensorId=sensorId, 
-                                                                                                 ), auth=True)
+                                                                                                deviceId=deviceId,
+                                                                                                sensorId=sensorId,
+                                                                                                ), auth=True)
 
         return sensor
 
     @cache_disk(seconds=3600 * 8)
     def getLocationSunSchedule(self, locationId):
-       
+
         sunSchedule = self.get("locations/{locationId}/sunschedule".format(locationId=locationId), auth=True)
         return sunSchedule
+
+    def notifyLocationOffline(self, locationId):
+
+        data = {
+            "notificationTitle": "locationOfflineTitle",
+            "notificationBody": "locationOfflineBody",
+            "notificationTitleArgs": ["%(locationName)s"],
+            "notificationBodyArgs": ["%(locationName)s"]
+        }
+
+        self.post("locations/{locationId}/locationnotification".format(locationId=locationId), data=data, auth=True)

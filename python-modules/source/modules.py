@@ -13,6 +13,7 @@ import switch_logic
 import toogle_logic
 import iothub_api
 import utils
+import location_status
 
 # Logging setup
 logger = logging.getLogger()
@@ -22,15 +23,18 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+
 class Device():
     def __init__(self):
         self.sensors = defaultdict(Sensor)
         self.status = False
 
+
 class Value():
     def __init__(self, value):
         self.value = value
         self.timestamp = int(time.time())
+
 
 class Sensor():
     def __init__(self):
@@ -39,7 +43,9 @@ class Sensor():
         self.metadata = None
         self.aux = {}
 
+
 devices = defaultdict(Device)
+locationsStatus = defaultdict(location_status.LocationStatus)
 values = defaultdict(Value)
 modules = {"switch": switch_logic.Switch,
            "thermostat": thermostat_logic.Thermostat,
@@ -48,9 +54,10 @@ modules = {"switch": switch_logic.Switch,
 # Keep track of all the subscriptions. In case of reconnection they
 # will be necessary to restore the subscriptions.
 # I do not trust the clean_session=False because it does not
-# guarantee that all the subscriptions will be restored, this wrong 
+# guarantee that all the subscriptions will be restored, this wrong
 # behaviour has been proved by stoping the broker and restart it again
 subscriptionsList = []
+
 
 def calculateDeviceHash(topic):
     """ Calculate the device hash from the topic
@@ -58,6 +65,7 @@ def calculateDeviceHash(topic):
     subtopics = topic.split('/')
     deviceHash = "|".join(subtopics[0:3])
     return deviceHash
+
 
 def getTags(topic):
     subtopics = topic.split("/")
@@ -69,13 +77,23 @@ def getTags(topic):
     return tags
 
 # Mqtt callbacks
+
+
 def onStatus(client, userdata, msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
-        devices[deviceHash].status = utils.decodeStatus(msg.payload)
+        deviceStatus = utils.decodeStatus(msg.payload)
+        devices[deviceHash].status = deviceStatus
+
+        # Save the device status
+        tags = getTags(msg.topic)
+        locationId = tags["locationId"]
+        locationsStatus[locationId].setDeviceStatus(deviceHash, deviceStatus)
+
     except:
         logger.error('onStatus message failed. Exception: ', exc_info=True)
-    
+
+
 def onState(client, userdata, msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
@@ -84,6 +102,7 @@ def onState(client, userdata, msg):
     except:
         logger.error('onState message failed. Exception: ', exc_info=True)
 
+
 def onValue(client, userdata, msg):
     try:
         value = float(msg.payload)
@@ -91,7 +110,9 @@ def onValue(client, userdata, msg):
     except ValueError:
         logger.error('The value received: %s is not valid' % value)
         return
-    
+
+
+@utils.retryFunc
 def onSensorUpdated(client, userdata, msg):
     """The sensor has been updated, retrieve the new data
     """
@@ -101,23 +122,28 @@ def onSensorUpdated(client, userdata, msg):
         tags = getTags(msg.topic)
         userId = json.loads(msg.payload)
         sensorData = api.getUserSensor(userId, tags["locationId"], tags["deviceId"], tags["sensorId"])
-        
+
         devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
     except:
         logger.error("Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True)
-        return
+        raise
 
+
+@utils.retryFunc
 def onAux(client, userdata, msg):
 
     try:
         deviceHash = calculateDeviceHash(msg.topic)
         tags = getTags(msg.topic)
-    
+
         # New module. Create the instance and get the metadata from the api
         if tags["endpoint"] in modules.keys():
             if not devices[deviceHash].sensors[tags["sensorId"]].instance:
                 devices[deviceHash].sensors[tags["sensorId"]].instance = modules[tags["endpoint"]](tags, client, subscriptionsList)
                 sensorData = api.getSensor(tags["locationId"], tags["deviceId"], tags["sensorId"])
+                if not sensorData:
+                    return
+                logger.info(sensorData)
                 devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
 
         # Add the value received to the aux dict
@@ -125,8 +151,9 @@ def onAux(client, userdata, msg):
             devices[deviceHash].sensors[tags["sensorId"]].aux[tags["endpoint"]] = msg.payload
     except:
         logger.error('onAux message failed. Exception: ', exc_info=True)
+        raise
 
-    
+
 logger.info("Starting...")
 
 # IotHub api setup
@@ -146,6 +173,7 @@ mqttclient = mqtt.Client()
 token = getDocketSecrets('mqtt_token')
 mqttclient.username_pw_set(token, "_")
 
+
 def run(mqttClient):
     for device in devices.values():
         # Only run the sensors that are online
@@ -162,9 +190,14 @@ def run(mqttClient):
                     # Run the engine
                     sensor.instance.engine(mqttClient, values)
 
+    for locationId, locationStatus in locationsStatus.items():
+        locationStatus.checkLocationStatus(api, locationId)
+
     Timer(1.0, run, [mqttClient]).start()
 
+
 run(mqttclient)
+
 
 def onConnect(self, mosq, obj, rc):
     logger.info("connected")
@@ -179,6 +212,7 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(stateTopic, onState)
     mqttclient.message_callback_add(sensorUpdateTopic, onSensorUpdated)
     mqttclient.message_callback_add(auxTopic, onAux)
+
 
 mqttclient.on_connect = onConnect
 
