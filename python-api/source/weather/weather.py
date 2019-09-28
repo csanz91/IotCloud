@@ -5,9 +5,9 @@ from requests import adapters
 import ssl
 from urllib3 import poolmanager
 import math
-from datetime import datetime
 import time 
 import pytz
+import datetime
 
 from stations_list import stationsList
 from location_list import locationsList
@@ -164,7 +164,7 @@ def getTodaySunSchedule(locationId):
         u"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/horaria/{locationId}"
         .format(locationId=locationId))
     weatherForToday = predictedWeather[0]["prediccion"]["dia"][0]
-    timestamp = datetime_utils.toUtc(datetime.strptime(weatherForToday['fecha'], '%Y-%m-%d'))
+    timestamp = datetime_utils.toUtc(datetime.datetime.strptime(weatherForToday['fecha'], '%Y-%m-%d'))
     sunrise = weatherForToday["orto"]
     sunset = weatherForToday["ocaso"]
 
@@ -190,7 +190,7 @@ def getMeasurementFromPostalCode(postalCode, measurement):
     # Get the last measurement
     lastMeasurement = currentWeather[-1]
     currentTemperature = lastMeasurement[measurements[measurement]["observationMeasurementName"]]
-    lastUpdate = pytz.UTC.localize(datetime.strptime(lastMeasurement['fint'], '%Y-%m-%dT%H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S%z")
+    lastUpdate = pytz.UTC.localize(datetime.datetime.strptime(lastMeasurement['fint'], '%Y-%m-%dT%H:%M:%S')).strftime("%Y-%m-%d %H:%M:%S%z")
 
     # Get the history of the last measurements
     numHours = min(7, len(currentWeather))
