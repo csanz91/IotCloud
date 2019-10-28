@@ -59,7 +59,7 @@ services:
       - ./mongodb:/data/db
     ports:
       - "27017:27017"
-    command: mongod --smallfiles --logpath=/dev/null --setParameter diagnosticDataCollectionEnabled=false # --quiet
+    command: mongod --logpath=/dev/null --setParameter diagnosticDataCollectionEnabled=false # --quiet
 
   influxdb:
     image: influxdb:1.7
