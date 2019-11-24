@@ -5,11 +5,13 @@ import time
 logger = logging.getLogger()
 
 def decodeBoolean(value):
+    value = value.decode()
     assert value.lower() in ["true", "false"]
     state = value.lower()=="true"
     return state
 
 def decodeStatus(value):
+    value = value.decode()
     assert value.lower() in ["online", "offline"]
     status = value.lower()=="online"
     return status
