@@ -888,11 +888,6 @@ def selectUserSensors(db, userId):
     devices = []
     user = selectUserInheritedData(db, userId)
     for location in user["locations"]:
-        # Only return the selected locations
-        try:
-            assert location['thirdPartiesVisible']
-        except (KeyError, AssertionError):
-            continue
 
         rooms = {room["roomId"]: room["roomName"] for room in location["rooms"]}
         for device in location["devices"]:
@@ -933,6 +928,7 @@ def findSensor(db, locationId, deviceId, sensorId):
             for sensor in device['sensors']:
                 if sensor['sensorId'] == sensorId:
                     return sensor
+            return {}
 
     return {}
 
