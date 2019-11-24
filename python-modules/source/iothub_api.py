@@ -69,7 +69,7 @@ class IothubApi():
         # First we try to post de data without validating the token,
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
-        for numRetries in xrange(2):
+        for numRetries in range(2):
             r = self.session.get(self.iothubApiUrl+url, headers=headers, timeout=30)
             if r.status_code != requests.codes.unauthorized:
                 break
@@ -94,7 +94,7 @@ class IothubApi():
         # First we try to post de data without validating the token,
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
-        for numRetries in xrange(2):
+        for numRetries in range(2):
             r = self.session.post(self.iothubApiUrl+url, json=data, headers=headers, timeout=30)
             if r.status_code != requests.codes.unauthorized:
                 break
