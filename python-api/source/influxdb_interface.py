@@ -10,14 +10,23 @@ def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
     intervalSeconds = finalTimestamp - initialTimestamp
     groupBySeconds = max(-(-intervalSeconds / maxValues-1), 1)
 
+    # > 60 days
+    if intervalSeconds > 3600 * 24 * 60:
+        rp = '"3years"."downsampled_sensorsData_1d"'
+    # > 5 days   
+    elif intervalSeconds > 3600 * 24 * 5:
+        rp = '"1year"."downsampled_sensorsData_1h"'
+    else:
+        rp = "sensorsData"
+
     query = ''' SELECT 
                     mean("value") as value
-                FROM sensorsData WHERE 
+                FROM %s WHERE 
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 GROUP BY
                     time(%is)
                 FILL(none)
-                ''' % (locationId, sensorId, initialTimestamp, finalTimestamp, groupBySeconds)
+                ''' % (rp, locationId, sensorId, initialTimestamp, finalTimestamp, groupBySeconds)
 
     results = influxClient.query(query)
     if not results:
