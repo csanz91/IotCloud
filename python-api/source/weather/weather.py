@@ -185,7 +185,7 @@ def getMeasurementFromPostalCode(postalCode, measurement):
     # 2. Get the closest station to our coordenates
     stationId = getClosestStationId(postalCodeCoordenates)
     # 3. Get the current weather from the selected station
-    currentWeather = getCurrentWeather(stationId)    
+    currentWeather = getCurrentWeather(stationId)
 
     # Get the last measurement
     lastMeasurement = currentWeather[-1]
@@ -221,7 +221,7 @@ def getSunScheduleFromPostalCode(postalCode):
     # 2. Get the closest station to our coordenates
     locationId = getLocationId(locationName)
     # 3. Get the sunset and the sunrise from the selected station
-    timestamp, sunrise, sunset = getTodaySunSchedule(locationId)    
+    timestamp, sunrise, sunset = getTodaySunSchedule(locationId)
 
     return {"timestamp": timestamp, "sunrise": sunrise, "sunset": sunset}
 
