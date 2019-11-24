@@ -897,6 +897,11 @@ def selectUserSensors(db, userId):
         rooms = {room["roomId"]: room["roomName"] for room in location["rooms"]}
         for device in location["devices"]:
             device['locationId'] = location['_id']
+            try:
+                device['thirdPartiesVisible'] = location['thirdPartiesVisible']
+            except KeyError:
+                device['thirdPartiesVisible'] = False
+            
             # Add the name of the room
             for sensor in device["sensors"]:
                 try:
