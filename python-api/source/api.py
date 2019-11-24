@@ -22,7 +22,7 @@ from auth0_api import Auth0Api
 from locations import UserLocations, Locations, LocationsPermissions, LocationPermission, LocationRooms, LocationRoom
 from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation, DeviceIP
 from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserToken, FirebaseUserToken
-from m2m import UserSensors, FindSensor, LocationSunSchedule, SendNotification
+from m2m import UserSensors, FindSensor, LocationSunSchedule, SendNotification, M2MSensorData, M2MUserTags
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather.weather_api import Weather, SunSchedule
 from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
@@ -122,6 +122,8 @@ app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/
 app.add_route("/api/v1/locations/{locationId}/sunschedule", LocationSunSchedule(db))
 app.add_route("/api/v1/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", FindSensor(db))
 app.add_route("/api/v1/locations/{locationId}/locationnotification", SendNotification(db))
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/m2msensorsdata/{sensorId}", M2MSensorData(influx_client, db))
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/tags", M2MUserTags(db))
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())
