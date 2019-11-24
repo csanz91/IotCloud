@@ -226,11 +226,12 @@ type Device struct {
 
 // Sensor : Standard struct for a sensor received through the API
 type Sensor struct {
-	ID       string                 `json:"sensorId"`
-	Name     string                 `json:"sensorName"`
-	Metadata map[string]interface{} `json:"sensorMetadata"`
-	Type     string                 `json:"sensorType"`
-	Room     string                 `json:"room"`
+	ID                  string                 `json:"sensorId"`
+	Name                string                 `json:"sensorName"`
+	Metadata            map[string]interface{} `json:"sensorMetadata"`
+	Type                string                 `json:"sensorType"`
+	Room                string                 `json:"room"`
+	ThirdPartiesVisible bool                   `json:"thirdPartiesVisible"`
 }
 
 type deviceCacheModel struct {
