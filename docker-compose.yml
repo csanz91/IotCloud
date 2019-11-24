@@ -88,6 +88,13 @@ services:
       - ./grafana/config:/etc/grafana
       - ./certs:/grafana/certs
       - ./grafana/log:/var/log/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-simple-json-datasource
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID__FILE=/run/secrets/grafana_secrets_clientId
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE=/run/secrets/grafana_secrets_clientSecret
+    secrets:
+      - grafana_secrets_clientId
+      - grafana_secrets_clientSecret
 
   mosquitto:
     image: jllopis/mosquitto
@@ -111,4 +118,8 @@ secrets:
       file: ./python-api/secrets
   gateway_secrets:
       file: ./python-gateway/secrets
-
+  grafana_secrets_clientId:
+      file: ./grafana/secrets/clientId
+  grafana_secrets_clientSecret:
+      file: ./grafana/secrets/clientSecret
+  
