@@ -310,7 +310,7 @@ api = iothub_api.IothubApi()
 
 # MQTT constants
 version = 'v1'
-topicHeader = "{version}/+/+/".format(version=version)
+topicHeader = f"{version}/+/+/"
 statusTopic = topicHeader + "status"
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
