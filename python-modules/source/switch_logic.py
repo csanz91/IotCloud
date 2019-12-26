@@ -26,8 +26,6 @@ class Switch():
         self.aux = {}
 
         # Subscribe to the relevant topics
-        mqttClient.subscribe(self.deviceTopicHeader+"status")
-        subscriptionsList.append(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"state")
         subscriptionsList.append(self.topicHeader+"state")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")

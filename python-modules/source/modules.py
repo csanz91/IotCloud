@@ -352,6 +352,7 @@ def onConnect(self, mosq, obj, rc):
     logger.info("connected")
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
+    mqttclient.subscribe(statusTopic)
     # Restore the subscriptions
     for subscription in subscriptionsList:
         mqttclient.subscribe(subscription)

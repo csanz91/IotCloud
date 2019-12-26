@@ -25,8 +25,6 @@ class Toogle():
         self.aux = {}
 
         # Subscribe to the relevant topics
-        mqttClient.subscribe(self.deviceTopicHeader+"status")
-        subscriptionsList.append(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
         subscriptionsList.append(self.topicHeader+"updatedSensor")
 

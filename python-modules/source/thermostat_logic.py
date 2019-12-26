@@ -46,8 +46,6 @@ class Thermostat():
         self.addTempReference(mqttClient, self.topicHeader+"value", 2)
         mqttClient.subscribe(self.topicHeader+"state")
         subscriptionsList.append(self.topicHeader+"state")
-        mqttClient.subscribe(self.deviceTopicHeader+"status")
-        subscriptionsList.append(self.deviceTopicHeader+"status")
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
         subscriptionsList.append(self.topicHeader+"updatedSensor")
 
@@ -101,6 +99,7 @@ class Thermostat():
 
         try:
             self.setpoint = float(aux['setpoint'])
+            logger.info(f"Received setpoint: {self.setpoint}")
         except:
             pass
 
@@ -164,7 +163,7 @@ class Thermostat():
             return
 
         tempReference = self.calculateTempReference(values)
-        logger.debug("tempReference: %s, setpoint: %s" % (tempReference, self.setpoint))
+        logger.info(f"{tempReference=}, {self.setpoint=}, {self.heating=}")
 
         # These values are needed to be able to run the algorithm
         if not tempReference or not self.setpoint:
