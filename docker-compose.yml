@@ -51,6 +51,19 @@ services:
     secrets:
       - home_secrets
 
+  grafana-datasource:
+    build: ./go-grafana-datasource
+    env_file:
+      - 'variables.env'
+    restart: always
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./go-grafana-datasource/src:/app/src
+      - ./go-grafana-datasource/logs:/app/logs
+    secrets:
+      - grafana_datasource_secrets
+
   mongodb:
     restart: always
     image: mongo
@@ -114,6 +127,8 @@ secrets:
       file: ./python-modules/secrets
   home_secrets:
       file: ./go-home/secrets
+  grafana_datasource_secrets:
+      file: ./go-grafana-datasource/secrets
   api_secrets:
       file: ./python-api/secrets
   gateway_secrets:
