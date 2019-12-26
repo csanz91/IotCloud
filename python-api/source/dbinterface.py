@@ -234,7 +234,6 @@ def existsShare(db, sharedToUserId, ownerUserId, locationId):
 
 @checkArgs("db", "locationId")
 def getLocationUsers(db, locationId):
-    logger.info(locationId)
     usersIds = db.locationsAuthorizations.find(
         {"locationId": locationId,
          "validated": True},
