@@ -154,12 +154,12 @@ func SetState(locationID, deviceID, sensorID string, newState bool) error {
 }
 
 // SetAux : Sets an aux value for the requested sensor
-func SetAux(locationID, deviceID, sensorID, endpoint, value string) error {
+func SetAux(locationID, deviceID, sensorID, endpoint, value string, retain bool) error {
 	if mqttClient == nil || !mqttClient.IsConnected() {
 		return errors.New("The mqtt client is not connected")
 	}
 	topic := "v1/" + locationID + "/" + deviceID + "/" + sensorID + "/aux/" + endpoint
-	token := mqttClient.Publish(topic, 2, false, value)
+	token := mqttClient.Publish(topic, 2, retain, value)
 	token.Wait()
 	return token.Error()
 }
