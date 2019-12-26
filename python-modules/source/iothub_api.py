@@ -112,7 +112,7 @@ class IothubApi():
 
     def getUserSensor(self, userId, locationId, deviceId, sensorId):
 
-        devices = self.get("users/{userId}/sensors".format(userId=userId), auth=True)
+        devices = self.get(f"users/{userId}/sensors", auth=True)
 
         for device in devices:
             if deviceId == device["deviceId"]:
@@ -125,17 +125,14 @@ class IothubApi():
 
     def getSensor(self, locationId, deviceId, sensorId):
 
-        sensor = self.get("locations/{locationId}/devices/{deviceId}/sensors/{sensorId}".format(locationId=locationId,
-                                                                                                deviceId=deviceId,
-                                                                                                sensorId=sensorId,
-                                                                                                ), auth=True)
+        sensor = self.get(f"locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", auth=True)
 
         return sensor
 
     @cache_disk(seconds=3600 * 8)
     def getLocationSunSchedule(self, locationId):
 
-        sunSchedule = self.get("locations/{locationId}/sunschedule".format(locationId=locationId), auth=True)
+        sunSchedule = self.get(f"locations/{locationId}/sunschedule", auth=True)
         return sunSchedule
 
     def notifyLocationOffline(self, locationId):
@@ -147,4 +144,4 @@ class IothubApi():
             "notificationBodyArgs": ["%(locationName)s"]
         }
 
-        self.post("locations/{locationId}/locationnotification".format(locationId=locationId), data=data, auth=True)
+        self.post(f"locations/{locationId}/locationnotification", data=data, auth=True)
