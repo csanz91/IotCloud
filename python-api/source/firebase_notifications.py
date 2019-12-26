@@ -1,4 +1,5 @@
 import logging
+import json
 
 import firebase_admin
 from firebase_admin import messaging
@@ -44,9 +45,17 @@ def sendLocationNotification(locationId,
                 color='#3671a8',
             ),
         ),
+        data={
+            "title_loc_key": notificationTitle,
+            "body_loc_key": notificationBody,
+            "title_loc_args": json.dumps(notificationTitleArgs),
+            "body_loc_args": json.dumps(notificationBodyArgs)
+        },
         token=userToken
     )
     try:
         firebase_admin.messaging.send(message)
     except firebase_admin.exceptions.FirebaseError:
+        logger.error("Cannot send the notification for the userToken: %s" % userToken, exc_info=True)
+    except:
         logger.error("Cannot send the notification for the userToken: %s" % userToken, exc_info=True)
