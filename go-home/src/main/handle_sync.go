@@ -23,10 +23,10 @@ func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.Device
 
 	var googleDevices = []model.ResponseDeviceModel{}
 	for _, device := range apiDevices {
+		if !device.ThirdPartiesVisible {
+			continue
+		}
 		for _, sensor := range device.Sensors {
-			if !sensor.ThirdPartiesVisible {
-				continue
-			}
 			googleDeviceType, err := model.GetGoogleDeviceType(sensor.Type)
 			if err != nil {
 				continue
