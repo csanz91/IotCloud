@@ -164,7 +164,7 @@ def getTodaySunSchedule(locationId):
         u"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/horaria/{locationId}"
         .format(locationId=locationId))
     weatherForToday = predictedWeather[0]["prediccion"]["dia"][0]
-    timestamp = datetime_utils.toUtc(datetime.datetime.strptime(weatherForToday['fecha'], '%Y-%m-%d'))
+    timestamp = datetime_utils.toUtc(datetime.datetime.strptime(weatherForToday['fecha'], '%Y-%m-%dT%H:%M:%S'))
     sunrise = weatherForToday["orto"]
     sunset = weatherForToday["ocaso"]
 
