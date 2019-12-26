@@ -935,9 +935,17 @@ def findSensor(db, locationId, deviceId, sensorId):
 @checkArgs("db", "locationId")
 def getUserFirebaseToken(db, locationId):
 
-    userData = db.usersData.find(
+    # 1. Get the token for the owner
+    userData = db.usersData.find_one(
         {"locations._id": locationId},
         {"firebaseToken": True}
     )
+    userTokens = [userData["firebaseToken"]]
 
-    return [user["firebaseToken"] for user in userData]
+    # 2. If the location is shared with others,
+    #    get their tokens
+    users = getLocationUsers(db, locationId)
+    for user in users:
+        userData = selectUser(db, user["sharedToUserId"])
+        userTokens.append(userData["firebaseToken"])
+    return userTokens
