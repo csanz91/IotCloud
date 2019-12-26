@@ -129,3 +129,5 @@ secrets
 data
 mongodb
 cache
+pkg
+bin
