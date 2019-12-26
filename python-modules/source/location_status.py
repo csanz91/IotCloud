@@ -30,5 +30,10 @@ class LocationStatus():
         if self.previousState and not self.notificationSent and currentTimestamp - self.offlineInitialTimestamp > self.timeFilter:
             self.notificationSent = True
             self.previousState = False
-            logger.info("The location:%s is offline" % locationId)
-            api.notifyLocationOffline(locationId)
+
+            try:
+                logger.info("Sending notification for the location:%s is offline" % locationId)
+                api.notifyLocationOffline(locationId)
+            except :
+                logger.info("Error while sending notification for the location:%s" % locationId, exc_info=True)
+                return
