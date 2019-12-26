@@ -8,7 +8,7 @@ logger = logging.getLogger()
 class LocationStatus():
     def __init__(self):
         self.offlineInitialTimestamp = 0
-        self.timeFilter = 600  # Seconds
+        self.timeFilter = 50  # Seconds
         self.devicesStatus = {}
         self.notificationSent = False
         self.previousState = False
