@@ -212,7 +212,8 @@ def getMeasurementFromPostalCode(postalCode, measurement):
         "min": minTemp,
         "max": maxTemp,
         "lastUpdate": lastUpdate,
-        "current": currentTemperature
+        "current": currentTemperature,
+        "weatherDataExpanded": lastMeasurement
     }
 
 def getSunScheduleFromPostalCode(postalCode):
