@@ -30,6 +30,8 @@ def sendLocationNotification(locationId,
                              notificationTitleArgs=None,
                              notificationBodyArgs=None):
 
+    logger.info("sending notification to: %s" % userToken)
+
     message = firebase_admin.messaging.Message(
         android=firebase_admin.messaging.AndroidConfig(
             priority='normal',
