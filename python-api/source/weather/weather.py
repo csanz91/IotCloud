@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-
+import logging
 import requests
 from requests import adapters
 import ssl
@@ -17,6 +17,8 @@ from docker_secrets import getDocketSecrets
 import sys 
 sys.path.append('..')
 import datetime_utils
+
+logger = logging.getLogger(__name__)
 
 googleApiKey = getDocketSecrets("googleApiKey")
 aemetApiKey = getDocketSecrets("aemetApiKey")
