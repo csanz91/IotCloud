@@ -226,7 +226,7 @@ def getSunScheduleFromPostalCode(postalCode):
 
     return {"timestamp": timestamp, "sunrise": sunrise, "sunset": sunset}
 
-clear_cache()
+#clear_cache()
 
 if __name__ == "__main__":
     postalCode = 44770
