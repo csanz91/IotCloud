@@ -113,7 +113,7 @@ def getClosestStationId(postalCodeCoordenates):
 
 # 3. Get the current weather from the selected station
 #
-@cache_disk(seconds=1200)
+@cache_disk(seconds=300)
 def getCurrentWeather(stationId):
     currentWeatherData = getAemetData(
         u"https://opendata.aemet.es/opendata/api/observacion/convencional/datos/estacion/{stationId}"
