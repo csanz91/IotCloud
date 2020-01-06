@@ -896,8 +896,9 @@ def selectUserSensors(db, userId):
             except KeyError:
                 device['thirdPartiesVisible'] = False
             
-            # Add the name of the room
+            # Add additional data to the sensor
             for sensor in device["sensors"]:
+                sensor['postalCode'] = location['postalCode']
                 try:
                     sensor["room"] = rooms[sensor["roomId"]]
                 except KeyError:
@@ -926,6 +927,7 @@ def findSensor(db, locationId, deviceId, sensorId):
         if device['deviceId'] == deviceId:
             for sensor in device['sensors']:
                 if sensor['sensorId'] == sensorId:
+                    sensor['postalCode'] = location['postalCode']
                     return sensor
             return {}
 
