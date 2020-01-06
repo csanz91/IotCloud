@@ -5,19 +5,29 @@ import time
 
 logger = logging.getLogger(__name__)
 
+def getRP(initialTimestamp, finalTimestamp):
+    now = int(time.time())
+    intervalSeconds = finalTimestamp - initialTimestamp
+    secondsFromStart = now - initialTimestamp
+
+    # > 60 days or from 360 days ago
+    if intervalSeconds > 3600 * 24 * 60 or secondsFromStart > 3600 * 24 * 360:
+        rp = '"3years"."downsampled_sensorsData_1d"'
+    # > 5 days or from 44 days ago
+    elif intervalSeconds > 3600 * 24 * 32 or secondsFromStart > 3600 * 24 * 44:
+        rp = '"1year"."downsampled_sensorsData_1h"'
+    else:
+        rp = "sensorsData"
+
+    return rp
+
+
 def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=200):
 
     intervalSeconds = finalTimestamp - initialTimestamp
     groupBySeconds = max(-(-intervalSeconds / maxValues-1), 1)
 
-    # > 60 days
-    if intervalSeconds > 3600 * 24 * 60:
-        rp = '"3years"."downsampled_sensorsData_1d"'
-    # > 5 days   
-    elif intervalSeconds > 3600 * 24 * 5:
-        rp = '"1year"."downsampled_sensorsData_1h"'
-    else:
-        rp = "sensorsData"
+    rp = getRP(initialTimestamp, finalTimestamp)
 
     query = ''' SELECT 
                     mean("value") as value
@@ -37,14 +47,16 @@ def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
 
 def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp):
 
+    rp = getRP(initialTimestamp, finalTimestamp)
+
     query = ''' SELECT 
                     mean("value") as mean,
                     min("value") as min,
                     max("value") as max
-                FROM sensorsData WHERE 
+                FROM %s WHERE 
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 FILL(none)
-                ''' % (locationId, sensorId, initialTimestamp, finalTimestamp)
+                ''' % (rp, locationId, sensorId, initialTimestamp, finalTimestamp)
 
     results = influxClient.query(query)
     if not results:
