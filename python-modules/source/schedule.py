@@ -5,6 +5,7 @@ import time
 from dateutil import tz
 
 import iothub_api
+import utils
 
 logger = logging.getLogger()
 
@@ -34,6 +35,8 @@ class Schedule():
         
         for scheduleElement in todaySchedule:
 
+            # The times provided by AEMET for the [sunHour] 
+            # are in the local time
             state, offset, value, isSunrise = scheduleElement
             if isSunrise:
                 sunHour = self.sunScheduleInfo["sunrise"]
@@ -44,6 +47,7 @@ class Schedule():
             if currentMinute == sunHour+offset:
                 # If the state is different from the setpoint
                 if not self.sunScheduleRunning:
+                    logger.info(f"Setting sun schedule to {state}")
                     self.sunScheduleRunning = True
                     self.setState(mqttClient, state)
                     self.setValue(mqttClient, value)
@@ -53,13 +57,17 @@ class Schedule():
         if self.sunScheduleRunning:
             self.sunScheduleRunning = False
 
-    def runManualSchedule(self, mqttClient, today, currentMinute):
+    def runManualSchedule(self, mqttClient, today, currentMinute, timeZoneId):
         todaySchedule = self.schedule[today]
         for scheduleElement in todaySchedule:
             # If schedule is activated
-            if currentMinute >= scheduleElement[0] and currentMinute < scheduleElement[0] + scheduleElement[1]:
+            start = utils.getMinutesConverted(scheduleElement[0], timeZoneId)
+            #logger.info(f"{currentMinute=}, {start=}")
+
+            if currentMinute >= start and currentMinute < start + scheduleElement[1]:
                 # If the schedule wasnt active
                 if not self.scheduleRunning:
+                    logger.info("Running manual schedule")
                     self.scheduleRunning = True
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
@@ -71,17 +79,19 @@ class Schedule():
             self.setState(mqttClient, False)
 
 
-    def runSchedule(self, mqttClient):
-        now = datetime.datetime.today()
-        localZone = tz.gettz("Europe/Madrid")
-        nowAware = now.replace(tzinfo=tz.UTC)
-        nowNaive = nowAware.astimezone(localZone)
-        today = nowNaive.weekday() # Mon: 0, Sun: 6
-        currentMinute = nowNaive.hour * 60 + nowNaive.minute
+    def runSchedule(self, mqttClient, timeZoneId):
+
+        if not timeZoneId:
+            logger.warning("Time zone not available")
+            return
+
+        now = utils.getLocalTime(timeZoneId)
+        currentMinute = utils.getCurrentMinute(timeZoneId)
+        today = now.weekday() # Mon: 0, Sun: 6
 
         # Even if we have the function cached everywhere, this check in memory can
         # improve things slightly because this function can be called many times
-        if nowNaive > datetime.datetime.utcfromtimestamp(self.sunScheduleInfo["timestamp"]).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=24):
+        if now > datetime.datetime.utcfromtimestamp(self.sunScheduleInfo["timestamp"]).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=24):
             try:
                 self.sunScheduleInfo = api.getLocationSunSchedule(self.locationId)
             except:
@@ -100,5 +110,5 @@ class Schedule():
                     self.sunScheduleInfo["sunset"] = 60 * 19
 
         self.runSunSchedule(mqttClient, today, currentMinute)
-        self.runManualSchedule(mqttClient, today, currentMinute)
+        self.runManualSchedule(mqttClient, today, currentMinute, timeZoneId)
         

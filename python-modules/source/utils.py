@@ -1,6 +1,8 @@
 import logging
 import logging.config
 import time
+import datetime
+from dateutil import tz
 
 logger = logging.getLogger()
 
@@ -45,3 +47,23 @@ def retryFunc(func):
             numRetries += 1
 
     return wrapper
+
+def getLocalTime(timeZoneId):
+    localZone = tz.gettz(timeZoneId)
+    now = datetime.datetime.now(tz=localZone)
+    return now
+
+def getCurrentMinute(timeZoneId):
+    now = getLocalTime(timeZoneId)
+    currentMinute = now.hour * 60 + now.minute
+    return currentMinute
+
+def getMinutesConverted(minutes, timeZoneId):
+    localZone = tz.gettz(timeZoneId)
+    now = datetime.datetime.now(tz=tz.UTC)
+    hour = int(minutes / 60)
+    minute = minutes % 60
+    now = now.replace(hour=hour, minute=minute)
+    now = now.astimezone(tz=localZone)
+    minutesConverted = now.hour * 60 + now.minute
+    return minutesConverted

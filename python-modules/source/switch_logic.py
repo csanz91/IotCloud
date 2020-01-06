@@ -6,6 +6,7 @@ from dateutil import tz
 
 import schedule
 import timer
+import location_utils
 
 logger = logging.getLogger()
 
@@ -24,6 +25,8 @@ class Switch():
         self.timer = timer.Timer(self.setState)
         self.metadata = {}
         self.aux = {}
+        self.postalCode = None
+        self.timeZoneId = None
 
         # Subscribe to the relevant topics
         mqttClient.subscribe(self.topicHeader+"state")
@@ -48,12 +51,20 @@ class Switch():
     def updateAux(self, mqttClient, aux):
         self.aux = aux
 
+    def updatePostalCode(self, postalCode):
+        self.postalCode = postalCode
+        try:
+            locationTimezoneData = location_utils.getTimeZone(postalCode)
+            self.timeZoneId = locationTimezoneData["timeZoneId"]
+        except:
+            logger.error("It was not possible to retrive the timezone data", exc_info=True)
+
     def setState(self, mqttClient, state):
         mqttClient.publish(self.topicHeader+"setState", state, qos=1, retain=True)
 
     def engine(self, mqttClient, values):
 
         # Check the schedule
-        self.schedule.runSchedule(mqttClient)
+        self.schedule.runSchedule(mqttClient, self.timeZoneId)
         # Check the timer
         self.timer.runTimer(mqttClient)

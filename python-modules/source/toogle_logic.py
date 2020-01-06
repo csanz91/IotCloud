@@ -6,6 +6,7 @@ from dateutil import tz
 
 import schedule
 import timer
+import location_utils
 
 logger = logging.getLogger()
 
@@ -23,6 +24,8 @@ class Toogle():
         self.schedule = schedule.Schedule(tags["locationId"], self.setState)
         self.metadata = {}
         self.aux = {}
+        self.postalCode = None
+        self.timeZoneId = None
 
         # Subscribe to the relevant topics
         mqttClient.subscribe(self.topicHeader+"updatedSensor")
@@ -38,6 +41,14 @@ class Toogle():
 
     def updateAux(self, mqttClient, aux):
         self.aux = aux
+    
+    def updatePostalCode(self, postalCode):
+        self.postalCode = postalCode
+        try:
+            locationTimezoneData = location_utils.getTimeZone(postalCode)
+            self.timeZoneId = locationTimezoneData["timeZoneId"]
+        except:
+            logger.error("It was not possible to retrive the timezone data", exc_info=True)
 
     def setState(self, mqttClient, state):
         if state:
@@ -50,4 +61,4 @@ class Toogle():
     def engine(self, mqttClient, values):
 
         # Check the schedule
-        self.schedule.runSchedule(mqttClient)
+        self.schedule.runSchedule(mqttClient, self.timeZoneId)

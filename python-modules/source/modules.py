@@ -46,6 +46,7 @@ class Sensor():
         self.state = False
         self.instance = None
         self.metadata = None
+        self.postalCode = None
         self.aux = {}
 
 ####################################
@@ -105,6 +106,7 @@ onStatusNumWorkerThreads = 3
 onStateNumWorkerThreads = 3
 onValueNumWorkerThreads = 5
 onSensorUpdateNumWorkerThreads = 5
+onLocationUpdateNumWorkerThreads = 2
 onAuxNumWorkerThreads = 5
 
 ####################################
@@ -214,7 +216,7 @@ def sensorUpdateWorker():
             if numRetries < maxRetries:
                 delay = numRetries**2+10
                 logger.info(f'retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds')
-                Thread(target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)).start()
+                Thread(target=addToQueueDelayed, args=(sensorUpdateQueue, (item, numRetries), delay)).start()
         
         sensorUpdateQueue.task_done()
 
@@ -228,7 +230,9 @@ def onSensorUpdateWork(msg):
         userId = json.loads(msg.payload)
         sensorData = api.getUserSensor(userId, tags["locationId"], tags["deviceId"], tags["sensorId"])
 
-        devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
+        sensor = devices[deviceHash].sensors[tags["sensorId"]]
+        sensor.metadata = sensorData['sensorMetadata']
+        sensor.postalCode = sensorData['postalCode']
     except:
         logger.error("Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True)
         raise
@@ -238,6 +242,57 @@ for i in range(onSensorUpdateNumWorkerThreads):
     t.start()
     threads.append(t)
 
+####################################
+# Location update message processing
+####################################
+locationUpdateQueue = queue.Queue()
+
+def locationUpdateWorker():
+    while True:
+        items = locationUpdateQueue.get()
+        if items is None:
+            break
+
+        item, numRetries = items
+        try:
+            onLocationUpdateWork(item)
+        except:
+            numRetries += 1
+            if numRetries < maxRetries:
+                delay = numRetries**2+10
+                logger.info(f'retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds')
+                Thread(target=addToQueueDelayed, args=(locationUpdateQueue, (item, numRetries), delay)).start()
+        
+        locationUpdateQueue.task_done()
+
+def onLocationUpdateWork(msg):
+    """The location has been updated, retrieve the new data
+    """
+
+    try:
+        subtopics = msg.topic.split("/")
+        locationId = subtopics[1]
+        location = api.getLocation(locationId)
+
+        for device in location["devices"]:
+            deviceId = device["deviceId"]
+            for sensorData in device["sensors"]:
+                sensorId = sensorData["sensorId"]
+
+                deviceHash = calculateDeviceHash(f"{version}/{locationId}/{deviceId}")
+                if deviceHash in devices:
+                    sensor = devices[deviceHash].sensors[sensorId]
+                    sensor.metadata = sensorData['sensorMetadata']
+                    sensor.postalCode = location['postalCode']
+
+    except:
+        logger.error("Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True)
+        raise
+
+for i in range(onLocationUpdateNumWorkerThreads):
+    t = Thread(target=locationUpdateWorker)
+    t.start()
+    threads.append(t)
 
 ####################################
 # Aux update message processing
@@ -274,7 +329,9 @@ def onAuxWork(client, msg):
             sensorData = api.getSensor(tags["locationId"], tags["deviceId"], tags["sensorId"])
             if not sensorData:
                 return
-            devices[deviceHash].sensors[tags["sensorId"]].metadata = sensorData['sensorMetadata']
+            sensor = devices[deviceHash].sensors[tags["sensorId"]]
+            sensor.metadata = sensorData['sensorMetadata']
+            sensor.postalCode = sensorData['postalCode']
 
     # Add the value received to the aux dict
     else:
@@ -299,6 +356,9 @@ def onValue(client, userdata, msg):
 def onSensorUpdated(client, userdata, msg):
     sensorUpdateQueue.put((msg, numRetries:=0))
 
+def onLocationUpdated(client, userdata, msg):
+    locationUpdateQueue.put((msg, numRetries:=0))
+
 def onAux(client, userdata, msg):
     auxQueue.put(((client,msg), numRetries:=0))
 
@@ -315,6 +375,7 @@ statusTopic = topicHeader + "status"
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
 sensorUpdateTopic = topicHeader + "+/updatedSensor"
+locationUpdatedTopic = f"{version}/+/updatedLocation"
 auxTopic = topicHeader + "+/aux/+"
 
 # Setup MQTT client
@@ -336,6 +397,9 @@ def run(mqttClient):
                         sensor.instance.updateSettings(mqttClient, sensor.metadata)
                     if sensor.aux != sensor.instance.aux:
                         sensor.instance.updateAux(mqttClient, sensor.aux)
+                    if sensor.postalCode != sensor.instance.postalCode:
+                        logger.info(sensor.postalCode)
+                        sensor.instance.updatePostalCode(sensor.postalCode)
                     # Run the engine
                     sensor.instance.engine(mqttClient, values)
 
@@ -353,6 +417,8 @@ def onConnect(self, mosq, obj, rc):
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
     mqttclient.subscribe(statusTopic)
+    mqttclient.subscribe(locationUpdatedTopic)
+
     # Restore the subscriptions
     for subscription in subscriptionsList:
         mqttclient.subscribe(subscription)
@@ -361,6 +427,7 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(valuesTopic, onValue)
     mqttclient.message_callback_add(stateTopic, onState)
     mqttclient.message_callback_add(sensorUpdateTopic, onSensorUpdated)
+    mqttclient.message_callback_add(locationUpdatedTopic, onLocationUpdated)
     mqttclient.message_callback_add(auxTopic, onAux)
 
 

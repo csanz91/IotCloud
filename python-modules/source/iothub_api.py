@@ -129,6 +129,13 @@ class IothubApi():
 
         return sensor
 
+    def getLocation(self, locationId):
+
+        location = self.get(f"locations/{locationId}/devices", auth=True)
+
+        return location
+
+
     @cache_disk(seconds=3600 * 8)
     def getLocationSunSchedule(self, locationId):
 

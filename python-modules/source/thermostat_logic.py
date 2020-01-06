@@ -8,6 +8,7 @@ import copy
 import schedule
 import timer
 import utils
+import location_utils
 
 logger = logging.getLogger()
 
@@ -39,6 +40,11 @@ class Thermostat():
         self.metadata = {}
         self.aux = {}
         self.tempReferenceMem = 0.0
+        self.progThermostatShutdownEnabled = False
+        self.progThermostatShutdownTime = 0
+        self.progThermostatShutdownMem = False
+        self.postalCode = None
+        self.timeZoneId = None
 
         self.subscriptionsList = subscriptionsList
 
@@ -89,6 +95,16 @@ class Thermostat():
         except:
             pass
 
+        try:
+            self.progThermostatShutdownEnabled = bool(metadata['progThermostatShutdownEnabled'])
+        except:
+            pass
+
+        try:
+            self.progThermostatShutdownTime = int(metadata['progThermostatShutdownTime'])
+        except:
+            pass
+
         self.metadata = copy.deepcopy(metadata)
 
     def updateAux(self, mqttClient, aux):
@@ -99,7 +115,7 @@ class Thermostat():
 
         try:
             self.setpoint = float(aux['setpoint'])
-            logger.info(f"Received setpoint: {self.setpoint}")
+            logger.debug(f"Received setpoint: {self.setpoint}")
         except:
             pass
 
@@ -111,6 +127,14 @@ class Thermostat():
             pass
         
         self.aux = copy.deepcopy(aux)
+
+    def updatePostalCode(self, postalCode):
+        self.postalCode = postalCode
+        try:
+            locationTimezoneData = location_utils.getTimeZone(postalCode)
+            self.timeZoneId = locationTimezoneData["timeZoneId"]
+        except:
+            logger.error("It was not possible to retrive the timezone data", exc_info=True)
 
     def calculateTempReference(self, values):
         tempReference = 0.0
@@ -148,11 +172,33 @@ class Thermostat():
     def setSetpoint(self, mqttClient, setpoint):
         mqttClient.publish(self.topicHeader+"aux/setpoint", setpoint, qos=1, retain=True)
 
+    def progThermostatShutdown(self, mqttClient):
+        if self.progThermostatShutdownEnabled:
+
+            if not self.timeZoneId:
+                logger.warning("Time zone not available")
+                return
+
+            minutesConverted = utils.getMinutesConverted(self.progThermostatShutdownTime, self.timeZoneId)
+            currentMinute = utils.getCurrentMinute(self.timeZoneId)
+
+            #logger.info(f"{currentMinute=}, {minutesConverted=}")
+            if currentMinute == minutesConverted:
+                if not self.progThermostatShutdownMem:
+                    logger.info("Shuthing down the thermostat")
+                    self.progThermostatShutdownMem = True
+                    self.state = False
+                    self.setState(mqttClient, self.state)
+            else:
+                self.progThermostatShutdownMem = False
+
     def engine(self, mqttClient, values):
         # Check the schedule
-        self.schedule.runSchedule(mqttClient)
+        self.schedule.runSchedule(mqttClient, self.timeZoneId)
         # Check the timer
         self.timer.runTimer(mqttClient)
+        # Check the programmed shutdown
+        self.progThermostatShutdown(mqttClient)
 
         # The thermostat cannot run if there is an active alarm or if it is not active
         if self.alarm or not self.state:
@@ -163,7 +209,7 @@ class Thermostat():
             return
 
         tempReference = self.calculateTempReference(values)
-        logger.info(f"{tempReference=}, {self.setpoint=}, {self.heating=}")
+        #logger.info(f"{tempReference=}, {self.setpoint=}, {self.heating=}")
 
         # These values are needed to be able to run the algorithm
         if not tempReference or not self.setpoint:
