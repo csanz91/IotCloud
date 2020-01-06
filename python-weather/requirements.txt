@@ -1,0 +1,5 @@
+falcon
+gunicorn
+requests
+python-dateutil
+-e libs/docker_secrets
