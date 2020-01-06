@@ -7,10 +7,13 @@ import calendar
 
 logger = logging.getLogger(__name__)
 
-def toUtc(measureTime, timezone="Europe/Madrid"):
+def toUtc(measureTime, timeZoneId):
     '''Converts a timestamp from a local time to UTC'''
 
-    localZone = tz.gettz(timezone)
+    if not timeZoneId:
+        timeZoneId = "Europe/Madrid"
+
+    localZone = tz.gettz(timeZoneId)
 
     localTimeMidnightAware = measureTime.replace(tzinfo=localZone)
     localTimeMidnightNaive = localTimeMidnightAware.astimezone(tz.UTC)
@@ -18,37 +21,49 @@ def toUtc(measureTime, timezone="Europe/Madrid"):
     return localMidnightTimestamp
 
 
-def getDayTimestamps(today, timezone="Europe/Madrid"):
+def getDayTimestamps(today, timeZoneId):
     
-    localZone = tz.gettz(timezone)
-    dt = today.replace(tzinfo=localZone)
+    if not timeZoneId:
+        timeZoneId = "Europe/Madrid"
 
-    localMidnightTimestamp = toUtc(dt.replace(hour=0, minute=0, second=0, microsecond=0))
-    localEndDayTimestamp = toUtc(dt.replace(hour=23, minute=59, second=59, microsecond=0))
+    localZone = tz.gettz(timeZoneId)
+    todayAware = today.replace(tzinfo=tz.UTC)
+    dt = todayAware.astimezone(tz=localZone)
+
+    localMidnightTimestamp = toUtc(dt.replace(hour=0, minute=0, second=0, microsecond=0), timeZoneId)
+    localEndDayTimestamp = toUtc(dt.replace(hour=23, minute=59, second=59, microsecond=0), timeZoneId)
     return localMidnightTimestamp, localEndDayTimestamp
 
 
-def getThisWeekTimestamps(today, timezone="Europe/Madrid"):
+def getThisWeekTimestamps(today, timeZoneId):
 
-    localZone = tz.gettz(timezone)
-    today = today.replace(tzinfo=localZone).date()
-    start = today - timedelta(days=today.weekday())
+    if not timeZoneId:
+        timeZoneId = "Europe/Madrid"
+
+    localZone = tz.gettz(timeZoneId)
+    todayAware = today.replace(tzinfo=tz.UTC)
+    todayLocal = todayAware.astimezone(tz=localZone).date()
+    start = todayLocal - timedelta(days=todayLocal.weekday())
     end = start + timedelta(days=6)
 
     d2dt = lambda date: datetime(year=date.year, month=date.month, day=date.day)
-    localMidnightTimestamp = toUtc(d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0))
-    localEndDayTimestamp = toUtc(d2dt(end).replace(hour=23, minute=59, second=59, microsecond=0))
+    localMidnightTimestamp = toUtc(d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0), timeZoneId)
+    localEndDayTimestamp = toUtc(d2dt(end).replace(hour=23, minute=59, second=59, microsecond=0), timeZoneId)
     return localMidnightTimestamp, localEndDayTimestamp
 
 
-def getThisMonthTimestamps(today, timezone="Europe/Madrid"):
+def getThisMonthTimestamps(today, timeZoneId):
 
-    localZone = tz.gettz(timezone)
-    today = today.replace(tzinfo=localZone)
-    start = today.replace(day=1)
+    if not timeZoneId:
+        timeZoneId = "Europe/Madrid"
+
+    localZone = tz.gettz(timeZoneId)
+    todayAware = today.replace(tzinfo=tz.UTC)
+    todayLocal = todayAware.astimezone(tz=localZone)
+    start = todayLocal.replace(day=1)
     end = start + relativedelta(months=1) - timedelta(days=1)
 
     d2dt = lambda date: datetime(year=date.year, month=date.month, day=date.day)
-    localMidnightTimestamp = toUtc(d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0))
-    localEndDayTimestamp = toUtc(d2dt(end).replace(hour=23, minute=59, second=59, microsecond=0))
+    localMidnightTimestamp = toUtc(d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0), timeZoneId)
+    localEndDayTimestamp = toUtc(d2dt(end).replace(hour=23, minute=59, second=59, microsecond=0), timeZoneId)
     return localMidnightTimestamp, localEndDayTimestamp

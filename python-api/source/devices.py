@@ -276,10 +276,15 @@ class SensorDataStats():
     @grantLocationOwnerPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
 
-        datetimeNow = datetime.now()
-        todayLocalMidnightTimestamp, todayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(datetimeNow)
-        thisWeekLocalMidnightTimestamp, thisWeekLocalEndDayTimestamp = datetime_utils.getThisWeekTimestamps(datetimeNow)
-        thisMonthLocalMidnightTimestamp, thisMonthLocalEndDayTimestamp = datetime_utils.getThisMonthTimestamps(datetimeNow)
+        selectedDatetime = req.get_param_as_datetime("selectedDatetime")
+        if not selectedDatetime:
+            selectedDatetime = datetime.now()
+
+        timeZoneId = req.get_param("timeZoneId")
+
+        todayLocalMidnightTimestamp, todayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(selectedDatetime, timeZoneId)
+        thisWeekLocalMidnightTimestamp, thisWeekLocalEndDayTimestamp = datetime_utils.getThisWeekTimestamps(selectedDatetime, timeZoneId)
+        thisMonthLocalMidnightTimestamp, thisMonthLocalEndDayTimestamp = datetime_utils.getThisMonthTimestamps(selectedDatetime, timeZoneId)
 
         try:
             todayStats = influxdb_interface.getStats(self.influxdb, locationId, sensorId, todayLocalMidnightTimestamp, todayLocalEndDayTimestamp)
@@ -307,12 +312,14 @@ class SensorStateTime():
         datetimeNow = datetime.now()
         includeHeating = req.get_param_as_bool("includeHeating")
 
+        timeZoneId = req.get_param("timeZoneId")
+
         stateTimes = []
         # Go back 10 days
         for dayIndex in xrange(10):
             # Get the timestamps from the selected period
             pastDay = datetimeNow - timedelta(days=dayIndex)
-            pastDayLocalMidnightTimestamp, pastDayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(pastDay)
+            pastDayLocalMidnightTimestamp, pastDayLocalEndDayTimestamp = datetime_utils.getDayTimestamps(pastDay, timeZoneId)
 
             # If the last state is on and [pastDayLocalEndDayTimestamp] is in the future, we just need
             # to count up to now, otherwise it will count until the end of the current day
