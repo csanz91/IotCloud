@@ -38,6 +38,17 @@ services:
     secrets:
       - modules_secrets
 
+  weather:
+    build: ./python-weather
+    env_file:
+      - 'variables.env'
+    restart: always
+    volumes:
+      - ./python-weather/source:/app/source
+      - ./python-weather/logs:/app/logs
+    secrets:
+      - weather_secrets
+
   home:
     build: ./go-home
     env_file:
@@ -125,6 +136,8 @@ services:
 secrets:
   modules_secrets:
       file: ./python-modules/secrets
+  weather_secrets:
+    file: ./python-weather/secrets
   home_secrets:
       file: ./go-home/secrets
   grafana_datasource_secrets:
