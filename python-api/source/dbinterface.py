@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 import time
 import inspect
 import logging
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import json
 from bson import json_util
 import random
@@ -951,3 +951,23 @@ def getUserFirebaseToken(db, locationId):
         userData = selectUser(db, user["sharedToUserId"])
         userTokens.append(userData["firebaseToken"])
     return userTokens
+
+@checkArgs("db")
+def getMeteoAlertsFirebaseTokens(db):
+
+    # 1. Get the token for the owner
+    result = db.usersData.find(
+        {"locations.devices.sensors.sensorType": "weather_alerts"},
+        {"firebaseToken": True, "locations.$": True}
+    )
+
+    postalCodesTokens = defaultdict(list)
+    return list(result)
+    for match in result:
+        firebaseToken = match["firebaseToken"]
+        locations = match["locations"]
+        for location in locations:
+            postalCode = location["postalCode"]
+            postalCodesTokens[postalCode].append(firebaseToken)
+
+    return postalCodesTokens
