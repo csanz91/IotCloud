@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"iotcloud"
 	"model"
 	"mqtt"
@@ -170,18 +171,16 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 			return model.DeviceProperties{}, err
 		}
 
-		name, analogDataTypeKey, deviceUnits, err := getAnalogSensorDataAttr(sensorID)
+		analogDataTypeKey, err := getAnalogSensorDataAttr(sensorID)
 		if err != nil {
 			return model.DeviceProperties{}, err
 		}
 
-		deviceProperties.CurrentSensorData = []model.SensorData{
-			model.SensorData{
-				Name:               name,
-				DataTypeKey:        analogDataTypeKey,
-				DefaultDeviceUnits: deviceUnits,
-				DataValue:          value,
-			},
+		if analogDataTypeKey == "temperature" {
+			deviceProperties.TemperatureAmbientCelsius = value
+			deviceProperties.TemperatureSetpointCelsius = value
+		} else if analogDataTypeKey == "humidity" {
+			deviceProperties.HumidityAmbientPercent = value
 		}
 	} else if deviceType == "ledRGB" {
 		// The LED data is encoded in the aux subtopic
@@ -210,18 +209,18 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 		}
 		deviceProperties.Color = intColor
 	}
-
 	return deviceProperties, nil
 }
 
-func getAnalogSensorDataAttr(sensorID string) (string, string, string, error) {
-	analogType := sensorID[len(sensorID)-2:]
+func getAnalogSensorDataAttr(sensorID string) (string, error) {
+	analogType := sensorID[len(sensorID)-1:]
+	fmt.Println(analogType)
 	switch analogType {
 	case "T":
-		return "temperature", "temperature", "°C", nil
+		return "temperature", nil
 	case "H":
-		return "humidity", "humidity", "%", nil
+		return "humidity", nil
 	default:
-		return "", "", "", errors.New("Device type not supported")
+		return "", errors.New("Device type not supported")
 	}
 }

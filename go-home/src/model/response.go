@@ -73,25 +73,19 @@ type DeviceInfo struct {
 	SwVersion    string `json:"swVersion"`
 }
 
-// SensorData : Struct for the sensor data model
-type SensorData struct {
-	Name               string  `json:"name"`
-	DataTypeKey        string  `json:"data_type_key"`
-	DefaultDeviceUnits string  `json:"default_device_units"`
-	DataValue          float32 `json:"data_value"`
-}
-
 // DeviceProperties : Struct for a Command execution model
 type DeviceProperties struct {
-	ON                            bool         `json:"on"`
-	Online                        bool         `json:"online"`
-	Brightness                    int          `json:"brightness"`
-	Color                         uint64       `json:"spectrumRgb"`
-	ThermostatMode                string       `json:"thermostatMode"`
-	ThermostatTemperatureSetpoint float32      `json:"thermostatTemperatureSetpoint"`
-	ThermostatTemperatureAmbient  float32      `json:"thermostatTemperatureAmbient"`
-	ThermostatHumidityAmbient     float32      `json:"thermostatHumidityAmbient"`
-	CurrentSensorData             []SensorData `json:"currentSensorData"`
+	ON                            bool    `json:"on"`
+	Online                        bool    `json:"online"`
+	Brightness                    int     `json:"brightness"`
+	Color                         uint64  `json:"spectrumRgb"`
+	ThermostatMode                string  `json:"thermostatMode"`
+	ThermostatTemperatureSetpoint float32 `json:"thermostatTemperatureSetpoint"`
+	ThermostatTemperatureAmbient  float32 `json:"thermostatTemperatureAmbient"`
+	ThermostatHumidityAmbient     float32 `json:"thermostatHumidityAmbient"`
+	TemperatureSetpointCelsius    float32 `json:"temperatureSetpointCelsius"`
+	TemperatureAmbientCelsius     float32 `json:"temperatureAmbientCelsius"`
+	HumidityAmbientPercent        float32 `json:"humidityAmbientPercent"`
 }
 
 // DevicePropertyColor : Struct for a Command execution model

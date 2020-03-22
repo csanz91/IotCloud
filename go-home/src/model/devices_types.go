@@ -37,19 +37,16 @@ type dataTypesSupported struct {
 
 // AnalogType : Google Device definition for our analog types (not working)
 var AnalogType = GoogleDeviceType{
-	Type:   "action.devices.types.SENSOR",
-	Traits: []string{"action.devices.traits.Sensor"},
-	Attributes: map[string]interface{}{"dataTypesSupported": []map[string]interface{}{
-		{"name": "temperature",
-			"data_type": []map[string]interface{}{
-				{"type_synonym": []string{"temperature"}, "lang": "en"},
-				{"type_synonym": []string{"temperatura"}, "lang": "es"}},
-			"default_device_unit": "°C"},
-		{"name": "humidity",
-			"data_type": []map[string]interface{}{
-				{"type_synonym": []string{"humidity"}, "lang": "en"},
-				{"type_synonym": []string{"humedad"}, "lang": "es"}},
-			"default_device_unit": "%"}}},
+	Type: "action.devices.types.SENSOR",
+	Traits: []string{
+		"action.devices.traits.HumiditySetting",
+		"action.devices.traits.TemperatureControl",
+	},
+	Attributes: map[string]interface{}{
+		"queryOnlyHumiditySetting":    true,
+		"queryOnlyTemperatureControl": true,
+		"temperatureUnitForUX":        "C",
+	},
 }
 
 // RGBType : Google Device definition for our RGB type
