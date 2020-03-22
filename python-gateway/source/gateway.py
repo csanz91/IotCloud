@@ -108,7 +108,9 @@ def init(influxDb):
     influxDb.client.create_retention_policy('3years', '1080d', 1)
 
     influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1h" ON %s BEGIN
-                                SELECT mean("value") AS "value"
+                                SELECT mean("value") AS "value",
+                                       max("value") AS "max_value",
+                                       min("value") AS "min_value"
                                 INTO "1year"."downsampled_sensorsData_1h"
                                 FROM "raw"."sensorsData"
                                 GROUP BY time(1h), *
@@ -116,7 +118,9 @@ def init(influxDb):
                           """ % os.environ['INFLUXDB_DB'])
 
     influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON %s BEGIN
-                                SELECT mean("value") AS "value"
+                                SELECT mean("value") AS "value",
+                                       max("value") AS "max_value",
+                                       min("value") AS "min_value"
                                 INTO "3years"."downsampled_sensorsData_1d"
                                 FROM "1year"."downsampled_sensorsData_1h"
                                 GROUP BY time(1d), *
