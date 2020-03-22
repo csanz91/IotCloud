@@ -30,18 +30,16 @@ class Schedule():
         # [state, offset, value, isSunrise]
         self.solarSchedule = metadata['schedule']['solarSchedule']
 
-    def runSunSchedule(self, mqttClient, today, currentMinute):
+    def runSunSchedule(self, mqttClient, today, currentMinute, timeZoneId):
         todaySchedule = self.solarSchedule[today]
         
         for scheduleElement in todaySchedule:
 
-            # The times provided by AEMET for the [sunHour] 
-            # are in the local time
             state, offset, value, isSunrise = scheduleElement
             if isSunrise:
-                sunHour = self.sunScheduleInfo["sunrise"]
+                sunHour = utils.getMinutesConverted(self.sunScheduleInfo["sunrise"], timeZoneId)
             else:
-                sunHour = self.sunScheduleInfo["sunset"]
+                sunHour = utils.getMinutesConverted(self.sunScheduleInfo["sunset"], timeZoneId)
 
             # If the schedule is activated:
             if currentMinute == sunHour+offset:
@@ -91,10 +89,13 @@ class Schedule():
 
         # Even if we have the function cached everywhere, this check in memory can
         # improve things slightly because this function can be called many times
-        if now > datetime.datetime.utcfromtimestamp(self.sunScheduleInfo["timestamp"]).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=24):
+        utcSunScheduleTimestamp = datetime.datetime.utcfromtimestamp(self.sunScheduleInfo["timestamp"]).replace(tzinfo=tz.UTC)
+        utcSunScheduleExpireTimestamp = utcSunScheduleTimestamp + datetime.timedelta(hours=24)
+        if now > utcSunScheduleExpireTimestamp:
             try:
                 self.sunScheduleInfo = api.getLocationSunSchedule(self.locationId)
             except:
+                logger.warning("Unable to recover the sunschedule. Extending the current one.")
                 # In case we are not able to recover the sun schedule:
                 # 
                 # If we have previous data stored, make it last more
@@ -109,6 +110,8 @@ class Schedule():
                     # Set the sunset at 19:00
                     self.sunScheduleInfo["sunset"] = 60 * 19
 
-        self.runSunSchedule(mqttClient, today, currentMinute)
+                logger.info(f"New sunschedule: {self.sunScheduleInfo}")
+
+        self.runSunSchedule(mqttClient, today, currentMinute, timeZoneId)
         self.runManualSchedule(mqttClient, today, currentMinute, timeZoneId)
         

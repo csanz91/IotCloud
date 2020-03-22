@@ -254,12 +254,16 @@ def getLatestAlertsURLForArea(area):
 
 def dateToMinutes(date):
     '''
-    From a date string with the following format: 07:54
-    convert it to minutes since midnight
+    From a local (Europe/Madrid) date string with the following format: 07:54
+    convert it to minutes since midnight in UTC
     '''
 
     hours, minutes = date.split(":")
-    return int(hours) * 60 + int(minutes)
+    utcZeroDatetime = datetime.datetime.fromtimestamp(0, tz=tz.UTC)
+    dateLocal = utcZeroDatetime.replace(hour=int(hours), minute=int(minutes))
+    dateInSeconds = utils.toUtcTimestamp(dateLocal, "Europe/Madrid")
+    dateInMinutes = int(dateInSeconds / 60)
+    return dateInMinutes
 
 
 def getMeasurementFromPostalCode(postalCode, measurement):
