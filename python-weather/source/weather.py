@@ -258,12 +258,13 @@ def dateToMinutes(date):
     convert it to minutes since midnight in UTC
     '''
 
-    hours, minutes = date.split(":")
-    utcZeroDatetime = datetime.datetime.fromtimestamp(0, tz=tz.UTC)
-    dateLocal = utcZeroDatetime.replace(hour=int(hours), minute=int(minutes))
-    dateInSeconds = utils.toUtcTimestamp(dateLocal, "Europe/Madrid")
-    dateInMinutes = int(dateInSeconds / 60)
-    return dateInMinutes
+    hour, minute = date.split(":")
+    localZone = tz.gettz("Europe/Madrid")
+    now = datetime.datetime.now(localZone)
+    now = now.replace(hour=int(hour), minute=int(minute))
+    now = now.astimezone(tz=tz.UTC)
+    minutesConverted = now.hour * 60 + now.minute
+    return minutesConverted
 
 
 def getMeasurementFromPostalCode(postalCode, measurement):
