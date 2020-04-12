@@ -11,3 +11,14 @@ services:
       - ./grafana/config_dev:/etc/grafana
       - ./certs:/grafana/certs
       - ./grafana/log:/var/log/grafana
+
+  mosquitto:
+    image: jllopis/mosquitto
+    restart: always
+    volumes:
+      - ./mosquitto/dev/data:/var/lib/mosquitto
+      - ./mosquitto/dev/log:/var/log/mosquitto
+      - ./mosquitto/dev/config:/etc/mosquitto
+      - ./mosquitto/dev/mosquitto.d:/etc/mosquitto.d
+    ports:
+      - "1883:1883"
