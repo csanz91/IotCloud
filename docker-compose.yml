@@ -43,6 +43,8 @@ services:
     env_file:
       - 'variables.env'
     restart: always
+    expose:
+      - "5003"
     volumes:
       - ./python-weather/source:/app/source
       - ./python-weather/logs:/app/logs
@@ -67,8 +69,8 @@ services:
     env_file:
       - 'variables.env'
     restart: always
-    ports:
-      - "5002:5002"
+    expose:
+      - "5002"
     volumes:
       - ./go-grafana-datasource/src:/app/src
       - ./go-grafana-datasource/logs:/app/logs
@@ -81,8 +83,8 @@ services:
     hostname: docker
     volumes:
       - ./mongodb:/data/db
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
     command: mongod --logpath=/dev/null --setParameter diagnosticDataCollectionEnabled=false # --quiet
 
   influxdb:
@@ -95,10 +97,8 @@ services:
       - ./influxdb/data:/var/lib/influxdb
       # Mount for influxdb configuration
       - ./influxdb/config/:/etc/influxdb/
-    ports:
-      # The API for InfluxDB is served on port 8086
-      - "8086:8086"
-        #- "8082:8082"
+    expose:
+      - "8086"
     restart: always
 
   grafana:

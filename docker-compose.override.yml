@@ -22,3 +22,40 @@ services:
       - ./mosquitto/dev/mosquitto.d:/etc/mosquitto.d
     ports:
       - "1883:1883"
+
+  influxdb:
+    image: influxdb:1.7
+    
+    env_file:
+      - 'variables.env'
+    volumes:
+      # Mount for influxdb data directory
+      - ./influxdb/data:/var/lib/influxdb
+      # Mount for influxdb configuration
+      - ./influxdb/config/:/etc/influxdb/
+    ports:
+      - "8086:8086"
+    restart: always
+
+  grafana-datasource:
+    build: ./go-grafana-datasource
+    env_file:
+      - 'variables.env'
+    restart: always
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./go-grafana-datasource/src:/app/src
+      - ./go-grafana-datasource/logs:/app/logs
+    secrets:
+      - grafana_datasource_secrets
+  
+  mongodb:
+    restart: always
+    image: mongo
+    hostname: docker
+    volumes:
+      - ./mongodb:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod --logpath=/dev/null --setParameter diagnosticDataCollectionEnabled=false # --quiet
