@@ -113,7 +113,7 @@ services:
       - ./certs:/grafana/certs
       - ./grafana/log:/var/log/grafana
     environment:
-      - GF_INSTALL_PLUGINS=simpod-json-datasource 0.1.6
+      - GF_INSTALL_PLUGINS=simpod-json-datasource 0.1.7
       - GF_AUTH_GENERIC_OAUTH_CLIENT_ID__FILE=/run/secrets/grafana_secrets_clientId
       - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE=/run/secrets/grafana_secrets_clientSecret
     secrets:
