@@ -53,7 +53,8 @@ def statusWorker():
 
 def onStatusWork(msg):
     try:
-        status = utils.decodeBoolean(msg.payload)
+        msg.payload = msg.payload.decode("utf-8")
+        status = utils.decodeStatus(msg.payload)
         tags = utils.getTags(msg.topic)
     except:
         logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
@@ -89,6 +90,7 @@ def stateWorker():
 def onStateWork(msg):
 
     try:
+        msg.payload = msg.payload.decode("utf-8")
         state = utils.decodeBoolean(msg.payload)
         tags = utils.getTags(msg.topic)
     except:
@@ -125,6 +127,7 @@ def onValueWork(msg):
     # Avoid string values as mathematical operations cant
     # be made afterwards
     try:
+        msg.payload = msg.payload.decode("utf-8")
         value = utils.parseFloat(msg.payload)
         tags = utils.getTags(msg.topic)
     except:
@@ -160,6 +163,7 @@ def IPWorker():
 
 def onIPWork(msg):
     try:
+        msg.payload = msg.payload.decode("utf-8")
         IP = msg.payload
         assert IP
         tags = utils.getTags(msg.topic)

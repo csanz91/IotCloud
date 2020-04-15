@@ -72,8 +72,9 @@ def totalizerValueWorker():
 
 def onTotalizerValueWork(msg):
     try:
+        msg.payload = msg.payload.decode("utf-8")
         value = utils.parseFloat(msg.payload)
-        tags = utils.selectTags(msg.topic)
+        tags = utils.getTags(msg.topic)
     except:
         logger.error(
             f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')

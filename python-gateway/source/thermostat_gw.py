@@ -61,8 +61,9 @@ def thermostatValueWorker():
 
 def onThermostatValueWork(msg):
     try:
+        msg.payload = msg.payload.decode("utf-8")
         value = utils.parseFloat(msg.payload)
-        tags = utils.selectTags(msg.topic)
+        tags = utils.getTags(msg.topic)
     except:
         logger.error(
             f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
@@ -101,8 +102,9 @@ def heatingWorker():
 
 def onHeatingWork(msg):
     try:
+        msg.payload = msg.payload.decode("utf-8")
         heating = utils.decodeBoolean(msg.payload)
-        tags = utils.selectTags(msg.topic)
+        tags = utils.getTags(msg.topic)
     except:
         logger.error(
             f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
