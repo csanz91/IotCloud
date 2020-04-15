@@ -5,7 +5,7 @@ from threading import Thread, Event
 from collections import defaultdict
 import atexit
 import signal
-import Queue
+import queue
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,8 @@ class InfluxClient():
 
         self.connect()
         
-        self.dataBucket = defaultdict(Queue.Queue)
+        self.dataBucket = defaultdict(queue.Queue)
+        self.dataPackedQueue = queue.Queue()
 
         # Make sure the instance is always properly closed and no data is lose
         atexit.register(self.close)
@@ -35,15 +36,23 @@ class InfluxClient():
 
         self.endEvent = Event()
 
-        self.bucketThread = Thread(target=self.emptyBucket)
+        self.bucketThread = Thread(target=self.prepareSendBatch)
         self.bucketThread.daemon = True
         self.bucketThread.start()
+
+        self.dataSendNumThreads = 2
+        self.dataSendThreads = []
+        for numThread in range(self.dataSendNumThreads):
+            t = Thread(target=self.sendData)
+            t.daemon = True
+            t.start()
+            self.dataSendThreads.append(t)
 
 
     def connect(self):
         self.client = InfluxDBClient(**self.connectionCredentials)
 
-    def writeData(self, measurement, tags, fields, measureTime=None, bucketMode=True, retentionPolicy=None):
+    def writeData(self, measurement, tags, fields, measureTime=None, retentionPolicy=None):
 
         if not measurement or not type(tags) is dict or not type(fields) is dict:
             logger.warning("no data to insert. tags: %s. fields: %s" % (tags, fields))
@@ -60,23 +69,11 @@ class InfluxClient():
         }
 
         if not measureTime:
-            measureTime = int(time.time())
+            measureTime = int(time.time()*1000000)
         body["time"] = measureTime
 
-        if bucketMode:
-            # Wait for the bucket to empty, otherwise memory overload is guaranteed ;)
-            while self.getBucketLen() > 100000:
-                time.sleep(0.1)
+        self.dataBucket[retentionPolicy].put(body)
 
-            self.dataBucket[retentionPolicy].put(body)
-        else:
-            try:
-                self.client.write_points([body], time_precision='s', retention_policy=retentionPolicy)
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt()
-            except:
-                logger.error("Exception when saving the data.", exc_info=True)
-                self.connect()
 
     def getBucketLen(self):
         dataBucketLen = 0
@@ -86,46 +83,72 @@ class InfluxClient():
         return dataBucketLen
 
 
-    def emptyBucket(self):
+    def prepareSendBatch(self):
 
-        dataChunk = 50000
-        sleepTime = 10
+        dataChunk = 5000
+        sleepTime = 5
 
         while not self.endEvent.isSet() or self.getBucketLen():
 
             # Sleep for some time and listen for the end event
-            for _ in xrange(sleepTime):
-                if self.endEvent.isSet() or self.getBucketLen() >= dataChunk:
+            for _ in range(sleepTime):
+                if self.endEvent.isSet():
                     break
                 time.sleep(1)
 
-            for retentionPolicy, queue in self.dataBucket.items():
+            for retentionPolicy, dataQueue in self.dataBucket.items():
+                bucketEmpty = False
+                while not bucketEmpty:
+                    dataToSend = []
+                    for numOfItemsRetrieved in range(dataChunk):
+                        try:
+                            dataToSend.append(dataQueue.get(False))
+                        except queue.Empty:
+                            bucketEmpty = True
+                            break
 
-                dataToSend = []
-                while not queue.empty() and len(dataToSend)<dataChunk:
+                    if not dataToSend:
+                        break
 
+                    self.dataPackedQueue.put((dataToSend, retentionPolicy))
+                    logger.debug(f"Added new package of {len(dataToSend)} values")
+
+
+        for _ in range(self.dataSendNumThreads):
+            self.dataPackedQueue.put(None)
+                
+
+    def sendData(self):
+
+        client = InfluxDBClient(**self.connectionCredentials)
+
+        while True:
+
+            d = self.dataPackedQueue.get()
+            if d is None:
+                break
+            dataToSend, rp = d
+
+            logger.debug(f"Sending {len(dataToSend)} values")
+
+            try:
+                assert(client.write_points(dataToSend, 
+                                                time_precision='u', 
+                                                retention_policy=rp,
+                                                batch_size=10000))
+            except:
+                logger.error("Exception when saving the data", exc_info=True)
+
+                # If the batch fails try to send the values one by one
+                for value in dataToSend:
                     try:
-                        dataToSend.append(queue.get(False))
-                    except Queue.Empty:
-                        continue
-
-     
-                logger.debug("sending %s values" % len(dataToSend))
-            
-                if dataToSend:
-                    try:
-                        assert(self.client.write_points(dataToSend, time_precision='s', retention_policy=retentionPolicy))
-                    except KeyboardInterrupt:
-                        raise KeyboardInterrupt()
+                        assert(client.write_points([value],
+                                                        time_precision='u', 
+                                                        retention_policy=rp))
                     except:
-                        logger.error("Exception when saving the data", exc_info=True)
+                        logger.error(f"Ignoring value: {value}")
 
-                        # If the batch fails try to send the values one by one
-                        for value in dataToSend:
-                            try:
-                                assert(self.client.write_points([value], time_precision='s', retention_policy=retentionPolicy))
-                            except:
-                                logger.error("Ignoring value: %s" % value)
+        client.close()
 
 
 
@@ -143,5 +166,7 @@ class InfluxClient():
     def close(self, *args):
         self.endEvent.set()
         self.bucketThread.join()
+        for t in self.dataSendThreads:
+            t.join()
         self.client.close()
         logger.info("Influx closed")

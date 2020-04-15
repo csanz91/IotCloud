@@ -2,8 +2,11 @@ import logging
 import logging.config
 import os
 from collections import defaultdict
-import paho.mqtt.client as mqtt
+from threading import Timer, Thread
+import queue
+import time
 
+import paho.mqtt.client as mqtt
 import influx
 from docker_secrets import getDocketSecrets
 import utils
@@ -21,73 +24,176 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-# Mqtt callbacks
-def onValue(client, userdata, msg):
+####################################
+# Global variables
+####################################
+
+# Stores the list of threads started
+threads = []
+
+# Maximum number of retries if a network depending function fails
+maxRetries = 5
+
+# Configure the number of workers
+onStatusNumWorkerThreads = 2
+onStateNumWorkerThreads = 5
+onValueNumWorkerThreads = 10
+onIPNumWorkerThreads = 2
+
+####################################
+# Status message processing
+####################################
+statusQueue = queue.Queue()
+
+def statusWorker():
+    while True:
+        item = statusQueue.get()
+        if item is None:
+            break
+        onStatusWork(item)
+        statusQueue.task_done()
+
+def onStatusWork(msg):
+    try:
+        status = utils.decodeBoolean(msg.payload)
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
+        return
+
+    try:
+        fields = {"status": status}
+        tagsToSave =  ["locationId", "deviceId"]
+        measurement = "sensorsData"
+        influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
+    except:
+        logger.error(f'onStatusWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
+
+for i in range(onStatusNumWorkerThreads):
+    t = Thread(target=statusWorker)
+    t.start()
+    threads.append(t)
+
+####################################
+# State message processing
+####################################
+stateQueue = queue.Queue()
+
+def stateWorker():
+    while True:
+        item = stateQueue.get()
+        if item is None:
+
+            break
+        onStateWork(item)
+        stateQueue.task_done()
+
+def onStateWork(msg):
+
+    try:
+        state = utils.decodeBoolean(msg.payload)
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
+        return
+
+    try:
+        fields = {"state": state}
+        tagsToSave =  ["locationId", "sensorId"]
+        measurement = "sensorsData"
+        influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
+    except:
+        logger.error(f'onStateWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
+
+for i in range(onStateNumWorkerThreads):
+    t = Thread(target=stateWorker)
+    t.start()
+    threads.append(t)
+
+####################################
+# Value message processing
+####################################
+valueQueue = queue.Queue()
+
+def valueWorker():
+    while True:
+        item = valueQueue.get()
+        if item is None:
+            break
+        onValueWork(item)
+        valueQueue.task_done()
+
+def onValueWork(msg):
     # Avoid string values as mathematical operations cant
     # be made afterwards
     try:
         value = utils.parseFloat(msg.payload)
-        tags, _ = utils.decodeTopic(msg.topic)
+        tags = utils.getTags(msg.topic)
         sensorHash = utils.calculateSensorHash(msg.topic)
     except:
-        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
+        logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
         return
 
+    # try:
+    #     valueRange = max_list.getValueRange(influxDb, tags['locationId'], tags['sensorId'])
+    # except:
+    #     logger.error("It was not possible to calculate the values range", exc_info=True)
+    #     valueRange = None
+
+    # try:
+    #     lastValues[sensorHash].addValueSafe(value, valueRange)
+    # except ValueError:
+    #     return
+
     try:
-        valueRange = max_list.getValueRange(influxDb, tags['locationId'], tags['sensorId'])
+        fields = {"value": value}
+        tagsToSave =  ["locationId", "sensorId"]
+        measurement = "sensorsData"
+        influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
+
     except:
-        logger.error("It was not possible to calculate the values range", exc_info=True)
-        valueRange = None
+        logger.error(f'onValueWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
 
-    try:
-        lastValues[sensorHash].addValueSafe(value, valueRange)
-    except ValueError:
-        return
+for i in range(onValueNumWorkerThreads):
+    t = Thread(target=valueWorker)
+    t.start()
+    threads.append(t)
 
-    fields = {"value": value}
-    tagsToSave =  ["locationId", "sensorId"]
-    measurement = "sensorsData"
-    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
+####################################
+# IP message processing
+####################################
+IPQueue = queue.Queue()
 
-def onState(client, userdata, msg):
-    try:
-        state = utils.decodeBoolean(msg.payload)
-        tags, _ = utils.decodeTopic(msg.topic)
-    except:
-        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
-        return
+def IPWorker():
+    while True:
+        item = IPQueue.get()
+        if item is None:
+            break
+        onIPWork(item)
+        IPQueue.task_done()
 
-    fields = {"state": state}
-    tagsToSave =  ["locationId", "sensorId"]
-    measurement = "sensorsData"
-    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
-
-def onStatus(client, userdata, msg):
-    try:
-        status = utils.decodeStatus(msg.payload)
-        tags, _ = utils.decodeTopic(msg.topic)
-    except:
-        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
-        return
-
-    fields = {"status": status}
-    tagsToSave =  ["locationId", "deviceId"]
-    measurement = "sensorsData"
-    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="3years")
-
-def onIP(client, userdata, msg):
+def onIPWork(msg):
     try:
         IP = msg.payload
         assert IP
-        tags, _ = utils.decodeTopic(msg.topic)
+        tags = utils.getTags(msg.topic)
     except:
-        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
+        logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
         return
 
-    fields = {"IP": IP}
-    tagsToSave =  ["locationId", "deviceId"]
-    measurement = "devicesIPs"
-    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
+    try:
+        fields = {"IP": IP}
+        tagsToSave =  ["locationId", "deviceId"]
+        measurement = "devicesIPs"
+        influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
+    except:
+        logger.error(f'onIPWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
+
+for i in range(onIPNumWorkerThreads):
+    t = Thread(target=IPWorker)
+    t.start()
+    threads.append(t)
+
 
 def init(influxDb):
     """
@@ -107,25 +213,38 @@ def init(influxDb):
     influxDb.client.create_retention_policy('1year', '365d', 1)
     influxDb.client.create_retention_policy('3years', '1080d', 1)
 
-    influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1h" ON %s BEGIN
+    influxDb.client.query(f""" DROP CONTINUOUS QUERY "sensorsData_1h" ON {os.environ['INFLUXDB_DB']};""")
+    influxDb.client.query(f""" CREATE CONTINUOUS QUERY "sensorsData_1h" ON {os.environ['INFLUXDB_DB']} BEGIN
                                 SELECT mean("value") AS "value",
                                        max("value") AS "max_value",
                                        min("value") AS "min_value"
                                 INTO "1year"."downsampled_sensorsData_1h"
                                 FROM "raw"."sensorsData"
                                 GROUP BY time(1h), *
-                              END
-                          """ % os.environ['INFLUXDB_DB'])
+                              END """)
 
-    influxDb.client.query(""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON %s BEGIN
+    influxDb.client.query(f""" DROP CONTINUOUS QUERY "sensorsData_1d" ON {os.environ['INFLUXDB_DB']};""")
+    influxDb.client.query(f""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON {os.environ['INFLUXDB_DB']} BEGIN
                                 SELECT mean("value") AS "value",
                                        max("value") AS "max_value",
                                        min("value") AS "min_value"
                                 INTO "3years"."downsampled_sensorsData_1d"
                                 FROM "1year"."downsampled_sensorsData_1h"
                                 GROUP BY time(1d), *
-                              END
-                            """ % os.environ['INFLUXDB_DB'])
+                              END """)
+
+# Mqtt callbacks
+def onStatus(client, userdata, msg):
+    statusQueue.put(msg)
+
+def onState(client, userdata, msg):
+    stateQueue.put(msg)
+
+def onValue(client, userdata, msg):
+    valueQueue.put(msg)
+
+def onIP(client, userdata, msg):
+    IPQueue.put(msg)
 
 logger.info("Starting...")
 

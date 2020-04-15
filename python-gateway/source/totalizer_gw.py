@@ -1,6 +1,8 @@
 import logging
 import logging.config
 import os
+from threading import Timer, Thread
+import queue
 
 import utils
 
@@ -11,18 +13,29 @@ logger = logging.getLogger(__name__)
 ##################
 influxDb = None
 
+# Stores the list of threads started
+threads = []
+
+# Maximum number of retries if a network depending function fails
+maxRetries = 5
+
+# Configure the number of workers
+onTotalizerValueNumWorkerThreads = 3
+
+
 # MQTT constants
 version = 'v1'
-topicHeader= "{version}/+/+/+/aux/".format(version=version)
+topicHeader = "{version}/+/+/+/aux/".format(version=version)
 totalizerTopic = topicHeader + "totalizer"
+
 
 def onConnect(mqttclient, influxClient):
     global influxDb
     influxDb = influxClient
-    
+
     mqttclient.subscribe(totalizerTopic)
     mqttclient.message_callback_add(totalizerTopic, onTotalizerValue)
-    
+
     influxClient.client.query(""" CREATE CONTINUOUS QUERY "totalizer" ON %s BEGIN
                         SELECT NON_NEGATIVE_DIFFERENCE(LAST("totalizer")) as value
                         INTO "raw"."sensorsData"
@@ -30,7 +43,6 @@ def onConnect(mqttclient, influxClient):
                         GROUP BY time(40s), *
                         END
                     """ % os.environ['INFLUXDB_DB'])
-
 
     influxClient.client.query(""" CREATE CONTINUOUS QUERY "totalizer_rate" ON %s
                         RESAMPLE EVERY 5m FOR 90m
@@ -42,15 +54,47 @@ def onConnect(mqttclient, influxClient):
                         END
                     """ % os.environ['INFLUXDB_DB'])
 
-def onTotalizerValue(client, userdata, msg):
+
+####################################
+# Tot value message processing
+####################################
+totalizerValueQueue = queue.Queue()
+
+
+def totalizerValueWorker():
+    while True:
+        item = totalizerValueQueue.get()
+        if item is None:
+            break
+        onTotalizerValueWork(item)
+        totalizerValueQueue.task_done()
+
+
+def onTotalizerValueWork(msg):
     try:
         value = utils.parseFloat(msg.payload)
-        tags, endpoint = utils.decodeTopic(msg.topic)
+        tags = utils.selectTags(msg.topic)
     except:
-        logger.error('The message: "%s" cannot be processed. Topic: "%s" is malformed. Ignoring data' % (msg.payload, msg.topic))
+        logger.error(
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
         return
 
-    fields = {endpoint: value}
-    tagsToSave =  ["locationId", "sensorId"]
-    measurement = "totalizerData"
-    influxDb.writeData(measurement, utils.selectTags(tagsToSave, tags), fields, retentionPolicy="raw")
+    try:
+        fields = {tags["endpoint"]: value}
+        tagsToSave = ["locationId", "sensorId"]
+        measurement = "totalizerData"
+        influxDb.writeData(measurement, utils.selectTags(
+            tagsToSave, tags), fields, retentionPolicy="raw")
+    except:
+        logger.error(
+            f'onTotalizerValueWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
+
+
+for i in range(onTotalizerValueNumWorkerThreads):
+    t = Thread(target=totalizerValueWorker)
+    t.start()
+    threads.append(t)
+
+
+def onTotalizerValue(client, userdata, msg):
+    totalizerValueQueue.put(msg)

@@ -5,10 +5,6 @@ import pickle
 import collections
 import functools
 import shutil
-import logging
-import logging.config
-
-logger = logging.getLogger()
 
 cacheFolder = "cache"
 
@@ -18,12 +14,12 @@ def clear_cache():
         shutil.rmtree(cacheFolder)
     os.makedirs(cacheFolder)
 
-def cache_disk(seconds = 3600 * 8, cache_folder=cacheFolder):
+def cache_disk(seconds = 3600, cache_folder=cacheFolder):
     def doCache(f):
         def inner_function(*args, **kwargs):
 
             # calculate a cache key based on the decorated method signature
-            key = sha1(str(f.__module__) + str(f.__name__) + str(args) + str(kwargs)).hexdigest()
+            key = sha1((str(f.__module__) + str(f.__name__) + str(args) + str(kwargs)).encode("utf-8")).hexdigest()
             filepath = os.path.join(cache_folder, key)
 
             # verify that the cached object exists and is less than $seconds old
