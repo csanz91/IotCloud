@@ -10,7 +10,6 @@ import paho.mqtt.client as mqtt
 import influx
 from docker_secrets import getDocketSecrets
 import utils
-import max_list
 import thermostat_gw
 import totalizer_gw
 from cache_decorator import clear_cache
@@ -129,21 +128,9 @@ def onValueWork(msg):
     try:
         value = utils.parseFloat(msg.payload)
         tags = utils.getTags(msg.topic)
-        sensorHash = utils.calculateSensorHash(msg.topic)
     except:
         logger.error(f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
         return
-
-    # try:
-    #     valueRange = max_list.getValueRange(influxDb, tags['locationId'], tags['sensorId'])
-    # except:
-    #     logger.error("It was not possible to calculate the values range", exc_info=True)
-    #     valueRange = None
-
-    # try:
-    #     lastValues[sensorHash].addValueSafe(value, valueRange)
-    # except ValueError:
-    #     return
 
     try:
         fields = {"value": value}
@@ -254,8 +241,6 @@ influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], u
 # Initialize the database
 init(influxDb)
 
-# Global values
-lastValues = defaultdict(lambda: max_list.MaxSizeList(10))
 
 # Constants
 clear_cache()
