@@ -12,7 +12,6 @@ from docker_secrets import getDocketSecrets
 import utils
 import thermostat_gw
 import totalizer_gw
-from cache_decorator import clear_cache
 
 # Logging setup
 logger = logging.getLogger()
@@ -241,9 +240,6 @@ influxDb = influx.InfluxClient('influxdb', database=os.environ['INFLUXDB_DB'], u
 # Initialize the database
 init(influxDb)
 
-
-# Constants
-clear_cache()
 
 # MQTT constants
 version = 'v1'
