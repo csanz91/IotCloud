@@ -3,12 +3,12 @@ services:
   grafana:
     user: $ID
     restart: always
-    image: grafana/grafana:6.3.6
+    image: grafana/grafana:latest
     ports:
       - 3000:3000
     volumes:
       - ./grafana/data:/var/lib/grafana
-      - ./grafana/config_dev:/etc/grafana
+      - ./grafana/dev/config:/etc/grafana
       - ./certs:/grafana/certs
       - ./grafana/log:/var/log/grafana
 
