@@ -388,7 +388,7 @@ def run(mqttClient):
     for device in devices.values():
         # Only run the sensors that are online
         if device.status:
-            for sensor in device.sensors.values():
+            for sensor in device.sensors.copy().values():
                 # The instance needs to be initialized
                 if sensor.instance:
                     # Pass all the states to the instance
