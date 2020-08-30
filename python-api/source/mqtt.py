@@ -11,49 +11,44 @@ import dbinterface
 from docker_secrets import getDocketSecrets
 
 logger = logging.getLogger(__name__)
-secret = getDocketSecrets('mqtt_auth_secret')
+secret = getDocketSecrets("mqtt_auth_secret")
+
 
 class MqttRoles:
-    user = 'User'
-    device = 'Device'
+    user = "User"
+    device = "Device"
     admin = "Admin"
 
 
 def raiseUnauthorized():
     raise falcon.HTTPUnauthorized(
-        'Unauthorized',
-        'The user is not authorized to access this topic.'
+        "Unauthorized", "The user is not authorized to access this topic."
     )
 
-class MqttAuth():
 
-    auth = {
-        'authDisabled': True
-    }
+class MqttAuth:
+
+    auth = {"authDisabled": True}
 
     def on_post(self, req, resp):
 
         try:
-            token = req.params['username']
+            token = req.params["username"]
             tokenData = verifyMqttToken(token)
-            assert tokenData['role']
-            logger.info(
-                "Granted MQTT connection to the user with id: %s" % token)
+            assert tokenData["role"]
+            logger.info("Granted MQTT connection to the user with id: %s" % token)
 
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
 
-class MqttAcl():
+class MqttAcl:
 
-    auth = {
-        'authDisabled': True
-    }
+    auth = {"authDisabled": True}
 
     def __init__(self, db):
         self.db = db
@@ -61,33 +56,44 @@ class MqttAcl():
     def on_post(self, req, resp):
 
         try:
-            token = req.params['username']
+            token = req.params["username"]
             tokenData = verifyMqttToken(token)
 
-            grantedRole = tokenData['role']
-            topic = req.params['topic']
+            grantedRole = tokenData["role"]
+            topic = req.params["topic"]
 
             # v1/locationId/deviceId/sensorId/...
-            subtopics = topic.split('/')
-            #version = subtopics[0]
+            subtopics = topic.split("/")
+            # version = subtopics[0]
             locationIdRequested = subtopics[1]
             deviceIdRequested = subtopics[2]
             endpoint = subtopics[-1]
-            acc = int(req.params['acc']) # 1: read only access, 2: read-write
+            acc = int(req.params["acc"])  # 1: read only access, 2: read-write
 
-            if grantedRole==MqttRoles.user:
-                role = dbinterface.selectUserLocationRole(self.db, tokenData['userId'], locationIdRequested)
-                if not role or (acc==2 and role <= Roles.viewer):
+            if grantedRole == MqttRoles.user:
+                role = dbinterface.selectUserLocationRole(
+                    self.db, tokenData["userId"], locationIdRequested
+                )
+                if not role or (acc == 2 and role <= Roles.viewer):
                     raiseUnauthorized()
 
-            elif grantedRole==MqttRoles.device:
-                grantedLocationId = tokenData['locationId']
-                grantedDeviceId = tokenData['deviceId']
+            elif grantedRole == MqttRoles.device:
+                grantedLocationId = tokenData["locationId"]
+                grantedDeviceId = tokenData["deviceId"]
 
-                if grantedLocationId != locationIdRequested or grantedDeviceId != deviceIdRequested or (acc == 2 and endpoint not in ["value", "status", "setState", "state", "ip"] and subtopics[4]!="aux"):
+                if (
+                    grantedLocationId != locationIdRequested
+                    or grantedDeviceId != deviceIdRequested
+                    or (
+                        acc == 2
+                        and endpoint
+                        not in ["value", "status", "setState", "state", "ip"]
+                        and subtopics[4] != "aux"
+                    )
+                ):
                     raiseUnauthorized()
 
-            elif grantedRole!=MqttRoles.admin:
+            elif grantedRole != MqttRoles.admin:
                 raiseUnauthorized()
 
         except falcon.HTTPUnauthorized:
@@ -95,26 +101,23 @@ class MqttAcl():
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
 
-class MqttSuperUser():
+class MqttSuperUser:
 
-    auth = {
-        'authDisabled': True
-    }
+    auth = {"authDisabled": True}
 
     def on_post(self, req, resp):
 
         try:
 
-            token = req.params['username']
+            token = req.params["username"]
             tokenData = verifyMqttToken(token)
 
-            if tokenData['role']!=MqttRoles.admin:
+            if tokenData["role"] != MqttRoles.admin:
                 raiseUnauthorized()
 
         except falcon.HTTPUnauthorized:
@@ -122,8 +125,7 @@ class MqttSuperUser():
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
@@ -131,22 +133,18 @@ class MqttSuperUser():
 def generateMqttToken(userId, role, locationId=None, deviceId=None):
 
     if role == MqttRoles.user or role == MqttRoles.admin:
-        tokenData = {"userId": userId,
-                     "exp": int(time.time())+3600*24*7}
+        tokenData = {"userId": userId, "exp": int(time.time()) + 3600 * 24 * 7}
 
     elif role == MqttRoles.device:
-        tokenData = {"issuerId": userId,
-                     "deviceId": deviceId,
-                     "locationId": locationId}
+        tokenData = {"issuerId": userId, "deviceId": deviceId, "locationId": locationId}
     else:
         return None
 
-    
     tokenData["role"] = role
-    encoded = jwt.encode(tokenData, secret, algorithm='HS256')
+    encoded = jwt.encode(tokenData, secret, algorithm="HS256")
     return encoded
 
 
 def verifyMqttToken(token):
-    decoded = jwt.decode(token, secret, algorithm='HS256')
+    decoded = jwt.decode(token, secret, algorithm="HS256")
     return decoded

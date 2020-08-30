@@ -20,8 +20,12 @@ import location_status
 
 # Logging setup
 logger = logging.getLogger()
-handler = logging.handlers.RotatingFileHandler('../logs/modules.log', mode='a', maxBytes=1024*1024*10, backupCount=2)
-formatter = logging.Formatter('%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s')
+handler = logging.handlers.RotatingFileHandler(
+    "../logs/modules.log", mode="a", maxBytes=1024 * 1024 * 10, backupCount=2
+)
+formatter = logging.Formatter(
+    "%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s"
+)
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -29,19 +33,19 @@ logger.addHandler(handler)
 ####################################
 # Helper classes
 ####################################
-class Device():
+class Device:
     def __init__(self):
         self.sensors = defaultdict(Sensor)
         self.status = False
 
 
-class Value():
+class Value:
     def __init__(self, value):
         self.value = value
         self.timestamp = int(time.time())
 
 
-class Sensor():
+class Sensor:
     def __init__(self):
         self.state = False
         self.instance = None
@@ -49,44 +53,50 @@ class Sensor():
         self.postalCode = None
         self.aux = {}
 
+
 ####################################
 # Helper functions
 ####################################
 def calculateDeviceHash(topic):
     """ Calculate the device hash from the topic
     """
-    subtopics = topic.split('/')
+    subtopics = topic.split("/")
     deviceHash = "|".join(subtopics[0:3])
     return deviceHash
 
 
 def getTags(topic):
     subtopics = topic.split("/")
-    tags = {"locationId": subtopics[1],
-            "deviceId": subtopics[2],
-            "sensorId": subtopics[3],
-            "endpoint": subtopics[-1]
-            }
+    tags = {
+        "locationId": subtopics[1],
+        "deviceId": subtopics[2],
+        "sensorId": subtopics[3],
+        "endpoint": subtopics[-1],
+    }
     return tags
+
 
 def addToQueueDelayed(queue, items, delay):
     time.sleep(delay)
     logger.info(f"Element has been put back into the queue after {delay} seconds")
     queue.put(items)
 
+
 ####################################
 # Global variables
 ####################################
 
-# This variables keeps a snapshot of the current state of all the things 
+# This variables keeps a snapshot of the current state of all the things
 # of the platform
 locationsStatus = defaultdict(location_status.LocationStatus)
 devices = defaultdict(Device)
 values = defaultdict(Value)
 
-modules = {"switch": switch_logic.Switch,
-           "thermostat": thermostat_logic.Thermostat,
-           "Toogle": toogle_logic.Toogle}
+modules = {
+    "switch": switch_logic.Switch,
+    "thermostat": thermostat_logic.Thermostat,
+    "Toogle": toogle_logic.Toogle,
+}
 
 # Keep track of all the subscriptions. In case of reconnection they
 # will be necessary to restore the subscriptions.
@@ -114,6 +124,7 @@ onAuxNumWorkerThreads = 5
 ####################################
 statusQueue = queue.Queue()
 
+
 def statusWorker():
     while True:
         item = statusQueue.get()
@@ -121,6 +132,7 @@ def statusWorker():
             break
         onStatusWork(item)
         statusQueue.task_done()
+
 
 def onStatusWork(msg):
     try:
@@ -134,7 +146,11 @@ def onStatusWork(msg):
         locationsStatus[locationId].setDeviceStatus(deviceHash, deviceStatus)
 
     except:
-        logger.error(f'onStatus message failed. message: {msg.payload}. Exception: ', exc_info=True)
+        logger.error(
+            f"onStatus message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+        )
+
 
 for i in range(onStatusNumWorkerThreads):
     t = Thread(target=statusWorker)
@@ -147,6 +163,7 @@ for i in range(onStatusNumWorkerThreads):
 ####################################
 stateQueue = queue.Queue()
 
+
 def stateWorker():
     while True:
         item = stateQueue.get()
@@ -156,13 +173,18 @@ def stateWorker():
         onStateWork(item)
         stateQueue.task_done()
 
+
 def onStateWork(msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
         sensorId = getTags(msg.topic)["sensorId"]
         devices[deviceHash].sensors[sensorId].state = utils.decodeBoolean(msg.payload)
     except:
-        logger.error(f'onState message failed. message: {msg.payload}. Exception: ', exc_info=True)
+        logger.error(
+            f"onState message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+        )
+
 
 for i in range(onStateNumWorkerThreads):
     t = Thread(target=stateWorker)
@@ -175,6 +197,7 @@ for i in range(onStateNumWorkerThreads):
 ####################################
 valueQueue = queue.Queue()
 
+
 def valueWorker():
     while True:
         item = valueQueue.get()
@@ -183,13 +206,15 @@ def valueWorker():
         onValueWork(item)
         valueQueue.task_done()
 
+
 def onValueWork(msg):
     try:
         value = float(msg.payload)
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error('The value received: %s is not valid' % value)
+        logger.error("The value received: %s is not valid" % value)
+
 
 for i in range(onValueNumWorkerThreads):
     t = Thread(target=valueWorker)
@@ -201,6 +226,7 @@ for i in range(onValueNumWorkerThreads):
 # Sensor update message processing
 ####################################
 sensorUpdateQueue = queue.Queue()
+
 
 def sensorUpdateWorker():
     while True:
@@ -214,11 +240,17 @@ def sensorUpdateWorker():
         except:
             numRetries += 1
             if numRetries < maxRetries:
-                delay = numRetries**2+10
-                logger.info(f'retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds')
-                Thread(target=addToQueueDelayed, args=(sensorUpdateQueue, (item, numRetries), delay)).start()
-        
+                delay = numRetries ** 2 + 10
+                logger.info(
+                    f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                )
+                Thread(
+                    target=addToQueueDelayed,
+                    args=(sensorUpdateQueue, (item, numRetries), delay),
+                ).start()
+
         sensorUpdateQueue.task_done()
+
 
 def onSensorUpdateWork(msg):
     """The sensor has been updated, retrieve the new data
@@ -228,14 +260,19 @@ def onSensorUpdateWork(msg):
         deviceHash = calculateDeviceHash(msg.topic)
         tags = getTags(msg.topic)
         userId = json.loads(msg.payload)
-        sensorData = api.getUserSensor(userId, tags["locationId"], tags["deviceId"], tags["sensorId"])
+        sensorData = api.getUserSensor(
+            userId, tags["locationId"], tags["deviceId"], tags["sensorId"]
+        )
 
         sensor = devices[deviceHash].sensors[tags["sensorId"]]
-        sensor.metadata = sensorData['sensorMetadata']
-        sensor.postalCode = sensorData['postalCode']
+        sensor.metadata = sensorData["sensorMetadata"]
+        sensor.postalCode = sensorData["postalCode"]
     except:
-        logger.error("Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True)
+        logger.error(
+            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+        )
         raise
+
 
 for i in range(onSensorUpdateNumWorkerThreads):
     t = Thread(target=sensorUpdateWorker)
@@ -246,6 +283,7 @@ for i in range(onSensorUpdateNumWorkerThreads):
 # Location update message processing
 ####################################
 locationUpdateQueue = queue.Queue()
+
 
 def locationUpdateWorker():
     while True:
@@ -259,11 +297,17 @@ def locationUpdateWorker():
         except:
             numRetries += 1
             if numRetries < maxRetries:
-                delay = numRetries**2+10
-                logger.info(f'retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds')
-                Thread(target=addToQueueDelayed, args=(locationUpdateQueue, (item, numRetries), delay)).start()
-        
+                delay = numRetries ** 2 + 10
+                logger.info(
+                    f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                )
+                Thread(
+                    target=addToQueueDelayed,
+                    args=(locationUpdateQueue, (item, numRetries), delay),
+                ).start()
+
         locationUpdateQueue.task_done()
+
 
 def onLocationUpdateWork(msg):
     """The location has been updated, retrieve the new data
@@ -282,12 +326,15 @@ def onLocationUpdateWork(msg):
                 deviceHash = calculateDeviceHash(f"{version}/{locationId}/{deviceId}")
                 if deviceHash in devices:
                     sensor = devices[deviceHash].sensors[sensorId]
-                    sensor.metadata = sensorData['sensorMetadata']
-                    sensor.postalCode = location['postalCode']
+                    sensor.metadata = sensorData["sensorMetadata"]
+                    sensor.postalCode = location["postalCode"]
 
     except:
-        logger.error("Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True)
+        logger.error(
+            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+        )
         raise
+
 
 for i in range(onLocationUpdateNumWorkerThreads):
     t = Thread(target=locationUpdateWorker)
@@ -299,6 +346,7 @@ for i in range(onLocationUpdateNumWorkerThreads):
 ####################################
 auxQueue = queue.Queue()
 
+
 def auxWorker():
     while True:
         items = auxQueue.get()
@@ -308,14 +356,19 @@ def auxWorker():
         try:
             onAuxWork(*item)
         except:
-            logger.error('onAux message failed. Exception: ', exc_info=True)
+            logger.error("onAux message failed. Exception: ", exc_info=True)
             numRetries += 1
             if numRetries < maxRetries:
-                delay = numRetries**2+10
-                logger.info(f'retrying onAux {numRetries}/{maxRetries} after {delay} seconds')
-                Thread(target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)).start()
+                delay = numRetries ** 2 + 10
+                logger.info(
+                    f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds"
+                )
+                Thread(
+                    target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)
+                ).start()
 
         auxQueue.task_done()
+
 
 def onAuxWork(client, msg):
 
@@ -325,17 +378,24 @@ def onAuxWork(client, msg):
     # New module. Create the instance and get the metadata from the api
     if tags["endpoint"] in modules.keys():
         if not devices[deviceHash].sensors[tags["sensorId"]].instance:
-            devices[deviceHash].sensors[tags["sensorId"]].instance = modules[tags["endpoint"]](tags, client, subscriptionsList)
-            sensorData = api.getSensor(tags["locationId"], tags["deviceId"], tags["sensorId"])
+            devices[deviceHash].sensors[tags["sensorId"]].instance = modules[
+                tags["endpoint"]
+            ](tags, client, subscriptionsList)
+            sensorData = api.getSensor(
+                tags["locationId"], tags["deviceId"], tags["sensorId"]
+            )
             if not sensorData:
                 return
             sensor = devices[deviceHash].sensors[tags["sensorId"]]
-            sensor.metadata = sensorData['sensorMetadata']
-            sensor.postalCode = sensorData['postalCode']
+            sensor.metadata = sensorData["sensorMetadata"]
+            sensor.postalCode = sensorData["postalCode"]
 
     # Add the value received to the aux dict
     else:
-        devices[deviceHash].sensors[tags["sensorId"]].aux[tags["endpoint"]] = msg.payload
+        devices[deviceHash].sensors[tags["sensorId"]].aux[
+            tags["endpoint"]
+        ] = msg.payload
+
 
 for i in range(onAuxNumWorkerThreads):
     t = Thread(target=auxWorker)
@@ -347,20 +407,25 @@ for i in range(onAuxNumWorkerThreads):
 def onStatus(client, userdata, msg):
     statusQueue.put(msg)
 
+
 def onState(client, userdata, msg):
     stateQueue.put(msg)
+
 
 def onValue(client, userdata, msg):
     valueQueue.put(msg)
 
+
 def onSensorUpdated(client, userdata, msg):
-    sensorUpdateQueue.put((msg, numRetries:=0))
+    sensorUpdateQueue.put((msg, numRetries := 0))
+
 
 def onLocationUpdated(client, userdata, msg):
-    locationUpdateQueue.put((msg, numRetries:=0))
+    locationUpdateQueue.put((msg, numRetries := 0))
+
 
 def onAux(client, userdata, msg):
-    auxQueue.put(((client,msg), numRetries:=0))
+    auxQueue.put(((client, msg), numRetries := 0))
 
 
 logger.info("Starting...")
@@ -369,7 +434,7 @@ logger.info("Starting...")
 api = iothub_api.IothubApi()
 
 # MQTT constants
-version = 'v1'
+version = "v1"
 topicHeader = f"{version}/+/+/"
 statusTopic = topicHeader + "status"
 valuesTopic = topicHeader + "+/value"
@@ -380,12 +445,12 @@ auxTopic = topicHeader + "+/aux/+"
 
 # Setup MQTT client
 mqttclient = mqtt.Client()
-token = getDocketSecrets('mqtt_token')
+token = getDocketSecrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 
 
 def run(mqttClient):
-    for device in devices.values():
+    for device in devices.copy().values():
         # Only run the sensors that are online
         if device.status:
             for sensor in device.sensors.copy().values():
@@ -434,7 +499,7 @@ def onConnect(self, mosq, obj, rc):
 mqttclient.on_connect = onConnect
 
 # Connect
-mqttclient.connect('mosquitto')
+mqttclient.connect("mosquitto")
 mqttclient.loop_forever(retry_first_connection=True)
 
 # Block until all tasks are done
