@@ -93,7 +93,10 @@ class Schedule():
         utcSunScheduleExpireTimestamp = utcSunScheduleTimestamp + datetime.timedelta(hours=24)
         if now > utcSunScheduleExpireTimestamp:
             try:
-                self.sunScheduleInfo = api.getLocationSunSchedule(self.locationId)
+                newSunScheduleInfo = api.getLocationSunSchedule(self.locationId)
+                assert float(newSunScheduleInfo["sunrise"])
+                assert float(newSunScheduleInfo["sunset"])
+                self.sunScheduleInfo = newSunScheduleInfo
             except:
                 logger.warning("Unable to recover the sunschedule. Extending the current one.")
                 # In case we are not able to recover the sun schedule:
