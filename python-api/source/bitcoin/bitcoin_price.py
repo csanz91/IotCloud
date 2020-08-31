@@ -6,24 +6,31 @@ from cache import cache_disk, clear_cache
 @cache_disk(seconds=300)
 def getCurrentPrice():
 
-    response = requests.get('https://api.coindesk.com/v1/bpi/currentprice/EUR.json')
+    response = requests.get("https://api.coindesk.com/v1/bpi/currentprice/EUR.json")
     decodedResponse = response.json()
-    price = decodedResponse['bpi']['EUR']['rate']
-    return float(price.replace(',', ''))
+    price = decodedResponse["bpi"]["EUR"]["rate"]
+    return float(price.replace(",", ""))
 
 
 @cache_disk(seconds=300)
 def getHistoricalPrice():
     today = datetime.now()
-    weekAgo = today-timedelta(days=6)
+    weekAgo = today - timedelta(days=6)
 
-    def formatDatetime(dt): return dt.strftime('%Y-%m-%d')
+    def formatDatetime(dt):
+        return dt.strftime("%Y-%m-%d")
 
-    params = {"currency": 'EUR', "start": formatDatetime(weekAgo), "end": formatDatetime(today)}
+    params = {
+        "currency": "EUR",
+        "start": formatDatetime(weekAgo),
+        "end": formatDatetime(today),
+    }
 
-    response = requests.get('https://api.coindesk.com/v1/bpi/historical/close.json', params=params)
+    response = requests.get(
+        "https://api.coindesk.com/v1/bpi/historical/close.json", params=params
+    )
     decodedResponse = response.json()
-    prices = decodedResponse['bpi']
+    prices = decodedResponse["bpi"]
     sortedDates = sorted(prices)
 
     sortedPrices = [prices[date] for date in sortedDates]
