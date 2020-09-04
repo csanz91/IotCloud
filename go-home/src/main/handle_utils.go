@@ -214,7 +214,6 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 
 func getAnalogSensorDataAttr(sensorID string) (string, error) {
 	analogType := sensorID[len(sensorID)-1:]
-	fmt.Println(analogType)
 	switch analogType {
 	case "T":
 		return "temperature", nil
