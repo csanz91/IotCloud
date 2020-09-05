@@ -4,8 +4,12 @@ import os
 from logging import handlers
 
 logger = logging.getLogger()
-handler = logging.handlers.RotatingFileHandler('../logs/server.log', mode='a', maxBytes=1024*1024*10, backupCount=2)
-formatter = logging.Formatter('%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s')
+handler = logging.handlers.RotatingFileHandler(
+    "../logs/server.log", mode="a", maxBytes=1024 * 1024 * 10, backupCount=2
+)
+formatter = logging.Formatter(
+    "%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s"
+)
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -17,12 +21,49 @@ from bson.objectid import ObjectId
 
 from docker_secrets import getDocketSecrets
 import influx
-from user_management import (Login, RecoverPassword, UserManagement)
+from user_management import Login, RecoverPassword, UserManagement
 from auth0_api import Auth0Api
-from locations import UserLocations, Locations, LocationsPermissions, LocationPermission, LocationRooms, LocationRoom
-from devices import LocationDevices, Devices, Sensors, OrderSensors, MqttDeviceToken, SensorData, SensorDataTrend, SensorDataStats, SensorStateTime, LastSeen, TotalizerStats, HourlyAccumulation, DeviceIP
-from users import Users, ValidateLocationPermissions, ChangePassword, MqttUserToken, FirebaseUserToken
-from m2m import UserSensors, FindSensor, LocationSunSchedule, SendNotification, M2MSensorData, M2MUserTags, M2MLocationDevices, M2MGetMeteoAlertsTokens
+from locations import (
+    UserLocations,
+    Locations,
+    LocationsPermissions,
+    LocationPermission,
+    LocationRooms,
+    LocationRoom,
+)
+from devices import (
+    LocationDevices,
+    Devices,
+    Sensors,
+    OrderSensors,
+    MqttDeviceToken,
+    MqttSubdeviceToken,
+    SensorData,
+    SensorDataTrend,
+    SensorDataStats,
+    SensorStateTime,
+    LastSeen,
+    TotalizerStats,
+    HourlyAccumulation,
+    DeviceIP,
+)
+from users import (
+    Users,
+    ValidateLocationPermissions,
+    ChangePassword,
+    MqttUserToken,
+    FirebaseUserToken,
+)
+from m2m import (
+    UserSensors,
+    FindSensor,
+    LocationSunSchedule,
+    SendNotification,
+    M2MSensorData,
+    M2MUserTags,
+    M2MLocationDevices,
+    M2MGetMeteoAlertsTokens,
+)
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule
 from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
@@ -33,41 +74,43 @@ from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
 
 
 cfg = {
-    'alg': ['RS256'],
-    'audience': getDocketSecrets("auth0_audience"),
-    'domain': getDocketSecrets("auth0_full_domain"),
-    'jwks_uri': getDocketSecrets("auth0_jwks_uri")
+    "alg": ["RS256"],
+    "audience": getDocketSecrets("auth0_audience"),
+    "domain": getDocketSecrets("auth0_full_domain"),
+    "jwks_uri": getDocketSecrets("auth0_jwks_uri"),
 }
 
 claims = {
-    'email_verified': 'verified',
-    'email': 'email',
-    'clientID': 'id',
-    'updated_at': 'updated',
-    'name': 'name',
-    'picture': 'avatar',
-    'user_id': 'user_id',
-    'nickname': 'profile_name',
-    'identities': 'profiles',
-    'created_at': 'created',
-    'scope': 'scope',
-    'iss': 'issuer',
-    'sub': 'subject',
-    'aud': 'audience',
-    'iat': 'issued',
-    'exp': 'expires',
-    'gty': 'grant_type',
-    'at_hash': 'hash',
-    'nonce': 'its_a_secret_to_everyone'
+    "email_verified": "verified",
+    "email": "email",
+    "clientID": "id",
+    "updated_at": "updated",
+    "name": "name",
+    "picture": "avatar",
+    "user_id": "user_id",
+    "nickname": "profile_name",
+    "identities": "profiles",
+    "created_at": "created",
+    "scope": "scope",
+    "iss": "issuer",
+    "sub": "subject",
+    "aud": "audience",
+    "iat": "issued",
+    "exp": "expires",
+    "gty": "grant_type",
+    "at_hash": "hash",
+    "nonce": "its_a_secret_to_everyone",
 }
 
 
 ##############################################
 # Data Connection
 ##############################################
-client = MongoClient(os.environ['MONGODB_HOST'])
+client = MongoClient(os.environ["MONGODB_HOST"])
 db = client.data
-influx_client = influx.InfluxDBClient(database=os.environ['INFLUXDB_DB'], host=os.environ['INFLUXDB_HOST'])
+influx_client = influx.InfluxDBClient(
+    database=os.environ["INFLUXDB_DB"], host=os.environ["INFLUXDB_HOST"]
+)
 
 ##############################################
 # Auth Server Connection
@@ -90,7 +133,9 @@ app.add_route("/api/v1/user", UserManagement(db, auth0))
 
 app.add_route("/api/v1/users/{userId}", Users(db, auth0))
 app.add_route("/api/v1/users/{userId}/changepassword", ChangePassword(auth0))
-app.add_route("/api/v1/users/{userId}/permissionvalidation", ValidateLocationPermissions(db))
+app.add_route(
+    "/api/v1/users/{userId}/permissionvalidation", ValidateLocationPermissions(db)
+)
 app.add_route("/api/v1/users/{userId}/mqttauth", MqttUserToken())
 app.add_route("/api/v1/users/{userId}/locations", UserLocations(db))
 app.add_route("/api/v1/users/{userId}/weather", Weather())
@@ -102,28 +147,81 @@ app.add_route("/api/v1/users/{userId}/bitcoin/historical", BitcoinHistorical())
 app.add_route("/api/v1/users/{userId}/bitcoin", BitcoinPrice())
 app.add_route("/api/v1/users/{userId}/firebasetoken", FirebaseUserToken(db))
 app.add_route("/api/v1/users/{userId}/locations/{locationId}", Locations(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices", LocationDevices(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/permissions", LocationsPermissions(db))
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices", LocationDevices(db)
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db)
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/permissions",
+    LocationsPermissions(db),
+)
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/rooms", LocationRooms(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/rooms/{roomId}", LocationRoom(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}", Devices(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/mqttauth", MqttDeviceToken(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/lastseen", LastSeen(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/deviceip", DeviceIP(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", Sensors(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdata/{sensorId}", SensorData(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdatatrend/{sensorId}", SensorDataTrend(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdatastats/{sensorId}", SensorDataStats(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsstatetime/{sensorId}", SensorStateTime(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/totalizerstats/{sensorId}", TotalizerStats(influx_client, db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/hourlyaccumulation/{sensorId}", HourlyAccumulation(influx_client, db))
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/rooms/{roomId}", LocationRoom(db)
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}", Devices(db)
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/mqttauth",
+    MqttDeviceToken(db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/subdevice/mqttauth",
+    MqttSubdeviceToken(db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/lastseen",
+    LastSeen(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/deviceip",
+    DeviceIP(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}",
+    Sensors(db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdata/{sensorId}",
+    SensorData(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdatatrend/{sensorId}",
+    SensorDataTrend(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdatastats/{sensorId}",
+    SensorDataStats(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsstatetime/{sensorId}",
+    SensorStateTime(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/totalizerstats/{sensorId}",
+    TotalizerStats(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/hourlyaccumulation/{sensorId}",
+    HourlyAccumulation(influx_client, db),
+)
 
 app.add_route("/api/v1/locations/{locationId}/sunschedule", LocationSunSchedule(db))
-app.add_route("/api/v1/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", FindSensor(db))
-app.add_route("/api/v1/locations/{locationId}/locationnotification", SendNotification(db))
+app.add_route(
+    "/api/v1/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}",
+    FindSensor(db),
+)
+app.add_route(
+    "/api/v1/locations/{locationId}/locationnotification", SendNotification(db)
+)
 app.add_route("/api/v1/locations/{locationId}/devices", M2MLocationDevices(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}/m2msensorsdata/{sensorId}", M2MSensorData(influx_client, db))
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/m2msensorsdata/{sensorId}",
+    M2MSensorData(influx_client, db),
+)
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/tags", M2MUserTags(db))
 app.add_route("/api/v1/meteoalerts/tokens", M2MGetMeteoAlertsTokens(db))
 

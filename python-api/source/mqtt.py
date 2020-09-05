@@ -17,6 +17,7 @@ secret = getDocketSecrets("mqtt_auth_secret")
 class MqttRoles:
     user = "User"
     device = "Device"
+    subdevice = "Subdevice"
     admin = "Admin"
 
 
@@ -92,6 +93,25 @@ class MqttAcl:
                     )
                 ):
                     raiseUnauthorized()
+            elif grantedRole == MqttRoles.subdevice:
+                grantedLocationId = tokenData["locationId"]
+                grantedDeviceId = tokenData["deviceId"]
+                grantedSubdeviceId = tokenData["subdeviceId"]
+
+                if (
+                    grantedLocationId != locationIdRequested
+                    or (
+                        grantedDeviceId != deviceIdRequested
+                        and grantedSubdeviceId != deviceIdRequested
+                    )
+                    or (
+                        acc == 2
+                        and endpoint
+                        not in ["value", "status", "setState", "state", "ip"]
+                        and subtopics[4] != "aux"
+                    )
+                ):
+                    raiseUnauthorized()
 
             elif grantedRole != MqttRoles.admin:
                 raiseUnauthorized()
@@ -130,13 +150,20 @@ class MqttSuperUser:
         resp.media = api_utils.getResponseModel(True)
 
 
-def generateMqttToken(userId, role, locationId=None, deviceId=None):
+def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=None):
 
     if role == MqttRoles.user or role == MqttRoles.admin:
         tokenData = {"userId": userId, "exp": int(time.time()) + 3600 * 24 * 7}
 
     elif role == MqttRoles.device:
         tokenData = {"issuerId": userId, "deviceId": deviceId, "locationId": locationId}
+    elif role == MqttRoles.subdevice:
+        tokenData = {
+            "issuerId": userId,
+            "deviceId": deviceId,
+            "subdeviceId": subdeviceId,
+            "locationId": locationId,
+        }
     else:
         return None
 
