@@ -28,6 +28,16 @@ var ToogleType = GoogleDeviceType{
 	Traits: []string{"action.devices.traits.OpenClose"},
 }
 
+// TvType : Google Device definition for our TV types
+var TvType = GoogleDeviceType{
+	Type: "action.devices.types.TV",
+	Traits: []string{
+		"action.devices.traits.InputSelector",
+		"action.devices.traits.OnOff",
+		"action.devices.traits.Volume",
+		"action.devices.traits.TransportControl"},
+}
+
 // dataTypesSupported : Struct for a dataTypesSupported model
 type dataTypesSupported struct {
 	Name              string                 `json:"name"`
@@ -77,6 +87,8 @@ func GetGoogleDeviceType(apiType string) (GoogleDeviceType, error) {
 		return RGBType, nil
 	case "led":
 		return LEDType, nil
+	case "TV":
+		return TvType, nil
 	default:
 		return GoogleDeviceType{}, errors.New("Device type not supported")
 	}

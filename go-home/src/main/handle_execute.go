@@ -132,6 +132,49 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
 					}
 
+				} else if execution.Command == "action.devices.commands.SetInput" ||
+					execution.Command == "action.devices.commands.NextInput" ||
+					execution.Command == "action.devices.commands.PreviousInput" {
+
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "command", "SOURCE", false); err == nil {
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+					} else {
+						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+					}
+
+				} else if execution.Command == "action.devices.commands.mediaPause" {
+
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "command", "PAUSE", false); err == nil {
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+					} else {
+						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+					}
+
+				} else if execution.Command == "action.devices.commands.mediaResume" {
+
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "command", "PLAY", false); err == nil {
+						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+					} else {
+						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+					}
+
+				} else if execution.Command == "action.devices.commands.volumeRelative" {
+					up := execution.Params["relativeSteps"].(float64) > 0.0
+
+					if up {
+						if err := mqtt.SetAux(locationID, deviceID, sensorID, "command", "UP", false); err == nil {
+							responsesModels["pending"] = addID(responsesModels["pending"], ID)
+						} else {
+							responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+						}
+					} else {
+						if err := mqtt.SetAux(locationID, deviceID, sensorID, "command", "DOWN", false); err == nil {
+							responsesModels["pending"] = addID(responsesModels["pending"], ID)
+						} else {
+							responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+						}
+					}
+
 				} else {
 					model.ReturnAPIErrorNotSupported(w, dfReq.RequestID)
 					return
