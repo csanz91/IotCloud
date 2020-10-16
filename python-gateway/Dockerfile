@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 COPY ./ /app
 
 # Generate logs folder if it doesn't exist
-RUN mkdir /logs
+RUN mkdir /app/logs
 
 WORKDIR /app/source
 CMD [ "./run_gateway.sh" ] 
