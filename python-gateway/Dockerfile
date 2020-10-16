@@ -11,5 +11,8 @@ RUN pip install -r requirements.txt
 # Bundle app source
 COPY ./ /app
 
+# Generate logs folder if it doesn't exist
+RUN mkdir /logs
+
 WORKDIR /app/source
 CMD [ "./run_gateway.sh" ] 
