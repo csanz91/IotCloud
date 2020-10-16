@@ -23,7 +23,7 @@ onThermostatValueNumWorkerThreads = 3
 onHeatingNumWorkerThreads = 3
 
 # MQTT constants
-version = 'v1'
+version = "v1"
 topicHeader = "{version}/+/+/+/aux/".format(version=version)
 tempReferenceTopic = topicHeader + "tempReference"
 heatingTopic = topicHeader + "heating"
@@ -66,24 +66,26 @@ def onThermostatValueWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+        )
         return
 
     try:
         fields = {tags["endpoint"]: value}
         tagsToSave = ["locationId", "sensorId"]
         measurement = "thermostatData"
-        influxDb.writeData(measurement, utils.selectTags(
-            tagsToSave, tags), fields, retentionPolicy="3years")
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
     except:
         logger.error(
-            f'onThermostatValueWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
+            f"onThermostatValueWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+        )
 
-
-for i in range(onThermostatValueNumWorkerThreads):
-    t = Thread(target=thermostatValueWorker)
-    t.start()
-    threads.append(t)
 
 #############################################
 # Heating message processing
@@ -107,24 +109,25 @@ def onHeatingWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data')
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+        )
         return
 
     try:
         fields = {"heating": heating}
         tagsToSave = ["locationId", "sensorId"]
         measurement = "thermostatData"
-        influxDb.writeData(measurement, utils.selectTags(
-            tagsToSave, tags), fields, retentionPolicy="3years")
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
     except:
         logger.error(
-            f'onHeatingWork message failed. message: {msg.payload}. Exception: ', exc_info=True)
-
-
-for i in range(onHeatingNumWorkerThreads):
-    t = Thread(target=heatingWorker)
-    t.start()
-    threads.append(t)
+            f"onHeatingWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+        )
 
 
 def onThermostatValue(client, userdata, msg):
@@ -133,3 +136,26 @@ def onThermostatValue(client, userdata, msg):
 
 def onHeating(client, userdata, msg):
     heatingQueue.put(msg)
+
+
+def startThreads():
+    for _ in range(onThermostatValueNumWorkerThreads):
+        t = Thread(target=thermostatValueWorker)
+        t.start()
+        threads.append(t)
+
+    for _ in range(onHeatingNumWorkerThreads):
+        t = Thread(target=heatingWorker)
+        t.start()
+        threads.append(t)
+
+
+def stopThreads():
+    for _ in range(onThermostatValueNumWorkerThreads):
+        thermostatValueQueue.put(None)
+
+    for _ in range(onHeatingNumWorkerThreads):
+        heatingQueue.put(None)
+
+    for t in threads:
+        t.join()

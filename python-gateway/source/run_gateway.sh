@@ -5,6 +5,7 @@ do
   date
   echo "--- Start Gateway"
   python gateway.py
+  echo "--- Gateway Stopped"
   RET=$?
   if [ ${RET} -ne 0 ];
   then
