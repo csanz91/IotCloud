@@ -87,23 +87,17 @@ type OptionElement struct {
 
 // DeviceProperties : Struct for a Command execution model
 type DeviceProperties struct {
-	ON                                bool          `json:"on"`
-	Online                            bool          `json:"online"`
-	Brightness                        int           `json:"brightness"`
-	Color                             uint64        `json:"spectrumRgb"`
-	ThermostatMode                    string        `json:"thermostatMode"`
-	ThermostatTemperatureSetpoint     float32       `json:"thermostatTemperatureSetpoint"`
-	ThermostatTemperatureAmbient      float32       `json:"thermostatTemperatureAmbient"`
-	ThermostatHumidityAmbient         float32       `json:"thermostatHumidityAmbient"`
-	TemperatureSetpointCelsius        float32       `json:"temperatureSetpointCelsius"`
-	TemperatureAmbientCelsius         float32       `json:"temperatureAmbientCelsius"`
-	HumidityAmbientPercent            float32       `json:"humidityAmbientPercent"`
-	AvailableInputs                   OptionElement `json:"availableInputs"`
-	CommandOnlyInputSelector          bool          `json:"commandOnlyInputSelector"`
-	TransportControlSupportedCommands []string      `json:"transportControlSupportedCommands"`
-	CommandOnlyVolume                 bool          `json:"commandOnlyVolume"`
-	VolumeMaxLevel                    int           `json:"volumeMaxLevel"`
-	VolumeDefaultPercentage           int           `json:"volumeDefaultPercentage"`
+	ON                            bool    `json:"on"`
+	Online                        bool    `json:"online"`
+	Brightness                    int     `json:"brightness"`
+	Color                         uint64  `json:"spectrumRgb"`
+	ThermostatMode                string  `json:"thermostatMode"`
+	ThermostatTemperatureSetpoint float32 `json:"thermostatTemperatureSetpoint"`
+	ThermostatTemperatureAmbient  float32 `json:"thermostatTemperatureAmbient"`
+	ThermostatHumidityAmbient     float32 `json:"thermostatHumidityAmbient"`
+	TemperatureSetpointCelsius    float32 `json:"temperatureSetpointCelsius"`
+	TemperatureAmbientCelsius     float32 `json:"temperatureAmbientCelsius"`
+	HumidityAmbientPercent        float32 `json:"humidityAmbientPercent"`
 }
 
 // DevicePropertyColor : Struct for a Command execution model

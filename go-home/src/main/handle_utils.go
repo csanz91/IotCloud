@@ -207,28 +207,6 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 			intColor = 0
 		}
 		deviceProperties.Color = intColor
-	} else if deviceType == "TV" {
-		deviceProperties.AvailableInputs = model.OptionElement{
-			Key: "HDMI",
-			Names: []model.LocalizedOption{
-				model.LocalizedOption{
-					Lang:        "en",
-					NameSynonym: []string{"HDMI"},
-				},
-			},
-		}
-
-		deviceProperties.CommandOnlyInputSelector = true
-
-		deviceProperties.TransportControlSupportedCommands = []string{
-			"PAUSE",
-			"RESUME",
-		}
-
-		deviceProperties.CommandOnlyVolume = true
-		deviceProperties.VolumeMaxLevel = 50
-		deviceProperties.VolumeDefaultPercentage = 10
-
 	}
 	return deviceProperties, nil
 }

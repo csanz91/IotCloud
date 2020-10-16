@@ -36,6 +36,26 @@ var TvType = GoogleDeviceType{
 		"action.devices.traits.OnOff",
 		"action.devices.traits.Volume",
 		"action.devices.traits.TransportControl"},
+	Attributes: map[string]interface{}{
+		"commandOnlyVolume":        true,
+		"commandOnlyOnOff":         true,
+		"commandOnlyInputSelector": true,
+		"volumeMaxLevel":           50,
+		"volumeDefaultPercentage":  10,
+		"transportControlSupportedCommands": []string{
+			"PAUSE",
+			"RESUME",
+		},
+		"availableInputs": OptionElement{
+			Key: "HDMI",
+			Names: []LocalizedOption{
+				LocalizedOption{
+					Lang:        "en",
+					NameSynonym: []string{"HDMI"},
+				},
+			},
+		},
+	},
 }
 
 // dataTypesSupported : Struct for a dataTypesSupported model

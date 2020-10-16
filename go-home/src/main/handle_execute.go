@@ -75,11 +75,20 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 
 				// Set device state
 				if execution.Command == "action.devices.commands.OnOff" {
-					newState := execution.Params["on"].(bool)
-					if err := mqtt.SetState(locationID, deviceID, sensorID, newState); err == nil {
-						responsesModels["pending"] = addID(responsesModels["pending"], ID)
+
+					if deviceType == "TV" {
+						if err := mqtt.SetAux(locationID, deviceID, sensorID, "setToogle", "toogle", false); err == nil {
+							responsesModels["pending"] = addID(responsesModels["pending"], ID)
+						} else {
+							responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+						}
 					} else {
-						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+						newState := execution.Params["on"].(bool)
+						if err := mqtt.SetState(locationID, deviceID, sensorID, newState); err == nil {
+							responsesModels["pending"] = addID(responsesModels["pending"], ID)
+						} else {
+							responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
+						}
 					}
 
 					// Toogle
