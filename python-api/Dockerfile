@@ -11,6 +11,12 @@ RUN pip install -r requirements.txt
 # Bundle app source
 COPY ./ /app
 
+# Generate logs folder if it doesn't exist
+RUN mkdir -p /app/logs
+
+# Generate cache folder if it doesn't exist
+RUN mkdir -p /app/cache
+
 WORKDIR /app/source
 
 EXPOSE 5000
