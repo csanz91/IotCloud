@@ -4,14 +4,13 @@ import falcon
 
 import api_utils
 from api_utils import checkUser
-import bitcoin_price
+from . import bitcoin_price
 import time
 
 logger = logging.getLogger(__name__)
 
 
-class BitcoinCurrent():
-
+class BitcoinCurrent:
     @checkUser
     def on_get(self, req, resp, userId):
 
@@ -20,14 +19,14 @@ class BitcoinCurrent():
 
         except:
             logger.error("Exception. userId: %s." % userId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = api_utils.getResponseModel(True, result)
 
 
-class BitcoinHistorical():
-
+class BitcoinHistorical:
     @checkUser
     def on_get(self, req, resp, userId):
 
@@ -36,13 +35,14 @@ class BitcoinHistorical():
 
         except:
             logger.error("Exception. userId: %s." % userId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = api_utils.getResponseModel(True, result)
 
 
-class BitcoinPrice():
+class BitcoinPrice:
     @checkUser
     def on_get(self, req, resp, userId):
 
@@ -50,11 +50,16 @@ class BitcoinPrice():
             historicalPrice = bitcoin_price.getHistoricalPrice()
             currentPrice = bitcoin_price.getCurrentPrice()
 
-            data = {'current': currentPrice, 'hist': historicalPrice, 'lastUpdate': int(time.time())}
+            data = {
+                "current": currentPrice,
+                "hist": historicalPrice,
+                "lastUpdate": int(time.time()),
+            }
 
         except:
             logger.error("Exception. userId: %s." % userId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = api_utils.getResponseModel(True, data)

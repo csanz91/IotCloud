@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:3.8
 
 # Create app directory
 WORKDIR /app
@@ -14,4 +14,4 @@ COPY ./ /app
 WORKDIR /app/source
 
 EXPOSE 5000
-CMD ["gunicorn", "--workers", "1", "--threads", "6", "-b", "0.0.0.0:5000", "api:app", "--reload"]
+CMD ["gunicorn", "--workers", "3", "--threads", "3", "-b", "0.0.0.0:5000", "api:app", "--reload"]

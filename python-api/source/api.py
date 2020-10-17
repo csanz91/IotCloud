@@ -62,7 +62,6 @@ from m2m import (
     M2MSensorData,
     M2MUserTags,
     M2MLocationDevices,
-    M2MGetMeteoAlertsTokens,
 )
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule
@@ -223,8 +222,6 @@ app.add_route(
     M2MSensorData(influx_client, db),
 )
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/tags", M2MUserTags(db))
-app.add_route("/api/v1/meteoalerts/tokens", M2MGetMeteoAlertsTokens(db))
-
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())
