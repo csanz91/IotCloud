@@ -13,8 +13,7 @@ import weather
 logger = logging.getLogger(__name__)
 
 
-class FindSensor():
-
+class FindSensor:
     def __init__(self, db):
         self.db = db
 
@@ -26,15 +25,13 @@ class FindSensor():
         except:
             logger.error("Exception. sensorId: %s" % (sensorId), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, sensor)
 
 
-class UserSensors():
-
+class UserSensors:
     def __init__(self, db):
         self.db = db
 
@@ -46,15 +43,13 @@ class UserSensors():
         except:
             logger.error("Exception. userId: %s" % (userId), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, sensors)
 
 
-class LocationSunSchedule():
-
+class LocationSunSchedule:
     def __init__(self, db):
         self.db = db
 
@@ -68,14 +63,14 @@ class LocationSunSchedule():
 
         except:
             logger.error("Exception. locationId: %s." % locationId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = result
 
 
-class SendNotification():
-
+class SendNotification:
     def __init__(self, db):
         self.db = db
 
@@ -84,31 +79,44 @@ class SendNotification():
 
         try:
             # Extract the request data
-            notificationTitle = req.media['notificationTitle']
-            notificationTitleArgs = req.media['notificationTitleArgs']
-            notificationBody = req.media['notificationBody']
-            notificationBodyArgs = req.media['notificationBodyArgs']
+            notificationTitle = req.media["notificationTitle"]
+            notificationTitleArgs = req.media["notificationTitleArgs"]
+            notificationBody = req.media["notificationBody"]
+            notificationBodyArgs = req.media["notificationBodyArgs"]
 
             # Get the user token and the location from the API
             firebaseTokens = dbinterface.getUserFirebaseToken(self.db, locationId)
             location = dbinterface.findLocation(self.db, locationId)
 
             # Generate the localization args
-            notificationTitleInterpolated = [arg % location for arg in notificationTitleArgs]
-            notificationBodyInterpolated = [arg % location for arg in notificationBodyArgs]
+            notificationTitleInterpolated = [
+                arg % location for arg in notificationTitleArgs
+            ]
+            notificationBodyInterpolated = [
+                arg % location for arg in notificationBodyArgs
+            ]
 
             # Send the notification to all the users
             for firebaseToken in firebaseTokens:
-                firebase_notifications.sendLocationNotification(locationId, notificationTitle, notificationBody, firebaseToken, notificationBodyArgs=notificationBodyInterpolated, notificationTitleArgs=notificationTitleInterpolated)
+                firebase_notifications.sendLocationNotification(
+                    locationId,
+                    notificationTitle,
+                    notificationBody,
+                    firebaseToken,
+                    notificationBodyArgs=notificationBodyInterpolated,
+                    notificationTitleArgs=notificationTitleInterpolated,
+                )
 
         except:
             logger.error("Exception. locationId: %s." % locationId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = api_utils.getResponseModel(True)
 
-class M2MSensorData():
+
+class M2MSensorData:
     def __init__(self, influxdb, mongodb):
         self.influxdb = influxdb
         self.db = mongodb
@@ -120,27 +128,42 @@ class M2MSensorData():
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                'Unauthorized',
-                'The user is not authorized to retrive this data.'
+                "Unauthorized", "The user is not authorized to retrive this data."
             )
 
         try:
-            fromDate = calendar.timegm(parse(req.media['from']).timetuple())
-            toDate = calendar.timegm(parse(req.media['to']).timetuple())
-            data = influxdb_interface.getData(self.influxdb, locationId, sensorId, fromDate, toDate, req.media['maxDataPoints'])
+            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
+            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            data = influxdb_interface.getData(
+                self.influxdb,
+                locationId,
+                sensorId,
+                fromDate,
+                toDate,
+                req.media["maxDataPoints"],
+            )
 
-            processedData = [[value["value"], calendar.timegm(parse(value["time"]).timetuple())*1000] for value in data]
+            processedData = [
+                [
+                    value["value"],
+                    calendar.timegm(parse(value["time"]).timetuple()) * 1000,
+                ]
+                for value in data
+            ]
 
         except:
-            logger.error("Exception. userId: %s, locationId %s" % (userId, locationId), exc_info=True)
+            logger.error(
+                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                exc_info=True,
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
 
-class M2MUserTags():
+
+class M2MUserTags:
     def __init__(self, mongodb):
         self.db = mongodb
 
@@ -148,7 +171,9 @@ class M2MUserTags():
     def on_get(self, req, resp, userId, locationId):
 
         try:
-            userLocations = dbinterface.selectLocations(self.db, userId, includeInherited=True)
+            userLocations = dbinterface.selectLocations(
+                self.db, userId, includeInherited=True
+            )
 
             locationTags = []
             deviceTags = []
@@ -157,28 +182,38 @@ class M2MUserTags():
                 # Filter the objects by location
                 if locationId != "*" and locationId != location["_id"]:
                     continue
-                locationTags.append({"text": location["locationName"], "value": location["_id"]})
+                locationTags.append(
+                    {"text": location["locationName"], "value": location["_id"]}
+                )
                 for device in location["devices"]:
-                    deviceTags.append({"text": device["deviceId"], "value": device["deviceId"]})
-                    for sensor in device['sensors']:
+                    deviceTags.append(
+                        {"text": device["deviceId"], "value": device["deviceId"]}
+                    )
+                    for sensor in device["sensors"]:
                         if sensor["sensorType"] in ["analog", "thermostat"]:
-                            sensorTags.append({"text": sensor["sensorName"], "value": sensor["sensorId"]})
+                            sensorTags.append(
+                                {
+                                    "text": sensor["sensorName"],
+                                    "value": sensor["sensorId"],
+                                }
+                            )
 
-            response = {"locationTags": locationTags, 
-                        "deviceTags": deviceTags, 
-                        "sensorTags": sensorTags}
+            response = {
+                "locationTags": locationTags,
+                "deviceTags": deviceTags,
+                "sensorTags": sensorTags,
+            }
 
         except:
             logger.error("Exception. userId: %s" % (userId), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, response)
 
-class M2MLocationDevices():
 
+class M2MLocationDevices:
     def __init__(self, db):
         self.db = db
 
@@ -190,28 +225,7 @@ class M2MLocationDevices():
         except:
             logger.error("Exception. locationId: %s" % (locationId), exc_info=True)
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, location)
-
-
-class M2MGetMeteoAlertsTokens():
-
-    def __init__(self, db):
-        self.db = db
-
-    @m2mValidation
-    def on_get(self, req, resp):
-
-        try:
-            result = dbinterface.getMeteoAlertsFirebaseTokens(self.db)
-        except:
-            logger.error("Exception.", exc_info=True)
-            raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
-            )
-
-        resp.media = getResponseModel(True, result)

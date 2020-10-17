@@ -5,6 +5,7 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
 def getRP(initialTimestamp, finalTimestamp):
     now = int(time.time())
     intervalSeconds = finalTimestamp - initialTimestamp
@@ -22,21 +23,30 @@ def getRP(initialTimestamp, finalTimestamp):
     return rp
 
 
-def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=200):
+def getData(
+    influxClient, locationId, sensorId, initialTimestamp, finalTimestamp, maxValues=200
+):
 
     intervalSeconds = finalTimestamp - initialTimestamp
-    groupBySeconds = max(-(-intervalSeconds / maxValues-1), 1)
+    groupBySeconds = max(-(-intervalSeconds / maxValues - 1), 1)
 
     rp = getRP(initialTimestamp, finalTimestamp)
 
-    query = ''' SELECT 
+    query = """ SELECT 
                     mean("value") as value
-                FROM %s WHERE 
+                FROM %s WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 GROUP BY
                     time(%is)
                 FILL(none)
-                ''' % (rp, locationId, sensorId, initialTimestamp, finalTimestamp, groupBySeconds)
+                """ % (
+        rp,
+        locationId,
+        sensorId,
+        initialTimestamp,
+        finalTimestamp,
+        groupBySeconds,
+    )
 
     results = influxClient.query(query)
     if not results:
@@ -44,19 +54,26 @@ def getData(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
 
     valuesList = list(results.get_points())
     return valuesList
+
 
 def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp):
 
     rp = getRP(initialTimestamp, finalTimestamp)
 
-    query = ''' SELECT 
+    query = """ SELECT 
                     mean("value") as mean,
                     min("value") as min,
                     max("value") as max
-                FROM %s WHERE 
+                FROM %s WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 FILL(none)
-                ''' % (rp, locationId, sensorId, initialTimestamp, finalTimestamp)
+                """ % (
+        rp,
+        locationId,
+        sensorId,
+        initialTimestamp,
+        finalTimestamp,
+    )
 
     results = influxClient.query(query)
     if not results:
@@ -65,13 +82,17 @@ def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestam
     valuesList = list(results.get_points())
     return valuesList
 
+
 def getDeviceLastTimeSeen(influxClient, locationId, deviceId):
 
-    query = ''' SELECT 
+    query = """ SELECT 
                     last(status) as lastStatus
-                FROM "3years"."sensorsData" WHERE 
+                FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND deviceId='%s'
-                ''' % (locationId, deviceId)
+                """ % (
+        locationId,
+        deviceId,
+    )
 
     statusResults = influxClient.query(query)
     if not statusResults:
@@ -79,53 +100,72 @@ def getDeviceLastTimeSeen(influxClient, locationId, deviceId):
 
     lastStatusSeen = list(statusResults.get_points())[0]
     # If the device is online, return the current timestamp
-    if lastStatusSeen['lastStatus']:
+    if lastStatusSeen["lastStatus"]:
         return int(time.time())
 
     # Otherwise, return the timestamp when the device disconnected
-    lastStatusSeenTimestamp = calendar.timegm(parser.parse(lastStatusSeen["time"]).timetuple())
+    lastStatusSeenTimestamp = calendar.timegm(
+        parser.parse(lastStatusSeen["time"]).timetuple()
+    )
     return lastStatusSeenTimestamp
 
-def getStateTime(influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp):
+
+def getStateTime(
+    influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp
+):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
     # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
     # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and 
+    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
     # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24 # Go back 1 day
+    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
 
-    query = ''' SELECT 
+    query = """ SELECT 
                     state
-                FROM "3years"."sensorsData" WHERE 
+                FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 ORDER BY
                     time DESC
-                ''' % (locationId, sensorId, initialTimestampPrev, finalTimestamp)
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestampPrev,
+        finalTimestamp,
+    )
 
     results = influxClient.query(query)
     return calculateActiveTime(results, initialTimestamp, finalTimestamp)
-    
-def getHeatingTime(influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp):
+
+
+def getHeatingTime(
+    influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp
+):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
     # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
     # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and 
+    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
     # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24 # Go back 1 day
+    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
 
-    query = ''' SELECT 
+    query = """ SELECT 
                     heating as state
-                FROM "3years"."thermostatData" WHERE 
+                FROM "3years"."thermostatData" WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 ORDER BY
                     time DESC
-                ''' % (locationId, sensorId, initialTimestampPrev, finalTimestamp)
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestampPrev,
+        finalTimestamp,
+    )
 
     results = influxClient.query(query)
     return calculateActiveTime(results, initialTimestamp, finalTimestamp)
-    
+
+
 def calculateActiveTime(results, initialTimestamp, finalTimestamp):
 
     if not results:
@@ -133,20 +173,20 @@ def calculateActiveTime(results, initialTimestamp, finalTimestamp):
 
     states = list(results.get_points())
 
-    activeTime = 0    
+    activeTime = 0
     previousStateTimestamp = finalTimestamp
     for statePoint in states:
         timestamp = calendar.timegm(parser.parse(statePoint["time"]).timetuple())
         state = bool(statePoint["state"])
 
-        if timestamp<=initialTimestamp:
+        if timestamp <= initialTimestamp:
             if state:
                 activeTime += previousStateTimestamp - initialTimestamp
             break
 
         if state:
             activeTime += previousStateTimestamp - timestamp
-            
+
         previousStateTimestamp = timestamp
 
     return activeTime
@@ -154,11 +194,14 @@ def calculateActiveTime(results, initialTimestamp, finalTimestamp):
 
 def getTotalizerCurrentRate(influxClient, locationId, sensorId):
 
-    query = ''' SELECT
+    query = """ SELECT
                     LAST("rate") as rate
-                FROM totalizerData WHERE 
+                FROM totalizerData WHERE
                     locationId='%s' AND sensorId='%s' AND time>= NOW() - 12h
-            ''' % (locationId, sensorId)
+            """ % (
+        locationId,
+        sensorId,
+    )
 
     results = influxClient.query(query)
     if not results:
@@ -166,14 +209,18 @@ def getTotalizerCurrentRate(influxClient, locationId, sensorId):
 
     valuesList = list(results.get_points())
     return valuesList
+
 
 def getTotalizerTrendRate(influxClient, locationId, sensorId):
 
-    query = ''' SELECT
+    query = """ SELECT
                     rate
-                FROM totalizerData WHERE 
+                FROM totalizerData WHERE
                     locationId='%s' AND sensorId='%s' AND time>= NOW() - 6h
-            ''' % (locationId, sensorId)
+            """ % (
+        locationId,
+        sensorId,
+    )
 
     results = influxClient.query(query)
     if not results:
@@ -182,17 +229,25 @@ def getTotalizerTrendRate(influxClient, locationId, sensorId):
     valuesList = list(results.get_points())
     return valuesList
 
-def getHourlyAccumulation(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp):
 
-    query = ''' SELECT 
+def getHourlyAccumulation(
+    influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
+):
+
+    query = """ SELECT 
                     SUM("value") as value
-                FROM sensorsData WHERE 
+                FROM sensorsData WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
                 GROUP BY
                     time(1h)
-                ORDER BY 
+                ORDER BY
                     time DESC
-                ''' % (locationId, sensorId, initialTimestamp, finalTimestamp)
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+        finalTimestamp,
+    )
 
     results = influxClient.query(query)
     if not results:
@@ -201,18 +256,22 @@ def getHourlyAccumulation(influxClient, locationId, sensorId, initialTimestamp, 
     valuesList = list(results.get_points())
     return valuesList
 
+
 def getDeviceIP(influxClient, locationId, deviceId):
 
-    query = ''' SELECT 
+    query = """ SELECT 
                      last(IP) as IP
-                FROM "raw"."devicesIPs" WHERE 
+                FROM "raw"."devicesIPs" WHERE
                     locationId='%s' AND deviceId='%s'
-                ''' % (locationId, deviceId)
+                """ % (
+        locationId,
+        deviceId,
+    )
 
     results = influxClient.query(query)
     if not results:
         return 0
 
     ip = list(results.get_points())[0]["IP"]
-   
+
     return ip
