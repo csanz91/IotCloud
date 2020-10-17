@@ -8,7 +8,6 @@ falcon-auth
 auth0-python
 -e libs/influx
 -e libs/docker_secrets
--e libs/cache
+-e libs/disk_cache
 python-dateutil
-futures
 firebase_admin
