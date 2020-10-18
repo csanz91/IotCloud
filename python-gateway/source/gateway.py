@@ -5,8 +5,6 @@ from collections import defaultdict
 from threading import Timer, Thread
 import queue
 import time
-import signal
-from requests import exceptions
 
 import paho.mqtt.client as mqtt
 import influx
