@@ -14,10 +14,5 @@ COPY ./ /app
 # Generate logs folder if it doesn't exist
 RUN mkdir -p /app/logs
 
-# Generate cache folder if it doesn't exist
-RUN mkdir -p /app/cache
-
 WORKDIR /app/source
-
-EXPOSE 5000
-CMD ["gunicorn", "--workers", "3", "--threads", "3", "-b", "0.0.0.0:5000", "api:app"]
+CMD [ "./start.sh" ] 
