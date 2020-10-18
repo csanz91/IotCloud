@@ -169,7 +169,7 @@ def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=
 
     tokenData["role"] = role
     encoded = jwt.encode(tokenData, secret, algorithm="HS256")
-    return encoded
+    return encoded.decode("utf-8")
 
 
 def verifyMqttToken(token):
