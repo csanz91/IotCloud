@@ -24,33 +24,33 @@ aemetApiKey = getDocketSecrets("aemetApiKey")
 measurements = {
     "temperature": {
         "observationMeasurementName": "ta",
-        "predictionMeasurementName": "temperatura"
+        "predictionMeasurementName": "temperatura",
     },
     "humidity": {
         "observationMeasurementName": "hr",
-        "predictionMeasurementName": "humedadRelativa"
-    }
+        "predictionMeasurementName": "humedadRelativa",
+    },
 }
 
-# Requiered to fix the AEMET poor encription
+# Requiered to fix the AEMET cipher
 
 
 class TLSAdapter(adapters.HTTPAdapter):
-
     def init_poolmanager(self, connections, maxsize, block=False):
         """Create and initialize the urllib3 PoolManager."""
         ctx = ssl.create_default_context()
-        ctx.set_ciphers('DEFAULT@SECLEVEL=1')
+        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
         self.poolmanager = poolmanager.PoolManager(
             num_pools=connections,
             maxsize=maxsize,
             block=block,
             ssl_version=ssl.PROTOCOL_TLS,
-            ssl_context=ctx)
+            ssl_context=ctx,
+        )
 
 
 session = requests.session()
-session.mount('https://', TLSAdapter())
+session.mount("https://", TLSAdapter())
 
 ######################################
 # Aemet functions
@@ -58,7 +58,7 @@ session.mount('https://', TLSAdapter())
 
 
 def getAemetData(url):
-    response = session.get(url, headers={'api_key': aemetApiKey})
+    response = session.get(url, headers={"api_key": aemetApiKey})
     result = response.json()
     assert result["estado"] == 200
     datosUrl = result["datos"]
@@ -82,12 +82,12 @@ def getLocationFromPostalCode(postalCode):
 
     querystring = {
         "key": googleApiKey,
-        "components": "country:ES|postal_code:%s" % postalCode
+        "components": "country:ES|postal_code:%s" % postalCode,
     }
 
     response = requests.get(
-        "https://maps.googleapis.com/maps/api/geocode/json",
-        params=querystring)
+        "https://maps.googleapis.com/maps/api/geocode/json", params=querystring
+    )
 
     result = response.json()
 
@@ -125,12 +125,12 @@ def getTimeZone(postalCodeCoordenates, timestamp=None):
     querystring = {
         "key": googleApiKey,
         "timestamp": timestamp,
-        "location": f"{postalCodeCoordenates['lat']},{postalCodeCoordenates['lng']}"
+        "location": f"{postalCodeCoordenates['lat']},{postalCodeCoordenates['lng']}",
     }
 
     response = requests.get(
-        "https://maps.googleapis.com/maps/api/timezone/json",
-        params=querystring)
+        "https://maps.googleapis.com/maps/api/timezone/json", params=querystring
+    )
 
     result = response.json()
     # If no results are found, return a dummy location
@@ -140,7 +140,7 @@ def getTimeZone(postalCodeCoordenates, timestamp=None):
             "rawOffset": 3600,
             "status": "OK",
             "timeZoneId": "Europe/Madrid",
-            "timeZoneName": "Central European Summer Time"
+            "timeZoneName": "Central European Summer Time",
         }
 
     assert result["status"] == "OK"
@@ -154,7 +154,7 @@ def getClosestStationId(postalCodeCoordenates):
     """
 
     closestStation = utils.closest_pair(postalCodeCoordenates, stationsList)
-    stationId = closestStation['indicativo']
+    stationId = closestStation["indicativo"]
 
     return stationId
 
@@ -165,7 +165,7 @@ def getClosestGeocode(postalCodeCoordenates):
     """
 
     closestGeocode = utils.closest_pair(postalCodeCoordenates, geocodesList)
-    geocode = closestGeocode['geocode']
+    geocode = closestGeocode["geocode"]
 
     return geocode
 
@@ -176,7 +176,8 @@ def getCurrentWeather(stationId):
     Get the current weather from the selected station
     """
     currentWeatherData = getAemetData(
-        f"https://opendata.aemet.es/opendata/api/observacion/convencional/datos/estacion/{stationId}")
+        f"https://opendata.aemet.es/opendata/api/observacion/convencional/datos/estacion/{stationId}"
+    )
 
     return currentWeatherData
 
@@ -190,15 +191,27 @@ def getLocationId(locationName):
 
     # Convert the location name to the same format Aemet is using
     firstWord = locationName.split(" ")[0]
-    if firstWord in ("la", "La", "Las", "El", "Els", "A", "Los", "L", "O",
-                     "Les", "Os", "Es"):
+    if firstWord in (
+        "la",
+        "La",
+        "Las",
+        "El",
+        "Els",
+        "A",
+        "Los",
+        "L",
+        "O",
+        "Les",
+        "Os",
+        "Es",
+    ):
         locationName = locationName.replace(firstWord, "")
         locationName += f", {firstWord}"
         locationName = locationName.strip()
 
     for location in locationsList:
-        if location['nombre'] == locationName:
-            return location['id'].replace("id", "")
+        if location["nombre"] == locationName:
+            return location["id"].replace("id", "")
 
     raise ValueError("The location name could not be found")
 
@@ -207,7 +220,8 @@ def getLocationId(locationName):
 def getTodayPredictedWeather(locationId):
 
     predictedWeather = getAemetData(
-        f"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/{locationId}")
+        f"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/{locationId}"
+    )
     weatherForToday = predictedWeather[0]["prediccion"]["dia"][0]
 
     return weatherForToday
@@ -215,19 +229,22 @@ def getTodayPredictedWeather(locationId):
 
 @cache_disk(seconds=3600 * 12)
 def getTodaySunSchedule(locationId):
-    '''
+    """
     From the locationId get the sunrise and the sunset,
     convert them to minutes since midnight and return it as
     a tuple (sunrise, sunset)
-    '''
+    """
 
     timeZoneId = "Europe/Madrid"
 
     predictedWeather = getAemetData(
-        f"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/horaria/{locationId}")
+        f"https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/horaria/{locationId}"
+    )
     weatherForToday = predictedWeather[0]["prediccion"]["dia"][0]
-    timestamp = utils.toUtcTimestamp(datetime.datetime.strptime(
-        weatherForToday['fecha'], '%Y-%m-%dT%H:%M:%S'), timeZoneId)
+    timestamp = utils.toUtcTimestamp(
+        datetime.datetime.strptime(weatherForToday["fecha"], "%Y-%m-%dT%H:%M:%S"),
+        timeZoneId,
+    )
     sunrise = weatherForToday["orto"]
     sunset = weatherForToday["ocaso"]
 
@@ -236,15 +253,17 @@ def getTodaySunSchedule(locationId):
 
 @cache_disk(seconds=60)
 def getLatestAlertsURLForArea(area):
-    '''
+    """
     From the area code (first two numbers
     from the geocode) get the latests alerts
     contained in the file available to download
     in the returned URL
-    '''
+    """
 
     response = session.get(
-        f"https://opendata.aemet.es/opendata/api/avisos_cap/ultimoelaborado/area/{area}", headers={'api_key': aemetApiKey})
+        f"https://opendata.aemet.es/opendata/api/avisos_cap/ultimoelaborado/area/{area}",
+        headers={"api_key": aemetApiKey},
+    )
     result = response.json()
     assert result["estado"] == 200
     datosUrl = result["datos"]
@@ -253,10 +272,10 @@ def getLatestAlertsURLForArea(area):
 
 
 def dateToMinutes(date):
-    '''
+    """
     From a local (Europe/Madrid) date string with the following format: 07:54
     convert it to minutes since midnight in UTC
-    '''
+    """
 
     hour, minute = date.split(":")
     localZone = tz.gettz("Europe/Madrid")
@@ -278,10 +297,12 @@ def getMeasurementFromPostalCode(postalCode, measurement):
 
     # Get the last measurement
     lastMeasurement = currentWeather[-1]
-    currentTemperature = lastMeasurement[measurements[measurement]
-                                         ["observationMeasurementName"]]
+    currentTemperature = lastMeasurement[
+        measurements[measurement]["observationMeasurementName"]
+    ]
     lastUpdateUtc = datetime.datetime.strptime(
-        lastMeasurement['fint'], '%Y-%m-%dT%H:%M:%S')
+        lastMeasurement["fint"], "%Y-%m-%dT%H:%M:%S"
+    )
     lastUpdateUtcAware = lastUpdateUtc.replace(tzinfo=datetime.timezone.utc)
     lastUpdate = lastUpdateUtcAware.strftime("%Y-%m-%d %H:%M:%S%z")
 
@@ -290,15 +311,19 @@ def getMeasurementFromPostalCode(postalCode, measurement):
     hist = []
     for numHour in range(-1, -numHours, -1):
         hist.append(
-            currentWeather[numHour][measurements[measurement]["observationMeasurementName"]])
+            currentWeather[numHour][
+                measurements[measurement]["observationMeasurementName"]
+            ]
+        )
     hist = list(reversed(hist))
 
     # 4. Get the predicted weather for today from the location
     locationId = getLocationId(locationName)
     weatherForToday = getTodayPredictedWeather(locationId)
 
-    todayTemperature = weatherForToday[measurements[measurement]
-                                       ["predictionMeasurementName"]]
+    todayTemperature = weatherForToday[
+        measurements[measurement]["predictionMeasurementName"]
+    ]
     maxTemp = todayTemperature["maxima"]
     minTemp = todayTemperature["minima"]
 
@@ -308,7 +333,7 @@ def getMeasurementFromPostalCode(postalCode, measurement):
         "max": maxTemp,
         "lastUpdate": lastUpdate,
         "current": currentTemperature,
-        "weatherDataExpanded": lastMeasurement
+        "weatherDataExpanded": lastMeasurement,
     }
 
 
@@ -320,11 +345,7 @@ def getSunScheduleFromPostalCode(postalCode):
     # 3. Get the sunset and the sunrise from the selected station
     timestamp, sunrise, sunset = getTodaySunSchedule(locationId)
 
-    return {
-        "timestamp": timestamp,
-        "sunrise": sunrise,
-        "sunset": sunset
-    }
+    return {"timestamp": timestamp, "sunrise": sunrise, "sunset": sunset}
 
 
 def getTimeZoneFromPostalCode(postalCode):
@@ -347,7 +368,7 @@ def getGeocodeFromPostalCode(postalCode):
 
 def getLatestAlertsForPostalCode(postalCode):
 
-    if postalCode=="esp":
+    if postalCode == "esp":
         area = "esp"
     else:
         # 1. Get the closest geocode to our postal code
