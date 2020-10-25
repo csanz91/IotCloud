@@ -3,3 +3,4 @@ gunicorn
 requests
 python-dateutil
 -e libs/docker_secrets
+-e libs/disk_cache

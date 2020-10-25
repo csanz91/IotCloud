@@ -12,7 +12,7 @@ import datetime
 from stations_list import stationsList
 from location_list import locationsList
 from geocodes_list import geocodesList
-from cache_decorator import cache_disk, clear_cache
+from cache import cache_disk, clear_cache
 from docker_secrets import getDocketSecrets
 import utils
 
