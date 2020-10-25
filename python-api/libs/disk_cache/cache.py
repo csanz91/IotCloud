@@ -6,7 +6,7 @@ import collections
 import functools
 import shutil
 
-cacheFolder = "cache"
+cacheFolder = "../cache"
 
 
 def clear_cache():
