@@ -3,3 +3,4 @@ paho-mqtt
 python-dateutil
 requests
 -e libs/docker_secrets
+-e libs/influx_logging

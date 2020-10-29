@@ -8,7 +8,7 @@ from threading import Timer, Thread
 import queue
 import time
 
-
+from influx_logging import InfluxHandler
 import paho.mqtt.client as mqtt
 from docker_secrets import getDocketSecrets
 import thermostat_logic
@@ -29,6 +29,8 @@ formatter = logging.Formatter(
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+influxHandler = InfluxHandler()
+logger.addHandler(influxHandler)
 
 ####################################
 # Helper classes
