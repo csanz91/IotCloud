@@ -81,7 +81,10 @@ def getTags(topic):
 
 def addToQueueDelayed(queue, items, delay):
     time.sleep(delay)
-    logger.info(f"Element has been put back into the queue after {delay} seconds")
+    logger.info(
+        f"Element has been put back into the queue after {delay} seconds",
+        extra={"service": "modules", "area": "main"},
+    )
     queue.put(items)
 
 
@@ -152,6 +155,7 @@ def onStatusWork(msg):
         logger.error(
             f"onStatus message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"service": "modules", "area": "status"},
         )
 
 
@@ -186,6 +190,7 @@ def onStateWork(msg):
         logger.error(
             f"onState message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"service": "modules", "area": "state"},
         )
 
 
@@ -216,7 +221,10 @@ def onValueWork(msg):
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error("The value received: %s is not valid" % value)
+        logger.error(
+            f"The value received: {value} is not valid",
+            extra={"service": "modules", "area": "value"},
+        )
 
 
 for i in range(onValueNumWorkerThreads):
@@ -245,7 +253,8 @@ def sensorUpdateWorker():
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"service": "modules", "area": "sensor"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -271,7 +280,9 @@ def onSensorUpdateWork(msg):
         sensor.metadata = sensorData["sensorMetadata"]
     except:
         logger.error(
-            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+            "Cant retrieve the metadata for the topic: %s" % msg.topic,
+            exc_info=True,
+            extra={"service": "modules", "area": "sensor"},
         )
         raise
 
@@ -301,7 +312,8 @@ def locationUpdateWorker():
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"service": "modules", "area": "location"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -334,7 +346,9 @@ def onLocationUpdateWork(msg):
 
     except:
         logger.error(
-            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+            "Cant retrieve the metadata for the topic: %s" % msg.topic,
+            exc_info=True,
+            extra={"service": "modules", "area": "location"},
         )
         raise
 
@@ -359,12 +373,17 @@ def auxWorker():
         try:
             onAuxWork(*item)
         except:
-            logger.error("onAux message failed. Exception: ", exc_info=True)
+            logger.error(
+                "onAux message failed. Exception: ",
+                exc_info=True,
+                extra={"service": "modules", "area": "aux"},
+            )
             numRetries += 1
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"service": "modules", "area": "aux"},
                 )
                 Thread(
                     target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)
@@ -432,7 +451,9 @@ def onAux(client, userdata, msg):
     auxQueue.put(((client, msg), numRetries := 0))
 
 
-logger.info("Starting...")
+logger.info(
+    "Starting...", extra={"service": "modules", "area": "main"},
+)
 
 # IotHub api setup
 api = iotcloud_api.IotCloudApi()
@@ -467,10 +488,8 @@ def run(mqttClient):
                     if sensor.aux != sensor.instance.aux:
                         sensor.instance.updateAux(mqttClient, sensor.aux)
                     if sensor.postalCode != sensor.instance.postalCode:
-                        logger.info(sensor.postalCode)
                         sensor.instance.updatePostalCode(sensor.postalCode)
                     if sensor.timeZone != sensor.instance.timeZone:
-                        logger.info(sensor.timeZone)
                         sensor.instance.updateTimeZone(sensor.timeZone)
                     # Run the engine
                     sensor.instance.engine(mqttClient, values)
@@ -485,7 +504,9 @@ run(mqttclient)
 
 
 def onConnect(self, mosq, obj, rc):
-    logger.info("connected")
+    logger.info(
+        "connected", extra={"service": "modules", "area": "mqtt"},
+    )
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
     mqttclient.subscribe(statusTopic)
@@ -535,4 +556,7 @@ for i in range(onAuxNumWorkerThreads):
 for t in threads:
     t.join()
 
-logger.info("Exiting...")
+logger.info(
+    "Exiting...", extra={"service": "modules", "area": "main"},
+)
+
