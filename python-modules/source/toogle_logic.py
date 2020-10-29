@@ -6,18 +6,19 @@ from dateutil import tz
 
 import schedule
 import timer
-import location_utils
 
 logger = logging.getLogger()
 
-class Toogle():
+
+class Toogle:
     def __init__(self, tags, mqttClient, subscriptionsList):
 
         # Aux variables
         self.tags = tags
-        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(locationId=tags["locationId"],
-                                                                      deviceId=tags["deviceId"])
-        self.topicHeader = self.deviceTopicHeader+tags["sensorId"]+"/"
+        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(
+            locationId=tags["locationId"], deviceId=tags["deviceId"]
+        )
+        self.topicHeader = self.deviceTopicHeader + tags["sensorId"] + "/"
 
         # Runtime variables
         self.state = False
@@ -25,30 +26,31 @@ class Toogle():
         self.metadata = {}
         self.aux = {}
         self.postalCode = None
-        self.timeZoneId = None
+        self.timeZone = None
 
         # Subscribe to the relevant topics
-        mqttClient.subscribe(self.topicHeader+"updatedSensor")
-        subscriptionsList.append(self.topicHeader+"updatedSensor")
+        mqttClient.subscribe(self.topicHeader + "updatedSensor")
+        subscriptionsList.append(self.topicHeader + "updatedSensor")
 
     def updateSettings(self, mqttClient, metadata):
         self.metadata = metadata
         try:
             self.schedule.importSchedule(metadata)
-            logger.info("%s: schedule updated: %s" % (self.deviceTopicHeader, self.schedule.schedule))
+            logger.info(
+                "%s: schedule updated: %s"
+                % (self.deviceTopicHeader, self.schedule.schedule)
+            )
         except:
             pass
 
     def updateAux(self, mqttClient, aux):
         self.aux = aux
-    
+
     def updatePostalCode(self, postalCode):
         self.postalCode = postalCode
-        try:
-            locationTimezoneData = location_utils.getTimeZone(postalCode)
-            self.timeZoneId = locationTimezoneData["timeZoneId"]
-        except:
-            logger.error("It was not possible to retrive the timezone data", exc_info=True)
+
+    def updateTimeZone(self, timeZone):
+        self.timeZone = timeZone
 
     def setState(self, mqttClient, state):
         if state:
@@ -56,9 +58,11 @@ class Toogle():
         else:
             action = "down"
 
-        mqttClient.publish(self.topicHeader+"aux/setToogle", action, qos=1, retain=False)
+        mqttClient.publish(
+            self.topicHeader + "aux/setToogle", action, qos=1, retain=False
+        )
 
     def engine(self, mqttClient, values):
 
         # Check the schedule
-        self.schedule.runSchedule(mqttClient, self.timeZoneId)
+        self.schedule.runSchedule(mqttClient, self.timeZone)

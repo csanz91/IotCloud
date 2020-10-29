@@ -18,6 +18,7 @@ class Schedule:
         self.schedule = [[], [], [], [], [], [], []]
         self.solarSchedule = [[], [], [], [], [], [], []]
         self.sunScheduleInfo = {"timestamp": 0, "sunrise": 0, "sunset": 0}
+        self.utcSunScheduleExpireDate = datetime.datetime.now(tz=tz.UTC)
         self.scheduleRunning = False
         self.sunScheduleRunning = False
         self.setState = setState
@@ -91,23 +92,18 @@ class Schedule:
         currentMinute = utils.getCurrentMinute(timeZoneId)
         today = now.weekday()  # Mon: 0, Sun: 6
 
-        # Even if we have the function cached everywhere, this check in memory can
-        # improve things slightly because this function can be called many times
-        utcSunScheduleTimestamp = datetime.datetime.utcfromtimestamp(
-            self.sunScheduleInfo["timestamp"]
-        ).replace(tzinfo=tz.UTC)
-        utcSunScheduleExpireTimestamp = utcSunScheduleTimestamp + datetime.timedelta(
-            hours=24
-        )
-        if now > utcSunScheduleExpireTimestamp:
+        if now > self.utcSunScheduleExpireDate:
             try:
                 newSunScheduleInfo = api.getLocationSunSchedule(self.locationId)
                 assert float(newSunScheduleInfo["sunrise"])
                 assert float(newSunScheduleInfo["sunset"])
+                assert int(newSunScheduleInfo["timestamp"])
                 self.sunScheduleInfo = newSunScheduleInfo
+
             except:
                 logger.warning(
-                    "Unable to recover the sunschedule. Extending the current one."
+                    "Unable to recover the sunschedule. Extending the current one.",
+                    exc_info=True,
                 )
                 # In case we are not able to recover the sun schedule:
                 #
@@ -124,6 +120,10 @@ class Schedule:
                     self.sunScheduleInfo["sunset"] = 60 * 19
 
                 logger.info(f"New sunschedule: {self.sunScheduleInfo}")
+
+            self.utcSunScheduleExpireDate = datetime.datetime.utcfromtimestamp(
+                self.sunScheduleInfo["timestamp"]
+            ).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=8)
 
         self.runSunSchedule(mqttClient, today, currentMinute, timeZoneId)
         self.runManualSchedule(mqttClient, today, currentMinute, timeZoneId)

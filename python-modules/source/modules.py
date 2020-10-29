@@ -51,6 +51,7 @@ class Sensor:
         self.instance = None
         self.metadata = None
         self.postalCode = None
+        self.timeZone = None
         self.aux = {}
 
 
@@ -266,7 +267,6 @@ def onSensorUpdateWork(msg):
 
         sensor = devices[deviceHash].sensors[tags["sensorId"]]
         sensor.metadata = sensorData["sensorMetadata"]
-        sensor.postalCode = sensorData["postalCode"]
     except:
         logger.error(
             "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
@@ -328,6 +328,7 @@ def onLocationUpdateWork(msg):
                     sensor = devices[deviceHash].sensors[sensorId]
                     sensor.metadata = sensorData["sensorMetadata"]
                     sensor.postalCode = location["postalCode"]
+                    sensor.timeZone = location["timeZone"]
 
     except:
         logger.error(
@@ -389,6 +390,7 @@ def onAuxWork(client, msg):
             sensor = devices[deviceHash].sensors[tags["sensorId"]]
             sensor.metadata = sensorData["sensorMetadata"]
             sensor.postalCode = sensorData["postalCode"]
+            sensor.timeZone = sensorData["timeZone"]
 
     # Add the value received to the aux dict
     else:
@@ -465,6 +467,9 @@ def run(mqttClient):
                     if sensor.postalCode != sensor.instance.postalCode:
                         logger.info(sensor.postalCode)
                         sensor.instance.updatePostalCode(sensor.postalCode)
+                    if sensor.timeZone != sensor.instance.timeZone:
+                        logger.info(sensor.timeZone)
+                        sensor.instance.updateTimeZone(sensor.timeZone)
                     # Run the engine
                     sensor.instance.engine(mqttClient, values)
 
