@@ -4,13 +4,13 @@ import datetime
 import time
 from dateutil import tz
 
-import iothub_api
+import iotcloud_api
 import utils
 
 logger = logging.getLogger()
 
 # IotHub api setup
-api = iothub_api.IothubApi()
+api = iotcloud_api.IotCloudApi()
 
 
 class Schedule:

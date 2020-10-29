@@ -14,7 +14,7 @@ from docker_secrets import getDocketSecrets
 import thermostat_logic
 import switch_logic
 import toogle_logic
-import iothub_api
+import iotcloud_api
 import utils
 import location_status
 
@@ -431,7 +431,7 @@ def onAux(client, userdata, msg):
 logger.info("Starting...")
 
 # IotHub api setup
-api = iothub_api.IothubApi()
+api = iotcloud_api.IotCloudApi()
 
 # MQTT constants
 version = "v1"

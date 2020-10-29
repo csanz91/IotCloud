@@ -3,35 +3,36 @@ import logging.config
 
 import requests
 from docker_secrets import getDocketSecrets
-from cache_decorator import cache_disk
 
 logger = logging.getLogger()
 
 
-class IothubApi():
+class IotCloudApi:
 
-    iothubApiUrl = getDocketSecrets('api_url')
-    client_id = getDocketSecrets('api_client_id')
-    client_secret = getDocketSecrets('api_client_secret')
-    auth_url = getDocketSecrets('auth_url')
-    audience = getDocketSecrets('api_audience')
+    iotcloudApiUrl = getDocketSecrets("api_url")
+    client_id = getDocketSecrets("api_client_id")
+    client_secret = getDocketSecrets("api_client_secret")
+    auth_url = getDocketSecrets("auth_url")
+    audience = getDocketSecrets("api_audience")
 
-    accessToken = ''
+    accessToken = ""
 
     def __init__(self):
         self.token = ""
         self.session = requests.session()
 
     def getAuthHeader(self):
-        headers = {'Authorization': "Bearer " + self.accessToken}
+        headers = {"Authorization": "Bearer " + self.accessToken}
         return headers
 
     def authenticate(self):
 
-        data = {'client_id': self.client_id,
-                'client_secret': self.client_secret,
-                'grant_type': "client_credentials",
-                "audience": self.audience}
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "grant_type": "client_credentials",
+            "audience": self.audience,
+        }
 
         result = requests.post(self.auth_url, json=data)
 
@@ -39,10 +40,10 @@ class IothubApi():
             decodedResult = result.json()
             self.accessToken = decodedResult["access_token"]
         except (KeyError, TypeError, ValueError):
-            logger.error('authenticate: User could NOT be successfully authenticated.')
+            logger.error("authenticate: User could NOT be successfully authenticated.")
             return False
 
-        logger.info('authenticate: User authenticated successfully.')
+        logger.info("authenticate: User authenticated successfully.")
         return True
 
     def validateResponse(self, response):
@@ -52,11 +53,14 @@ class IothubApi():
         try:
             result = response.json()
         except ValueError:
-            logger.warning("validateResponse: the response could not be json decoded. Response: %s" % response.text)
+            logger.warning(
+                "validateResponse: the response could not be json decoded. Response: %s"
+                % response.text
+            )
             raise
 
         try:
-            return result['data']
+            return result["data"]
         except KeyError:
             return True
 
@@ -70,7 +74,7 @@ class IothubApi():
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
         for numRetries in range(2):
-            r = self.session.get(self.iothubApiUrl+url, headers=headers, timeout=30)
+            r = self.session.get(self.iotcloudApiUrl + url, headers=headers, timeout=30)
             if r.status_code != requests.codes.unauthorized:
                 break
 
@@ -95,7 +99,9 @@ class IothubApi():
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
         for numRetries in range(2):
-            r = self.session.post(self.iothubApiUrl+url, json=data, headers=headers, timeout=30)
+            r = self.session.post(
+                self.iotcloudApiUrl + url, json=data, headers=headers, timeout=30
+            )
             if r.status_code != requests.codes.unauthorized:
                 break
 
@@ -125,7 +131,9 @@ class IothubApi():
 
     def getSensor(self, locationId, deviceId, sensorId):
 
-        sensor = self.get(f"locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", auth=True)
+        sensor = self.get(
+            f"locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", auth=True
+        )
 
         return sensor
 
@@ -135,8 +143,6 @@ class IothubApi():
 
         return location
 
-
-    @cache_disk(seconds=3600 * 8)
     def getLocationSunSchedule(self, locationId):
 
         sunSchedule = self.get(f"locations/{locationId}/sunschedule", auth=True)
@@ -148,7 +154,7 @@ class IothubApi():
             "notificationTitle": "locationOfflineTitle",
             "notificationBody": "locationOfflineBody",
             "notificationTitleArgs": ["%(locationName)s"],
-            "notificationBodyArgs": ["%(locationName)s"]
+            "notificationBodyArgs": ["%(locationName)s"],
         }
 
         self.post(f"locations/{locationId}/locationnotification", data=data, auth=True)
