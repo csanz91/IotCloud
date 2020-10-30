@@ -131,5 +131,9 @@ class Schedule:
                 self.sunScheduleInfo["timestamp"]
             ).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=8)
 
+            # If the data is already expired, renew it for an hour
+            if now > self.utcSunScheduleExpireDate:
+                self.utcSunScheduleExpireDate = now + datetime.timedelta(hours=1)
+
         self.runSunSchedule(mqttClient, today, currentMinute, timeZoneId)
         self.runManualSchedule(mqttClient, today, currentMinute, timeZoneId)
