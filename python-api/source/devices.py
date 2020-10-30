@@ -428,7 +428,7 @@ class SensorStateTime:
 
         stateTimes = []
         # Go back 10 days
-        for dayIndex in xrange(10):
+        for dayIndex in range(10):
             # Get the timestamps from the selected period
             pastDay = datetimeNow - timedelta(days=dayIndex)
             (
