@@ -2,5 +2,5 @@ influxdb
 paho-mqtt
 python-dateutil
 requests
--e libs/docker_secrets
--e libs/influx_logging
+libs/docker_secrets
+libs/influx_logging
