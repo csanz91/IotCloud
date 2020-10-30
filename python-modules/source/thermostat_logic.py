@@ -17,9 +17,7 @@ class Thermostat:
 
         # Aux variables
         self.tags = tags
-        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(
-            locationId=tags["locationId"], deviceId=tags["deviceId"]
-        )
+        self.deviceTopicHeader = f"v1/{tags['locationId']}/{tags['deviceId']}/"
         self.topicHeader = self.deviceTopicHeader + tags["sensorId"] + "/"
 
         # Runtime variables
@@ -58,7 +56,7 @@ class Thermostat:
         subscriptionsList.append(self.topicHeader + "updatedSensor")
 
     def addTempReference(self, mqttClient, temperatureReferenceTopic, factor):
-        if not temperatureReferenceTopic in self.temperatureReferences:
+        if temperatureReferenceTopic not in self.temperatureReferences:
             mqttClient.subscribe(temperatureReferenceTopic)
             self.subscriptionsList.append(temperatureReferenceTopic)
         self.temperatureReferences[temperatureReferenceTopic] = factor
@@ -90,12 +88,16 @@ class Thermostat:
             ].items():
                 self.addTempReference(mqttClient, temperatureReferenceTopic, factor)
         except:
-            logger.error("Excepcion: ", exc_info=True)
+            logger.error(
+                "Excepcion: ", exc_info=True, extra={"area": "thermostat"},
+            )
             pass
 
         try:
             self.timer.importSettings(metadata["timer"])
-            logger.info("timer updated: %s" % metadata["timer"])
+            logger.info(
+                f"timer updated: {metadata['timer']}", extra={"area": "thermostat"}
+            )
         except:
             pass
 
@@ -123,7 +125,9 @@ class Thermostat:
 
         try:
             self.setpoint = float(aux["setpoint"])
-            logger.debug(f"Received setpoint: {self.setpoint}")
+            logger.debug(
+                f"Received setpoint: {self.setpoint}", extra={"area": "thermostat"}
+            )
         except:
             pass
 
@@ -162,8 +166,8 @@ class Thermostat:
             # The sensor was not found
             except (KeyError, TypeError):
                 logger.warning(
-                    "Temperature value from the topic: %s not available"
-                    % temperatureReferenceTopic
+                    f"Temperature value from the topic:{temperatureReferenceTopic} not available",
+                    extra={"area": "thermostat"},
                 )
         if tempReference and factorsSum:
             tempReference = tempReference / factorsSum
@@ -192,7 +196,9 @@ class Thermostat:
         if self.progThermostatShutdownEnabled:
 
             if not self.timeZone:
-                logger.warning("Time zone not available")
+                logger.warning(
+                    "Time zone not available", extra={"area": "thermostat"},
+                )
                 return
 
             minutesConverted = utils.getMinutesConverted(
@@ -203,7 +209,9 @@ class Thermostat:
             # logger.info(f"{currentMinute=}, {minutesConverted=}")
             if currentMinute == minutesConverted:
                 if not self.progThermostatShutdownMem:
-                    logger.info("Shuthing down the thermostat")
+                    logger.info(
+                        "Shuthing down the thermostat", extra={"area": "thermostat"}
+                    )
                     self.progThermostatShutdownMem = True
                     self.state = False
                     self.setState(mqttClient, self.state)
@@ -221,8 +229,8 @@ class Thermostat:
         # The thermostat cannot run if there is an active alarm or if it is not active
         if self.alarm or not self.state:
             logger.debug(
-                "Thermostat: %s not running because is stopped or an alarm is set"
-                % self.topicHeader
+                f"Thermostat: {self.topicHeader} not running because is stopped or an alarm is set",
+                extra={"area": "thermostat"},
             )
             # Delete the retentive heating. The device also evaluates this condition
             if self.heating or self.setHeatingMem:
@@ -235,8 +243,8 @@ class Thermostat:
         # These values are needed to be able to run the algorithm
         if not tempReference or not self.setpoint:
             logger.warning(
-                "Some of the core values are not valid. tempReference: %s, setpoint: %s"
-                % (tempReference, self.setpoint)
+                f"Some of the core values are not valid. tempReference: {tempReference}, setpoint: {self.setpoint}",
+                extra={"area": "thermostat"},
             )
             return
 
@@ -252,8 +260,8 @@ class Thermostat:
             time.time()
         ):
             logger.warning(
-                "Heating running for more than %s seconds. Triggering alarm"
-                % self.maxHeatingTime
+                f"Heating running for more than {self.maxHeatingTime} sec. in {self.deviceTopicHeader}. Triggering alarm",
+                extra={"area": "thermostat"},
             )
             self.setHeating(mqttClient, False)
             self.setAlarm(mqttClient, True)
@@ -263,8 +271,15 @@ class Thermostat:
         if not self.heating and tempReference <= self.setpoint + self.hysteresisLow:
             self.setHeating(mqttClient, True)
             self.startHeatingAt = int(time.time())
-            logger.info("Start heating")
+            logger.info(
+                f"Start heating for: {self.deviceTopicHeader}",
+                extra={"area": "thermostat"},
+            )
         # The reference temperature is above the setpoint -> stop heating
         elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
             self.setHeating(mqttClient, False)
-            logger.info("Stop heating")
+            logger.info(
+                f"Stop heating for: {self.deviceTopicHeader}",
+                extra={"area": "thermostat"},
+            )
+

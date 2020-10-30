@@ -40,15 +40,17 @@ class Switch:
         try:
             self.schedule.importSchedule(metadata)
             logger.info(
-                "%s: schedule updated: %s"
-                % (self.deviceTopicHeader, self.schedule.schedule)
+                f"{self.deviceTopicHeader}: schedule updated: {self.schedule.schedule}",
+                extra={"area": "switch"},
             )
         except:
             pass
 
         try:
             self.timer.importSettings(metadata["timer"])
-            logger.info("timer updated: %s" % metadata["timer"])
+            logger.info(
+                f"timer updated: {metadata['timer']}", extra={"area": "switch"},
+            )
         except:
             pass
 

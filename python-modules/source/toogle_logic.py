@@ -15,9 +15,7 @@ class Toogle:
 
         # Aux variables
         self.tags = tags
-        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(
-            locationId=tags["locationId"], deviceId=tags["deviceId"]
-        )
+        self.deviceTopicHeader = f"v1/{tags['locationId']}/{tags['deviceId']}/"
         self.topicHeader = self.deviceTopicHeader + tags["sensorId"] + "/"
 
         # Runtime variables
@@ -37,8 +35,8 @@ class Toogle:
         try:
             self.schedule.importSchedule(metadata)
             logger.info(
-                "%s: schedule updated: %s"
-                % (self.deviceTopicHeader, self.schedule.schedule)
+                f"{self.deviceTopicHeader}: schedule updated: {self.schedule.schedule}",
+                extra={"area": "toogle"},
             )
         except:
             pass

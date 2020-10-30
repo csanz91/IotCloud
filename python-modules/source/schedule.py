@@ -51,7 +51,9 @@ class Schedule:
             if currentMinute == sunHour + offset:
                 # If the state is different from the setpoint
                 if not self.sunScheduleRunning:
-                    logger.info(f"Setting sun schedule to {state}")
+                    logger.info(
+                        f"Setting sun schedule to {state}", extra={"area": "schedule"}
+                    )
                     self.sunScheduleRunning = True
                     self.setState(mqttClient, state)
                     self.setValue(mqttClient, value)
@@ -71,7 +73,7 @@ class Schedule:
             if currentMinute >= start and currentMinute < start + scheduleElement[1]:
                 # If the schedule wasnt active
                 if not self.scheduleRunning:
-                    logger.info("Running manual schedule")
+                    logger.info("Running manual schedule", extra={"area": "schedule"})
                     self.scheduleRunning = True
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
@@ -85,7 +87,7 @@ class Schedule:
     def runSchedule(self, mqttClient, timeZoneId):
 
         if not timeZoneId:
-            logger.warning("Time zone not available")
+            logger.warning("Time zone not available", extra={"area": "schedule"})
             return
 
         now = utils.getLocalTime(timeZoneId)
@@ -104,6 +106,7 @@ class Schedule:
                 logger.warning(
                     "Unable to recover the sunschedule. Extending the current one.",
                     exc_info=True,
+                    extra={"area": "schedule"},
                 )
                 # In case we are not able to recover the sun schedule:
                 #
@@ -119,7 +122,10 @@ class Schedule:
                     # Set the sunset at 19:00
                     self.sunScheduleInfo["sunset"] = 60 * 19
 
-                logger.info(f"New sunschedule: {self.sunScheduleInfo}")
+                logger.info(
+                    f"New sunschedule: {self.sunScheduleInfo}",
+                    extra={"area": "schedule"},
+                )
 
             self.utcSunScheduleExpireDate = datetime.datetime.utcfromtimestamp(
                 self.sunScheduleInfo["timestamp"]
