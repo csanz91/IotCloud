@@ -7,6 +7,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - ./nginx/logs:/var/log/nginx
       - ./nginx/conf:/etc/nginx/conf.d
       - ./nginx/vhost:/etc/nginx/vhost.d
       - ./nginx/dhparam:/etc/nginx/dhparam
@@ -15,6 +16,11 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     environment:
       - DHPARAM_GENERATION=false
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
@@ -30,8 +36,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
        - DEFAULT_EMAIL=cesarsanz91@gmail.com
-       - NGINX_PROXY_CONTAINER=nginx-proxy
-       
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
   api:
     container_name: api
@@ -41,7 +48,6 @@ services:
     expose:
       - "5000"
     volumes:
-      - ./python-api/source:/app/source
       - ./python-api/logs:/app/logs
     env_file:
       - 'variables.env'
@@ -52,11 +58,14 @@ services:
     environment:
       - MONGODB_HOST=mongodb
       - INFLUXDB_HOST=influxdb
-      - "constraint:node==csanz1"
-      - VIRTUAL_HOST=api.iotcloudtest.tk
+      - VIRTUAL_HOST=api.iotcloud.es
       - VIRTUAL_PORT=5000
-      - LETSENCRYPT_HOST=api.iotcloudtest.tk
+      - LETSENCRYPT_HOST=api.iotcloud.es
       - VIRTUAL_NETWORK=iotcloud-overlay-net
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
+
 
   influx_mqtt_gateway:
     container_name: gateway
@@ -71,24 +80,10 @@ services:
     secrets:
       - gateway_secrets
     depends_on:
-      - influxdb
-    environment:
-       - "constraint:node==csanz2"
-
-  modules:
-    container_name: modules
-    image: localhost:5009/modules
-    build: ./python-modules
-    env_file:
-      - 'variables.env'
-    restart: always
-    volumes:
-      - ./python-modules/logs:/app/logs
-    secrets:
-      - modules_secrets
+     - influxdb
     deploy:
       placement:
-        constraints: [node.hostname == csanz1]
+        constraints: [node.hostname == csanz2]
 
   weather:
     container_name: weather
@@ -103,6 +98,25 @@ services:
       - ./python-weather/logs:/app/logs
     secrets:
       - weather_secrets
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz2]
+
+  modules:
+    container_name: modules
+    image: localhost:5009/modules
+    build: ./python-modules
+    env_file:
+      - 'variables.env'
+    restart: always
+    volumes:
+      - ./python-modules/source:/app/source
+      - ./python-modules/logs:/app/logs
+    secrets:
+      - modules_secrets
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
   monitoring:
     container_name: monitoring
@@ -116,18 +130,89 @@ services:
     environment:
       - INFLUXDB_HOST=influxdb
       - INFLUXDB_MONITORING_DB=monitoring
+      - MASTER_NODE=csanz1
+    deploy:
+      mode: global
+
+  home:
+    container_name: home
+    image: localhost:5009/home
+    build: ./go-home
+    env_file:
+      - 'variables.env'
+    restart: always
+    expose:
+      - "5001"
+    volumes:
+      - ./go-home/src:/app/src
+      - ./go-home/logs:/app/logs
+    secrets:
+      - home_secrets
+    environment:
+      - VIRTUAL_HOST=home.iotcloud.es
+      - VIRTUAL_PORT=5001
+      - LETSENCRYPT_HOST=home.iotcloud.es
+      - VIRTUAL_NETWORK=iotcloud-overlay-net
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
+
+  grafana-datasource:
+    container_name: grafana-datasource
+    image: localhost:5009/grafana-datasource
+    build: ./go-grafana-datasource
+    env_file:
+      - 'variables.env'
+    restart: always
+    expose:
+      - "5002"
+    volumes:
+      - ./go-grafana-datasource/src:/app/src
+      - ./go-grafana-datasource/logs:/app/logs
+    secrets:
+      - grafana_datasource_secrets
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz2]
+
+  grafana:
+    user: "$UID:$GID"
+    restart: always
+    image: grafana/grafana:latest
+    expose:
+      - "3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/config:/etc/grafana
+      - ./certs:/grafana/certs
+      - ./grafana/log:/var/log/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=simpod-json-datasource 0.1.7
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID__FILE=/run/secrets/grafana_secrets_clientId
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE=/run/secrets/grafana_secrets_clientSecret
+      - VIRTUAL_HOST=grafana.iotcloud.es
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=grafana.iotcloud.es
+      - VIRTUAL_NETWORK=iotcloud-overlay-net
+    secrets:
+      - grafana_secrets_clientId
+      - grafana_secrets_clientSecret
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
   mongodb:
     restart: always
-    image: mongo
+    image: mongo:4.2.5
     hostname: docker
     volumes:
       - ./mongodb:/data/db
     expose:
       - "27017"
-    command: mongod --logpath=/dev/null --setParameter diagnosticDataCollectionEnabled=false # --quiet
-    environment:
-       - "constraint:node==csanz1"
+    command: mongod --setParameter diagnosticDataCollectionEnabled=false # --quiet
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
   influxdb:
     image: influxdb:1.8
@@ -141,8 +226,9 @@ services:
     expose:
       - "8086"
     restart: always
-    environment:
-       - "constraint:node==csanz2"
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz2]
 
   mosquitto:
     image: jllopis/mosquitto
@@ -152,12 +238,20 @@ services:
       - ./mosquitto/log:/var/log/mosquitto
       - ./mosquitto/config:/etc/mosquitto
       - ./mosquitto/mosquitto.d:/etc/mosquitto.d
+      - ./nginx/certs/mqtt.iotcloud.es:/etc/mosquitto/certs:ro
     ports:
       - "8883:8883"
       - "1883:1883"
+    expose:
+      - "9001"
     environment:
-      - "constraint:node==csanz1"
-      - ./nginx/certs:/etc/mosquitto/certs:ro
+      - VIRTUAL_HOST=mqtt.iotcloud.es
+      - VIRTUAL_PORT=9001
+      - LETSENCRYPT_HOST=mqtt.iotcloud.es
+      - VIRTUAL_NETWORK=iotcloud-overlay-net
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
 
 secrets:
   modules_secrets:
@@ -177,3 +271,7 @@ secrets:
   grafana_secrets_clientSecret:
       file: ./grafana/secrets/clientSecret
   
+networks:
+  default:
+    external:
+       name: iotcloud-overlay-net
