@@ -78,7 +78,7 @@ class InfluxHandler(logging.Handler):
     def get_point(self, record):
 
         fields = {
-            "message": logging.getLevelName(record.levelno) + " " + record.getMessage(),
+            "message": f"{logging.getLevelName(record.levelno)} | {record.getMessage()}",
         }
 
         tags = {
