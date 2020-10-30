@@ -77,12 +77,12 @@ class InfluxHandler(logging.Handler):
 
     def get_point(self, record):
         fields = {
-            "message": record.getMessage(),
-            "level_name": logging.getLevelName(record.levelno),
+            "message": record.levelname + " " + record.getMessage(),
         }
 
         tags = {
             "service": self.serviceName,
+            "level_name": logging.getLevelName(record.levelno),
             "level": SYSLOG_LEVELS.get(record.levelno, record.levelno),
         }
         tags = add_extra_fields(tags, record)
