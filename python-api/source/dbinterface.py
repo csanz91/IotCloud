@@ -23,16 +23,10 @@ logger = logging.getLogger(__name__)
 #####################################################
 
 
-def joinDicts(d1, d2):
-    d = d1.copy()
-    d.update(d2)
-    return d
-
-
 def checkArgs(*argchecks):
     def checkAllArgs(func):
         def func_wrapper(*args, **kwargs):
-            dArgs = joinDicts(dict(zip(inspect.getargspec(func).args, args)), kwargs)
+            dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
             for arg in argchecks:
                 if not dArgs[arg]:
                     logger.warning("The argument: '%s' is not valid, is empty" % (arg))
