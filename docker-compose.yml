@@ -75,7 +75,6 @@ services:
       - 'variables.env'
     restart: always
     volumes:
-      - ./python-gateway/source:/app/source
       - ./python-gateway/logs:/app/logs
     secrets:
       - gateway_secrets
@@ -110,7 +109,6 @@ services:
       - 'variables.env'
     restart: always
     volumes:
-      - ./python-modules/source:/app/source
       - ./python-modules/logs:/app/logs
     secrets:
       - modules_secrets
