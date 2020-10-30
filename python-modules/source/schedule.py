@@ -67,7 +67,7 @@ class Schedule:
         todaySchedule = self.schedule[today]
         for scheduleElement in todaySchedule:
             # If schedule is activated
-            start = utils.getMinutesConverted(scheduleElement[0], timeZoneId)
+            start = scheduleElement[0]
             # logger.info(f"{currentMinute=}, {start=}")
 
             if currentMinute >= start and currentMinute < start + scheduleElement[1]:
