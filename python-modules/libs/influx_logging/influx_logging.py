@@ -49,10 +49,11 @@ class InfluxHandler(logging.Handler):
     """InfluxDB Log handler
     """
 
-    def __init__(self):
+    def __init__(self, serviceName):
         database = "logging"
         rp = "10weeks"
         self.measurement = "logs"
+        self.serviceName = serviceName
         self.client = InfluxDBClient(host="influxdb", database=database)
 
         if database not in {x["name"] for x in self.client.get_list_database()}:
@@ -77,10 +78,11 @@ class InfluxHandler(logging.Handler):
     def get_point(self, record):
         fields = {
             "message": record.getMessage(),
+            "level_name": logging.getLevelName(record.levelno),
         }
 
         tags = {
-            "level_name": logging.getLevelName(record.levelno),
+            "service": self.serviceName,
             "level": SYSLOG_LEVELS.get(record.levelno, record.levelno),
         }
         tags = add_extra_fields(tags, record)

@@ -29,7 +29,7 @@ formatter = logging.Formatter(
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-influxHandler = InfluxHandler()
+influxHandler = InfluxHandler("modules")
 logger.addHandler(influxHandler)
 
 ####################################
@@ -83,7 +83,7 @@ def addToQueueDelayed(queue, items, delay):
     time.sleep(delay)
     logger.info(
         f"Element has been put back into the queue after {delay} seconds",
-        extra={"service": "modules", "area": "main"},
+        extra={"area": "main"},
     )
     queue.put(items)
 
@@ -155,7 +155,7 @@ def onStatusWork(msg):
         logger.error(
             f"onStatus message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
-            extra={"service": "modules", "area": "status"},
+            extra={"area": "status"},
         )
 
 
@@ -190,7 +190,7 @@ def onStateWork(msg):
         logger.error(
             f"onState message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
-            extra={"service": "modules", "area": "state"},
+            extra={"area": "state"},
         )
 
 
@@ -222,8 +222,7 @@ def onValueWork(msg):
         values[msg.topic] = Value(value)
     except ValueError:
         logger.error(
-            f"The value received: {value} is not valid",
-            extra={"service": "modules", "area": "value"},
+            f"The value received: {value} is not valid", extra={"area": "value"},
         )
 
 
@@ -254,7 +253,7 @@ def sensorUpdateWorker():
                 delay = numRetries ** 2 + 10
                 logger.info(
                     f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
-                    extra={"service": "modules", "area": "sensor"},
+                    extra={"area": "sensor"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -282,7 +281,7 @@ def onSensorUpdateWork(msg):
         logger.error(
             "Cant retrieve the metadata for the topic: %s" % msg.topic,
             exc_info=True,
-            extra={"service": "modules", "area": "sensor"},
+            extra={"area": "sensor"},
         )
         raise
 
@@ -313,7 +312,7 @@ def locationUpdateWorker():
                 delay = numRetries ** 2 + 10
                 logger.info(
                     f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
-                    extra={"service": "modules", "area": "location"},
+                    extra={"area": "location"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -348,7 +347,7 @@ def onLocationUpdateWork(msg):
         logger.error(
             "Cant retrieve the metadata for the topic: %s" % msg.topic,
             exc_info=True,
-            extra={"service": "modules", "area": "location"},
+            extra={"area": "location"},
         )
         raise
 
@@ -376,14 +375,14 @@ def auxWorker():
             logger.error(
                 "onAux message failed. Exception: ",
                 exc_info=True,
-                extra={"service": "modules", "area": "aux"},
+                extra={"area": "aux"},
             )
             numRetries += 1
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
                     f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds",
-                    extra={"service": "modules", "area": "aux"},
+                    extra={"area": "aux"},
                 )
                 Thread(
                     target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)
@@ -452,7 +451,7 @@ def onAux(client, userdata, msg):
 
 
 logger.info(
-    "Starting...", extra={"service": "modules", "area": "main"},
+    "Starting...", extra={"area": "main"},
 )
 
 # IotHub api setup
@@ -505,7 +504,7 @@ run(mqttclient)
 
 def onConnect(self, mosq, obj, rc):
     logger.info(
-        "connected", extra={"service": "modules", "area": "mqtt"},
+        "connected", extra={"area": "mqtt"},
     )
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
@@ -557,6 +556,6 @@ for t in threads:
     t.join()
 
 logger.info(
-    "Exiting...", extra={"service": "modules", "area": "main"},
+    "Exiting...", extra={"area": "main"},
 )
 
