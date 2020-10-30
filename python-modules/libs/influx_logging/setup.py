@@ -1,5 +1,4 @@
-"""ftp_sync installer
-
+"""
 See:
 https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
