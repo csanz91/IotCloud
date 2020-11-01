@@ -14,7 +14,7 @@ formatter = logging.Formatter(
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-influxHandler = InfluxHandler("modules")
+influxHandler = InfluxHandler("api")
 logger.addHandler(influxHandler)
 
 import falcon
