@@ -200,7 +200,8 @@ class OrderSensors:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}, newSensorsOrder: {req.media["newSensorsOrder"]}",
+                f"Exception. userId: {userId}, locationId: {locationId}, "
+                f"newSensorsOrder: {req.media['newSensorsOrder']}",
                 exc_info=True,
                 extra={"area": "devices"},
             )
