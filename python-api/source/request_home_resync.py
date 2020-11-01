@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 googleHomegraphKey = getDocketSecrets("google_homegraph_key")
 
+
 def resync(db, userId, locationId):
     locationUsers = dbinterface.getLocationUsers(db, locationId)
     if not locationUsers:
@@ -21,14 +22,25 @@ def resync(db, userId, locationId):
         ownerUserId = share["ownerUserId"]
     threading.Thread(target=requestResync, args=(ownerUserId,)).start()
 
+
 def requestResync(agentUserId):
     logger.info("Requesting resync for the userId: %s" % agentUserId)
-    url = "https://homegraph.googleapis.com/v1/devices:requestSync?key=%s" % googleHomegraphKey
+    url = (
+        "https://homegraph.googleapis.com/v1/devices:requestSync?key=%s"
+        % googleHomegraphKey
+    )
     try:
         result = requests.post(url, json={"agentUserId": agentUserId})
     except:
-        logger.error("The resync requests has failed. Exception: ", exc_info=True)
+        logger.error(
+            "The resync requests has failed. Exception: ",
+            exc_info=True,
+            extra={"area": "google_home"},
+        )
         return
-    
+
     if result.status_code != 200:
-        logger.error("The resync requests has failed. Status code: %s, response: %s" % (result.status_code, result.text))
+        logger.error(
+            f"The resync requests has failed. Status code: {result.status_code}, response: {result.text}",
+            extra={"area": "google_home"},
+        )

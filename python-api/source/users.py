@@ -13,8 +13,7 @@ from mqtt import generateMqttToken, MqttRoles
 logger = logging.getLogger(__name__)
 
 
-class Users():
-
+class Users:
     def __init__(self, db, auth0):
         self.db = db
         self.auth0 = auth0
@@ -25,10 +24,11 @@ class Users():
         try:
             user = dbinterface.selectUserInheritedData(self.db, userId)
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, user)
@@ -45,10 +45,13 @@ class Users():
             response = dbinterface.updateUser(self.db, userId, req.media)
 
         except:
-            logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
+            logger.error(
+                f"Exception. req.media: {req.media}",
+                exc_info=True,
+                extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(response)
@@ -63,22 +66,21 @@ class Users():
         except exceptions.Auth0Error as e:
             logger.error(e.message)
             logger.error("Req.media: %s" % (req.media))
-            raise falcon.HTTPBadRequest(
-                'Error',
-                e.message
-            )
+            raise falcon.HTTPBadRequest("Error", e.message)
         except:
-            logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
+            logger.error(
+                f"Exception. req.media: {req.media}",
+                exc_info=True,
+                extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(response)
 
 
-class ValidateLocationPermissions():
-
+class ValidateLocationPermissions:
     def __init__(self, db):
         self.db = db
 
@@ -88,10 +90,12 @@ class ValidateLocationPermissions():
         try:
             pendingShares = dbinterface.getPendingValidateShares(self.db, userId)
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+            )
+
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, pendingShares)
@@ -101,23 +105,23 @@ class ValidateLocationPermissions():
 
         try:
             # Check we are the user to validate the share
-            shareId = req.media['shareId']
+            shareId = req.media["shareId"]
             locationShare = dbinterface.selectShare(self.db, shareId)
-            assert locationShare['sharedToUserId'] == userId
+            assert locationShare["sharedToUserId"] == userId
 
             dbinterface.validateLocationPermissions(self.db, shareId)
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True)
 
 
-class ChangePassword():
-
+class ChangePassword:
     def __init__(self, auth0):
         self.auth0 = auth0
 
@@ -125,26 +129,25 @@ class ChangePassword():
     def on_post(self, req, resp, userId):
 
         try:
-            response = self.auth0.changePassword(userId, req.media['password'])
+            response = self.auth0.changePassword(userId, req.media["password"])
         except exceptions.Auth0Error as e:
             logger.error(e.message)
             logger.error("Req.media: %s" % (req.media))
-            raise falcon.HTTPBadRequest(
-                'Error',
-                e.message
-            )
+            raise falcon.HTTPBadRequest("Error", e.message)
         except:
-            logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
+            logger.error(
+                f"Exception. req.media: {req.media}",
+                exc_info=True,
+                extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, response)
 
 
-class MqttUserToken():
-
+class MqttUserToken:
     @checkUser
     def on_get(self, req, resp, userId):
 
@@ -152,17 +155,17 @@ class MqttUserToken():
             token = generateMqttToken(userId, MqttRoles.user)
             assert token
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True, token)
 
 
-class FirebaseUserToken():
-
+class FirebaseUserToken:
     def __init__(self, db):
         self.db = db
 
@@ -171,14 +174,17 @@ class FirebaseUserToken():
 
         try:
             # Check we are the user to validate the share
-            firebaseToken = req.media['firebaseToken']
+            firebaseToken = req.media["firebaseToken"]
             dbinterface.setUserFirebaseToken(self.db, userId, firebaseToken)
 
         except:
-            logger.error("Exception. req.media: %s" % (req.media), exc_info=True)
+            logger.error(
+                f"Exception. req.media: {req.media}",
+                exc_info=True,
+                extra={"area": "users"},
+            )
             raise falcon.HTTPBadRequest(
-                'Bad Request',
-                'The request can not be completed.'
+                "Bad Request", "The request can not be completed."
             )
 
         resp.media = getResponseModel(True)

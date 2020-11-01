@@ -9,5 +9,6 @@ auth0-python
 -e libs/influx
 -e libs/docker_secrets
 -e libs/disk_cache
+-e libs/influx_logging
 python-dateutil
 firebase_admin

@@ -14,15 +14,14 @@ from .logger import logger
 
 # See https://auth0.com/docs/quickstart/backend/python/01-authorization
 
-__version__ = '1.1.0'
+__version__ = "1.1.0"
 VERSION = __version__
 
-__name__ = 'Auth0Middleware'
+__name__ = "Auth0Middleware"
 
 
 class Auth0Middleware(object):
-
-    def __init__(self, middleware_config=None, claims={'email': 'email'}):
+    def __init__(self, middleware_config=None, claims={"email": "email"}):
         """ Falcon Middleware for Auth0 Authorization using Bearer Tokens.
 
         :param auth_config: Dictionary containing configuration variables for Auth0.
@@ -105,48 +104,48 @@ class Auth0Middleware(object):
 
         :raises: HTTPError := HTTPUnauthorized
         """
-        logger.info('Pulling the Authorization header from the Request.')
+        logger.info("Pulling the Authorization header from the Request.")
         try:
-            _auth_token = req.get_header('Authorization')
+            _auth_token = req.get_header("Authorization")
             (_bearer, _token) = _auth_token.split()
-            
+
         except HTTPBadRequest:
             raise http_error_factory(
                 status=HTTP_401,
-                title='No \'Authorization\' Header',
-                description='No \'Authorization\' header was present in the request.',
+                title="No 'Authorization' Header",
+                description="No 'Authorization' header was present in the request.",
                 href=None,
                 href_text=None,
-                code=None
+                code=None,
             )
         except ValueError:
             raise http_error_factory(
                 status=HTTP_401,
-                title='Improper \'Authorization\' Header Formatting',
-                description='The \'Authorization\' header was improperly formatted.',
+                title="Improper 'Authorization' Header Formatting",
+                description="The 'Authorization' header was improperly formatted.",
                 href=None,
                 href_text=None,
-                code=None
+                code=None,
             )
         except AttributeError:
-            logger.info('No Authorization provided.')
+            logger.info("No Authorization provided.")
             raise http_error_factory(
                 status=HTTP_401,
-                title='No Authorization provided',
-                description='The \'Authorization\' header is mandatory.',
+                title="No Authorization provided",
+                description="The 'Authorization' header is mandatory.",
                 href=None,
                 href_text=None,
-                code=None
+                code=None,
             )
 
         if _bearer.lower() != "bearer":
             raise http_error_factory(
                 status=HTTP_401,
-                title='Invalid \'Authorization\' Header',
-                description='Authorization header must start with Bearer.',
+                title="Invalid 'Authorization' Header",
+                description="Authorization header must start with Bearer.",
                 href=None,
                 href_text=None,
-                code=None
+                code=None,
             )
 
         return _token
@@ -154,8 +153,8 @@ class Auth0Middleware(object):
     def _isAuthDisabled(self, req, resource):
         try:
             authSettings = resource.auth
-            methodsExcluded = authSettings.get('methodsExcluded', [])
-            authDisabled = authSettings.get('authDisabled', False)
+            methodsExcluded = authSettings.get("methodsExcluded", [])
+            authDisabled = authSettings.get("authDisabled", False)
             # If the auth is disabled -> dont check
             # Or
             # If the method is the excluded list
@@ -176,11 +175,12 @@ class Auth0Middleware(object):
         :return: JWKS Dictionary or None if the endpoint could not be reached.
         :rtype: Union[dict, None]
         """
-        logger.info('Getting JWKS from Auth0.')
-        _jwks_uri = self.config.get(self.__environment, self.config).get('jwks_uri', None)
+        logger.info("Getting JWKS from Auth0.")
+        _jwks_uri = self.config.get(self.__environment, self.config).get(
+            "jwks_uri", None
+        )
         _jwks_raw = urlopen(_jwks_uri).read()
         return loads(_jwks_raw) if _jwks_raw is not None else None
-
 
     def __process_claims(self, claims):
         """ Process claims returned by parsing the JWT Authorization based on the claims config.
@@ -211,14 +211,17 @@ class Auth0Middleware(object):
         :return: Processed claims
         :rtype: Dict[str, Union[bool, str, List[Dict[]], int]]
         """
-        logger.info('Processing decoded JWT Claims.')
+        logger.info("Processing decoded JWT Claims.")
         _claims = deepcopy(claims)
-        
+
         if self.claims:
-            _claims = {self.claims[claim]: value for claim, value in claims.items() if claim in self.claims}
+            _claims = {
+                self.claims[claim]: value
+                for claim, value in claims.items()
+                if claim in self.claims
+            }
             return _claims
         return {}
-
 
     def authenticate(self, req, resp):
         """ Processes the incoming request before routing it by parsing the Authorization header, and attaching the
@@ -229,89 +232,91 @@ class Auth0Middleware(object):
         :param resp: Response object that will be routed to the on_* responder.
         """
 
-        logger.info('Processing incoming Request.')
+        logger.info("Processing incoming Request.")
         if self.__jwks is None:
-            logger.warning('No JWKS has been set.')
+            logger.warning("No JWKS has been set.")
             self.__jwks = self.__create_jwks()
 
         _token = self.get_token_auth_header(req)
         self.verifyToken(req, _token)
-
 
     def verifyToken(self, req, _token):
         try:
             _unverified_header = jwt.get_unverified_header(_token)
         except jwt.JWTError:
             raise http_error_factory(
-                        status=HTTP_401,
-                        title="invalid_header",
-                        description="Invalid header. "
-                                    "Use an RS256 signed JWT Access Token",
-                        href=None,
-                        href_text=None,
-                        code=None
-                    )
+                status=HTTP_401,
+                title="invalid_header",
+                description="Invalid header. " "Use an RS256 signed JWT Access Token",
+                href=None,
+                href_text=None,
+                code=None,
+            )
         if _unverified_header["alg"] == "HS256":
             raise http_error_factory(
-                        status=HTTP_401,
-                        title="invalid_header",
-                        description="Invalid header. "
-                                    "Use an RS256 signed JWT Access Token",
-                        href=None,
-                        href_text=None,
-                        code=None
-                    )
-
+                status=HTTP_401,
+                title="invalid_header",
+                description="Invalid header. " "Use an RS256 signed JWT Access Token",
+                href=None,
+                href_text=None,
+                code=None,
+            )
 
         _rsa_key = {}
-        logger.info('Generating RSA Key.')
-        for key in self.__jwks.get('keys', []):
-            if key.get('kid') == _unverified_header.get('kid'):
+        logger.info("Generating RSA Key.")
+        for key in self.__jwks.get("keys", []):
+            if key.get("kid") == _unverified_header.get("kid"):
                 _rsa_key = {
-                    'kty': key['kty'],
-                    'kid': key['kid'],
-                    'use': key['use'],
-                    'n': key['n'],
-                    'e': key['e']
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"],
                 }
                 if _rsa_key:
-                    logger.info('Decoding JWT.')
+                    logger.info("Decoding JWT.")
                     try:
                         _claims = jwt.decode(
                             _token,
                             _rsa_key,
-                            algorithms=self.config.get(self.__environment, self.config).get('alg', ['RS256']),
-                            audience=self.config.get(self.__environment, self.config).get('audience', None),
-                            issuer=self.config.get(self.__environment, self.config).get('domain', None),
+                            algorithms=self.config.get(
+                                self.__environment, self.config
+                            ).get("alg", ["RS256"]),
+                            audience=self.config.get(
+                                self.__environment, self.config
+                            ).get("audience", None),
+                            issuer=self.config.get(self.__environment, self.config).get(
+                                "domain", None
+                            ),
                         )
-                        req.context.update({ 'auth': self.__process_claims(_claims) })
+                        req.context.update({"auth": self.__process_claims(_claims)})
                     except jwt.ExpiredSignatureError as e:
                         raise http_error_factory(
                             status=HTTP_401,
-                            title='Expired Token',
-                            description='The provided token has expired.',
+                            title="Expired Token",
+                            description="The provided token has expired.",
                             href=None,
                             href_text=None,
-                            code=None
+                            code=None,
                         )
                     except jwt.JWTClaimsError as e:
                         raise http_error_factory(
                             status=HTTP_401,
-                            title='Invalid Claims',
-                            description='The claims are incorrect. Please check the Audience and the Issuer.',
+                            title="Invalid Claims",
+                            description="The claims are incorrect. Please check the Audience and the Issuer.",
                             href=None,
                             href_text=None,
-                            code=None
+                            code=None,
                         )
                     except Exception as e:
-                        logger.critical('UNEXPECTED EXCEPTION.', exc_info=True)
+                        logger.critical("UNEXPECTED EXCEPTION.", exc_info=True)
                         raise http_error_factory(
                             status=HTTP_401,
-                            title='Invalid Header',
-                            description='Unable to find appropriate key.',
+                            title="Invalid Header",
+                            description="Unable to find appropriate key.",
                             href=None,
                             href_text=None,
-                            code=None
+                            code=None,
                         )
 
 
@@ -329,12 +334,13 @@ def requires_scope(req, resp, resource, params, required_scope):
             if token_scope == required_scope:
                 return True
 
-    logger.warning('User does not have the requiered scope: %s.' % required_scope)
+    logger.warning("User does not have the requiered scope: %s." % required_scope)
     raise http_error_factory(
-                        status=HTTP_401,
-                        title='Invalid Scope',
-                        description='User does not have the requiered scope.',
-                        href=None,
-                        href_text=None,
-                        code=None
-                    )
+        status=HTTP_401,
+        title="Invalid Scope",
+        description="User does not have the requiered scope.",
+        href=None,
+        href_text=None,
+        code=None,
+    )
+

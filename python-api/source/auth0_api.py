@@ -22,7 +22,9 @@ def autoAuthenticate(method):
             except exceptions.Auth0Error as e:
                 # 401(Unauthorized) code and first time.
                 if e.status_code == 401 and i == 0:
-                    logger.info("Getting new token...")
+                    logger.info(
+                        "Getting new token...", extra={"area": "security"},
+                    )
                     self.initAuth0()
                     continue
                 raise
@@ -78,16 +80,19 @@ class Auth0Api:
             userId = result["user_id"]
         except (KeyError, TypeError):
             logger.error(
-                "It was not possible to add the user with id: %s." % userId,
+                f"It was not possible to add the user with id: {userId}.",
                 exc_info=True,
+                extra={"area": "users"},
             )
             return
-        logger.info("User added with id: %s" % userId)
+        logger.info(
+            f"User added with id: {userId}", extra={"area": "users"},
+        )
         return userId
 
     @autoAuthenticate
     def deleteUser(self, userId):
-        logger.info("Deleted user with id: %s" % userId)
+        logger.info(f"Deleted user with id: {userId}", extra={"area": "users"})
         return self.auth0.users.delete(userId)
 
     @autoAuthenticate
@@ -118,6 +123,7 @@ class Auth0Api:
             logger.error(
                 "It was not possible to update the user with id: %s." % userId,
                 exc_info=True,
+                extra={"area": "users"},
             )
             return
 
@@ -143,7 +149,7 @@ class Auth0Api:
         )
 
         auth_api_token = token["access_token"]
-        logger.info("Loging from user: %s" % username)
+        logger.info(f"Loging from user: {username}", extra={"area": "users"})
         return auth_api_token
 
     def recoverPassword(self, username):
@@ -151,11 +157,14 @@ class Auth0Api:
             self.application_client_id, username, self.connection
         )
 
-        logger.info("User: %s requests a new password" % username)
+        logger.info(
+            f"User: {username} requests a new password", extra={"area": "users"}
+        )
         return result
 
     def changePassword(self, userId, password):
         result = self.auth0.users.update(userId, {"password": password})
-        logger.info("User: %s requests to change the password" % userId)
+        logger.info(
+            f"User: {userId} requests to change the password", extra={"area": "users"}
+        )
         return result
-

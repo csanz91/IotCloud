@@ -2,6 +2,7 @@ import logging
 import os
 
 from logging import handlers
+from influx_logging import InfluxHandler
 
 logger = logging.getLogger()
 handler = logging.handlers.RotatingFileHandler(
@@ -13,6 +14,8 @@ formatter = logging.Formatter(
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+influxHandler = InfluxHandler("modules")
+logger.addHandler(influxHandler)
 
 import falcon
 import falcon_auth0

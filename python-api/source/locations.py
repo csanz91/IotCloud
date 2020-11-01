@@ -28,7 +28,12 @@ class UserLocations:
             )
 
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}.",
+                exc_info=True,
+                extra={"area": "locations"},
+            )
+
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -63,8 +68,9 @@ class Locations:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -79,8 +85,9 @@ class Locations:
             location = dbinterface.selectLocation(self.db, userId, locationId, True)
         except:
             logger.error(
-                "Exception. userId: %s, locationId: %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -95,8 +102,9 @@ class Locations:
             result = dbinterface.deleteLocation(self.db, userId, locationId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -135,13 +143,15 @@ class LocationsPermissions:
         except ValueError as e:
             logger.error(
                 "The userId: %s has requested to give location permissions to the following email: %s that is not valid"
-                % (userId, req.media["email"])
+                % (userId, req.media["email"]),
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest("Bad Request: Invalid Email", e)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -158,8 +168,9 @@ class LocationsPermissions:
             )
         except:
             logger.error(
-                "Exception. userId: %s, locationId: %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -193,7 +204,11 @@ class LocationPermission:
         try:
             result = dbinterface.deleteUserLocationShare(self.db, userId, shareId)
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}.",
+                exc_info=True,
+                extra={"area": "locations"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -215,8 +230,9 @@ class LocationRooms:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -231,8 +247,9 @@ class LocationRooms:
             rooms = dbinterface.selectRooms(self.db, userId, locationId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -255,9 +272,9 @@ class LocationRoom:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, roomId: %s"
-                % (userId, locationId, roomId),
+                f"Exception. userId: {userId}, locationId: {locationId}, roomId: {roomId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -272,9 +289,9 @@ class LocationRoom:
             room = dbinterface.selectRoom(self.db, userId, locationId, roomId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, roomId: %s"
-                % (userId, locationId, roomId),
+                f"Exception. userId: {userId}, locationId: {locationId}, roomId: {roomId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -289,13 +306,12 @@ class LocationRoom:
             result = dbinterface.deleteRoom(self.db, userId, locationId, roomId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, roomId: %s"
-                % (userId, locationId, roomId),
+                f"Exception. userId: {userId}, locationId: {locationId}, roomId: {roomId}",
                 exc_info=True,
+                extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
-

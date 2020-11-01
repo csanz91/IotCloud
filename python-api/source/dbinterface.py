@@ -29,7 +29,10 @@ def checkArgs(*argchecks):
             dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
             for arg in argchecks:
                 if not dArgs[arg]:
-                    logger.warning("The argument: '%s' is not valid, is empty" % (arg))
+                    logger.warning(
+                        f"The argument: '{arg}' is not valid, is empty",
+                        extra={"area": "dbinterface"},
+                    )
                     raise ValueError("Invalid parameters.")
             return func(*args, **kwargs)
 
@@ -48,7 +51,10 @@ def validateDbResult(result):
         else:
             assert result.modified_count == 1
     except AssertionError:
-        logger.error("The database operation could not be completed successfully")
+        logger.error(
+            "The database operation could not be completed successfully",
+            extra={"area": "dbinterface"},
+        )
         raise
 
 
