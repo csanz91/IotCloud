@@ -125,10 +125,8 @@ services:
       - ./python-monitoring/logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/hostname:/app/hostname:ro
-    environment:
-      - INFLUXDB_HOST=influxdb
-      - INFLUXDB_MONITORING_DB=monitoring
-      - MASTER_NODE=csanz1
+    env_file:
+      - 'variables.env'
     deploy:
       mode: global
 
@@ -247,6 +245,22 @@ services:
       - VIRTUAL_PORT=9001
       - LETSENCRYPT_HOST=mqtt.iotcloud.es
       - VIRTUAL_NETWORK=iotcloud-overlay-net
+    deploy:
+      placement:
+        constraints: [node.hostname == csanz1]
+
+  telegraf:
+    image: telegraf
+    restart: always
+    env_file:
+      - 'variables.env'
+    hostname: localhost
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./nginx/logs:/var/log/nginx:ro
+    depends_on:
+     - influxdb
+     - nginx-proxy
     deploy:
       placement:
         constraints: [node.hostname == csanz1]
