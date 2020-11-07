@@ -340,9 +340,7 @@ def stopThreads():
         t.join()
 
 
-logger.info(
-    "Starting...", extra={"area": "main"},
-)
+logger.info("Starting...",)
 
 # Influx databse setup
 influxDb = influx.InfluxClient(
@@ -401,4 +399,4 @@ stopThreads()
 totalizer_gw.stopThreads()
 thermostat_gw.stopThreads()
 
-logger.info("Exiting...", extra={"area": "main"})
+logger.info("Exiting...")

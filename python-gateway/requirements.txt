@@ -2,4 +2,3 @@ influxdb
 paho-mqtt
 -e libs/influx
 -e libs/docker_secrets
--e libs/influx_logging

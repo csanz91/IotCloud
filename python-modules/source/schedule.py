@@ -51,9 +51,7 @@ class Schedule:
             if currentMinute == sunHour + offset:
                 # If the state is different from the setpoint
                 if not self.sunScheduleRunning:
-                    logger.info(
-                        f"Setting sun schedule to {state}", extra={"area": "schedule"}
-                    )
+                    logger.info(f"Setting sun schedule to {state}")
                     self.sunScheduleRunning = True
                     self.setState(mqttClient, state)
                     self.setValue(mqttClient, value)
@@ -73,7 +71,7 @@ class Schedule:
             if currentMinute >= start and currentMinute < start + scheduleElement[1]:
                 # If the schedule wasnt active
                 if not self.scheduleRunning:
-                    logger.info("Running manual schedule", extra={"area": "schedule"})
+                    logger.info("Running manual schedule")
                     self.scheduleRunning = True
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
@@ -87,7 +85,7 @@ class Schedule:
     def runSchedule(self, mqttClient, timeZoneId):
 
         if not timeZoneId:
-            logger.warning("Time zone not available", extra={"area": "schedule"})
+            logger.warning("Time zone not available")
             return
 
         now = utils.getLocalTime(timeZoneId)

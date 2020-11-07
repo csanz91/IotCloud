@@ -82,9 +82,7 @@ def grantLocationOwnerPermissions(requiredRole):
                     "Programing error, the args available for this "
                     "function are not valid for this decorator"
                 )
-                logger.error(
-                    errorMsg, extra={"area": "security"},
-                )
+                logger.error(errorMsg,)
                 raise SyntaxError(errorMsg)
 
             userIdReq = req.context["auth"]["subject"]

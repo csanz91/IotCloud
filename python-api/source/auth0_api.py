@@ -22,9 +22,7 @@ def autoAuthenticate(method):
             except exceptions.Auth0Error as e:
                 # 401(Unauthorized) code and first time.
                 if e.status_code == 401 and i == 0:
-                    logger.info(
-                        "Getting new token...", extra={"area": "security"},
-                    )
+                    logger.info("Getting new token...",)
                     self.initAuth0()
                     continue
                 raise
@@ -85,14 +83,12 @@ class Auth0Api:
                 extra={"area": "users"},
             )
             return
-        logger.info(
-            f"User added with id: {userId}", extra={"area": "users"},
-        )
+        logger.info(f"User added with id: {userId}",)
         return userId
 
     @autoAuthenticate
     def deleteUser(self, userId):
-        logger.info(f"Deleted user with id: {userId}", extra={"area": "users"})
+        logger.info(f"Deleted user with id: {userId}")
         return self.auth0.users.delete(userId)
 
     @autoAuthenticate
@@ -149,7 +145,7 @@ class Auth0Api:
         )
 
         auth_api_token = token["access_token"]
-        logger.info(f"Loging from user: {username}", extra={"area": "users"})
+        logger.info(f"Loging from user: {username}")
         return auth_api_token
 
     def recoverPassword(self, username):
@@ -157,14 +153,10 @@ class Auth0Api:
             self.application_client_id, username, self.connection
         )
 
-        logger.info(
-            f"User: {username} requests a new password", extra={"area": "users"}
-        )
+        logger.info(f"User: {username} requests a new password")
         return result
 
     def changePassword(self, userId, password):
         result = self.auth0.users.update(userId, {"password": password})
-        logger.info(
-            f"User: {userId} requests to change the password", extra={"area": "users"}
-        )
+        logger.info(f"User: {userId} requests to change the password")
         return result

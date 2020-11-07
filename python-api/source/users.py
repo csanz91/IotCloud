@@ -25,7 +25,7 @@ class Users:
             user = dbinterface.selectUserInheritedData(self.db, userId)
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -91,7 +91,7 @@ class ValidateLocationPermissions:
             pendingShares = dbinterface.getPendingValidateShares(self.db, userId)
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
 
             raise falcon.HTTPBadRequest(
@@ -112,7 +112,7 @@ class ValidateLocationPermissions:
             dbinterface.validateLocationPermissions(self.db, shareId)
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -156,7 +156,7 @@ class MqttUserToken:
             assert token
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "users"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."

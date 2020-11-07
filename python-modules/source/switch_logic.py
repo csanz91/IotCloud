@@ -48,9 +48,7 @@ class Switch:
 
         try:
             self.timer.importSettings(metadata["timer"])
-            logger.info(
-                f"timer updated: {metadata['timer']}", extra={"area": "switch"},
-            )
+            logger.info(f"timer updated: {metadata['timer']}",)
         except:
             pass
 

@@ -23,12 +23,8 @@ class Login:
         try:
             token = self.auth0.login(req.media["email"], req.media["password"])
         except exceptions.Auth0Error as e:
-            logger.error(
-                e.message, extra={"area": "users"},
-            )
-            logger.error(
-                "Req.media: %s" % (req.media), extra={"area": "users"},
-            )
+            logger.error(e.message,)
+            logger.error("Req.media: %s" % (req.media),)
             raise falcon.HTTPBadRequest("Error", e.message)
         except:
             logger.error(

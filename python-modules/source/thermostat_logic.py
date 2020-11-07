@@ -89,15 +89,13 @@ class Thermostat:
                 self.addTempReference(mqttClient, temperatureReferenceTopic, factor)
         except:
             logger.error(
-                "Excepcion: ", exc_info=True, extra={"area": "thermostat"},
+                "Excepcion: ", exc_info=True,
             )
             pass
 
         try:
             self.timer.importSettings(metadata["timer"])
-            logger.info(
-                f"timer updated: {metadata['timer']}", extra={"area": "thermostat"}
-            )
+            logger.info(f"timer updated: {metadata['timer']}")
         except:
             pass
 
@@ -125,9 +123,7 @@ class Thermostat:
 
         try:
             self.setpoint = float(aux["setpoint"])
-            logger.debug(
-                f"Received setpoint: {self.setpoint}", extra={"area": "thermostat"}
-            )
+            logger.debug(f"Received setpoint: {self.setpoint}")
         except:
             pass
 
@@ -196,9 +192,7 @@ class Thermostat:
         if self.progThermostatShutdownEnabled:
 
             if not self.timeZone:
-                logger.warning(
-                    "Time zone not available", extra={"area": "thermostat"},
-                )
+                logger.warning("Time zone not available",)
                 return
 
             minutesConverted = utils.getMinutesConverted(
@@ -209,9 +203,7 @@ class Thermostat:
             # logger.info(f"{currentMinute=}, {minutesConverted=}")
             if currentMinute == minutesConverted:
                 if not self.progThermostatShutdownMem:
-                    logger.info(
-                        "Shuthing down the thermostat", extra={"area": "thermostat"}
-                    )
+                    logger.info("Shuthing down the thermostat")
                     self.progThermostatShutdownMem = True
                     self.state = False
                     self.setState(mqttClient, self.state)

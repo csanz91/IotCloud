@@ -221,9 +221,7 @@ def onValueWork(msg):
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error(
-            f"The value received: {value} is not valid", extra={"area": "value"},
-        )
+        logger.error(f"The value received: {value} is not valid",)
 
 
 for i in range(onValueNumWorkerThreads):
@@ -450,9 +448,7 @@ def onAux(client, userdata, msg):
     auxQueue.put(((client, msg), numRetries := 0))
 
 
-logger.info(
-    "Starting...", extra={"area": "main"},
-)
+logger.info("Starting...",)
 
 # IotHub api setup
 api = iotcloud_api.IotCloudApi()
@@ -503,9 +499,7 @@ run(mqttclient)
 
 
 def onConnect(self, mosq, obj, rc):
-    logger.info(
-        "connected", extra={"area": "mqtt"},
-    )
+    logger.info("connected",)
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
     mqttclient.subscribe(statusTopic)
@@ -555,7 +549,5 @@ for i in range(onAuxNumWorkerThreads):
 for t in threads:
     t.join()
 
-logger.info(
-    "Exiting...", extra={"area": "main"},
-)
+logger.info("Exiting...",)
 

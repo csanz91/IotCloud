@@ -46,7 +46,7 @@ class UserSensors:
             sensors = dbinterface.selectUserSensors(self.db, userId)
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "m2m"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -221,7 +221,7 @@ class M2MUserTags:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True, extra={"area": "m2m"},
+                f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
