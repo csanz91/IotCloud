@@ -59,6 +59,12 @@ func ReturnAPIErrorUnknownError(w http.ResponseWriter, requestID string) {
 	returnAPIErrorMessage(w, requestID, "unknownError")
 }
 
+// ReturnAPIErrorHealthCheck : Health check request
+// dont do anything just return something
+func ReturnAPIErrorHealthCheck(w http.ResponseWriter, requestID string) {
+	returnAPIErrorMessage(w, requestID, "healthcheck")
+}
+
 func returnAPIErrorMessage(w http.ResponseWriter, requestID string, errorCode string) {
 	json.NewEncoder(w).Encode(DeviceResponseError{
 		RequestID: requestID,
