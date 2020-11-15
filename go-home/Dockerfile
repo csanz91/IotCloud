@@ -9,6 +9,10 @@ FROM golang:${GO_VERSION}-alpine AS builder
 # Set the working directory outside $GOPATH to enable the support for modules.
 WORKDIR /src
 
+RUN apk add --no-cache git
+
+RUN go get github.com/eclipse/paho.mqtt.golang
+
 # Import the code from the context.
 COPY ./ ./
 

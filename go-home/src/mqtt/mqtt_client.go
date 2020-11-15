@@ -110,6 +110,7 @@ func Connect() {
 	mqttClient = MQTT.NewClient(opts)
 
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
+		logger.Panicf("The mqtt client could not connect. Error: %s\n", token.Error())
 		panic(token.Error())
 	}
 

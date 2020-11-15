@@ -56,9 +56,9 @@ def checkLocationPermissions(requiredRole):
                     return func(self, *args, **kwargs)
 
             logger.warning(
-                "Unauthorized access attemp to the resource: %s"
-                " from the userId: %s with IP: %s, "
-                % (req.url, userId, req.remote_addr)
+                f"Unauthorized access attemp to the resource: {req.url}"
+                f" from the userId: {userId} with IP: {req.remote_addr}",
+                extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
                 "Unauthorized", "The user is not authorized to retrive this data."
@@ -82,7 +82,7 @@ def grantLocationOwnerPermissions(requiredRole):
                     "Programing error, the args available for this "
                     "function are not valid for this decorator"
                 )
-                logger.error(errorMsg)
+                logger.error(errorMsg,)
                 raise SyntaxError(errorMsg)
 
             userIdReq = req.context["auth"]["subject"]
@@ -98,9 +98,9 @@ def grantLocationOwnerPermissions(requiredRole):
                     return func(self, *args, **kwargs)
 
             logger.warning(
-                "Unauthorized access attemp to the resource: %s"
-                " from the userId: %s with IP: %s, "
-                % (req.url, userId, req.remote_addr)
+                f"Unauthorized access attemp to the resource: {req.url}"
+                f" from the userId: {userId} with IP: {req.remote_addr}",
+                extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
                 "Unauthorized", "The user is not authorized to retrive this data."
@@ -121,9 +121,9 @@ def checkUser(func):
             assert userIdReq == userId
         except:
             logger.warning(
-                "Unauthorized access attemp to the user:%s resource: %s"
-                " from the userId: %s with IP: %s, "
-                % (userId, req.url, userIdReq, req.remote_addr)
+                f"Unauthorized access attemp to the user: {userId} resource: {req.url}"
+                f" from the userId: {userIdReq} with IP: {req.remote_addr}",
+                extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
                 "Unauthorized", "The user is not authorized to retrive this data."
@@ -154,10 +154,12 @@ def checkShareOwner(func):
             if locationShare and locationShare["ownerUserId"] == userId:
                 return func(self, *args, **kwargs)
 
-        logger.warning(
-            "Unauthorized access attemp to the resource: %s"
-            " from the userId: %s with IP: %s, " % (req.url, userId, req.remote_addr)
-        )
+            logger.warning(
+                f"Unauthorized access attemp to the resource: {req.url}"
+                f" from the userId: {userId} with IP: {req.remote_addr}",
+                extra={"area": "security"},
+            )
+
         raise falcon.HTTPUnauthorized(
             "Unauthorized", "The user is not authorized to retrive this data."
         )
@@ -173,8 +175,9 @@ def m2mValidation(func):
             assert req.context["auth"]["scope"] == "read:devices"
         except:
             logger.warning(
-                "Unauthorized access attemp to the resource: %s"
-                " from the IP: %s, " % (req.url, req.remote_addr)
+                f"Unauthorized access attemp to the resource: {req.url}"
+                f"from the IP: {req.remote_addr}",
+                extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
                 "Unauthorized", "The user is not authorized to retrive this data."

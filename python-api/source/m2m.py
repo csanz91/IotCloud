@@ -23,7 +23,11 @@ class FindSensor:
         try:
             sensor = dbinterface.findSensor(self.db, locationId, deviceId, sensorId)
         except:
-            logger.error("Exception. sensorId: %s" % (sensorId), exc_info=True)
+            logger.error(
+                f"Exception. sensorId: {sensorId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -41,7 +45,9 @@ class UserSensors:
         try:
             sensors = dbinterface.selectUserSensors(self.db, userId)
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True,
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -62,7 +68,11 @@ class LocationSunSchedule:
             result = weather.getSunSchedule(postalCode)
 
         except:
-            logger.error("Exception. locationId: %s." % locationId, exc_info=True)
+            logger.error(
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -108,7 +118,11 @@ class SendNotification:
                 )
 
         except:
-            logger.error("Exception. locationId: %s." % locationId, exc_info=True)
+            logger.error(
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -153,8 +167,9 @@ class M2MSensorData:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "m2m"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -205,7 +220,9 @@ class M2MUserTags:
             }
 
         except:
-            logger.error("Exception. userId: %s" % (userId), exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}", exc_info=True,
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -223,7 +240,11 @@ class M2MLocationDevices:
         try:
             location = dbinterface.findLocation(self.db, locationId)
         except:
-            logger.error("Exception. locationId: %s" % (locationId), exc_info=True)
+            logger.error(
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )

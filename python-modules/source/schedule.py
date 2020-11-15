@@ -4,13 +4,13 @@ import datetime
 import time
 from dateutil import tz
 
-import iothub_api
+import iotcloud_api
 import utils
 
 logger = logging.getLogger()
 
 # IotHub api setup
-api = iothub_api.IothubApi()
+api = iotcloud_api.IotCloudApi()
 
 
 class Schedule:
@@ -18,10 +18,12 @@ class Schedule:
         self.schedule = [[], [], [], [], [], [], []]
         self.solarSchedule = [[], [], [], [], [], [], []]
         self.sunScheduleInfo = {"timestamp": 0, "sunrise": 0, "sunset": 0}
+        self.utcSunScheduleExpireDate = datetime.datetime.now(tz=tz.UTC)
         self.scheduleRunning = False
         self.sunScheduleRunning = False
         self.setState = setState
         self.setValue = setValue
+        self.lastValue = None
 
         self.locationId = locationId
 
@@ -64,7 +66,7 @@ class Schedule:
         todaySchedule = self.schedule[today]
         for scheduleElement in todaySchedule:
             # If schedule is activated
-            start = utils.getMinutesConverted(scheduleElement[0], timeZoneId)
+            start = scheduleElement[0]
             # logger.info(f"{currentMinute=}, {start=}")
 
             if currentMinute >= start and currentMinute < start + scheduleElement[1]:
@@ -74,6 +76,13 @@ class Schedule:
                     self.scheduleRunning = True
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
+                    self.lastValue = scheduleElement[2]
+                elif self.lastValue != scheduleElement[2]:
+                    logger.info(
+                        f"Changing value from: {self.lastValue} to {scheduleElement[2]}"
+                    )
+                    self.setValue(mqttClient, scheduleElement[2])
+                    self.lastValue = scheduleElement[2]
                 return
 
         # If the schudele is not active anymore, shut it down
@@ -91,23 +100,19 @@ class Schedule:
         currentMinute = utils.getCurrentMinute(timeZoneId)
         today = now.weekday()  # Mon: 0, Sun: 6
 
-        # Even if we have the function cached everywhere, this check in memory can
-        # improve things slightly because this function can be called many times
-        utcSunScheduleTimestamp = datetime.datetime.utcfromtimestamp(
-            self.sunScheduleInfo["timestamp"]
-        ).replace(tzinfo=tz.UTC)
-        utcSunScheduleExpireTimestamp = utcSunScheduleTimestamp + datetime.timedelta(
-            hours=24
-        )
-        if now > utcSunScheduleExpireTimestamp:
+        if now > self.utcSunScheduleExpireDate:
             try:
                 newSunScheduleInfo = api.getLocationSunSchedule(self.locationId)
                 assert float(newSunScheduleInfo["sunrise"])
                 assert float(newSunScheduleInfo["sunset"])
+                assert int(newSunScheduleInfo["timestamp"])
                 self.sunScheduleInfo = newSunScheduleInfo
+
             except:
                 logger.warning(
-                    "Unable to recover the sunschedule. Extending the current one."
+                    "Unable to recover the sunschedule. Extending the current one.",
+                    exc_info=True,
+                    extra={"area": "schedule"},
                 )
                 # In case we are not able to recover the sun schedule:
                 #
@@ -123,7 +128,18 @@ class Schedule:
                     # Set the sunset at 19:00
                     self.sunScheduleInfo["sunset"] = 60 * 19
 
-                logger.info(f"New sunschedule: {self.sunScheduleInfo}")
+                logger.info(
+                    f"New sunschedule: {self.sunScheduleInfo}",
+                    extra={"area": "schedule"},
+                )
+
+            self.utcSunScheduleExpireDate = datetime.datetime.utcfromtimestamp(
+                self.sunScheduleInfo["timestamp"]
+            ).replace(tzinfo=tz.UTC) + datetime.timedelta(hours=8)
+
+            # If the data is already expired, renew it for an hour
+            if now > self.utcSunScheduleExpireDate:
+                self.utcSunScheduleExpireDate = now + datetime.timedelta(hours=1)
 
         self.runSunSchedule(mqttClient, today, currentMinute, timeZoneId)
         self.runManualSchedule(mqttClient, today, currentMinute, timeZoneId)

@@ -9,32 +9,42 @@ import weather
 logger = logging.getLogger(__name__)
 
 
-class Weather():
-
+class Weather:
     @checkUser
     def on_post(self, req, resp, userId):
 
         try:
-            result = weather.getWeather(req.media['postalCode'], req.media['measurement'])
+            result = weather.getWeather(
+                req.media["postalCode"], req.media["measurement"]
+            )
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            logger.error(
+                f"Exception. userId: {userId}",
+                exc_info=True,
+                extra={"area": "weather"},
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = result
 
 
-class SunSchedule():
-
+class SunSchedule:
     @checkUser
     def on_post(self, req, resp, userId):
 
         try:
-            result = weather.getSunSchedule(req.media['postalCode'])
+            result = weather.getSunSchedule(req.media["postalCode"])
 
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
-            raise falcon.HTTPBadRequest('Bad Request',
-                                        'The request can not be completed.')
+            logger.error(
+                f"Exception. userId: {userId}",
+                exc_info=True,
+                extra={"area": "weather"},
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
 
         resp.media = result

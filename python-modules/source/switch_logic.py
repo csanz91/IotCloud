@@ -6,18 +6,19 @@ from dateutil import tz
 
 import schedule
 import timer
-import location_utils
 
 logger = logging.getLogger()
 
-class Switch():
+
+class Switch:
     def __init__(self, tags, mqttClient, subscriptionsList):
 
         # Aux variables
         self.tags = tags
-        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(locationId=tags["locationId"],
-                                                                      deviceId=tags["deviceId"])
-        self.topicHeader = self.deviceTopicHeader+tags["sensorId"]+"/"
+        self.deviceTopicHeader = "v1/{locationId}/{deviceId}/".format(
+            locationId=tags["locationId"], deviceId=tags["deviceId"]
+        )
+        self.topicHeader = self.deviceTopicHeader + tags["sensorId"] + "/"
 
         # Runtime variables
         self.state = False
@@ -26,25 +27,28 @@ class Switch():
         self.metadata = {}
         self.aux = {}
         self.postalCode = None
-        self.timeZoneId = None
+        self.timeZone = None
 
         # Subscribe to the relevant topics
-        mqttClient.subscribe(self.topicHeader+"state")
-        subscriptionsList.append(self.topicHeader+"state")
-        mqttClient.subscribe(self.topicHeader+"updatedSensor")
-        subscriptionsList.append(self.topicHeader+"updatedSensor")
+        mqttClient.subscribe(self.topicHeader + "state")
+        subscriptionsList.append(self.topicHeader + "state")
+        mqttClient.subscribe(self.topicHeader + "updatedSensor")
+        subscriptionsList.append(self.topicHeader + "updatedSensor")
 
     def updateSettings(self, mqttClient, metadata):
         self.metadata = metadata
         try:
             self.schedule.importSchedule(metadata)
-            logger.info("%s: schedule updated: %s" % (self.deviceTopicHeader, self.schedule.schedule))
+            logger.info(
+                f"{self.deviceTopicHeader}: schedule updated: {self.schedule.schedule}",
+                extra={"area": "switch"},
+            )
         except:
             pass
 
         try:
-            self.timer.importSettings(metadata['timer']) 
-            logger.info("timer updated: %s" % metadata['timer'])
+            self.timer.importSettings(metadata["timer"])
+            logger.info(f"timer updated: {metadata['timer']}",)
         except:
             pass
 
@@ -53,18 +57,16 @@ class Switch():
 
     def updatePostalCode(self, postalCode):
         self.postalCode = postalCode
-        try:
-            locationTimezoneData = location_utils.getTimeZone(postalCode)
-            self.timeZoneId = locationTimezoneData["timeZoneId"]
-        except:
-            logger.error("It was not possible to retrive the timezone data", exc_info=True)
+
+    def updateTimeZone(self, timeZone):
+        self.timeZone = timeZone
 
     def setState(self, mqttClient, state):
-        mqttClient.publish(self.topicHeader+"setState", state, qos=1, retain=True)
+        mqttClient.publish(self.topicHeader + "setState", state, qos=1, retain=True)
 
     def engine(self, mqttClient, values):
 
         # Check the schedule
-        self.schedule.runSchedule(mqttClient, self.timeZoneId)
+        self.schedule.runSchedule(mqttClient, self.timeZone)
         # Check the timer
         self.timer.runTimer(mqttClient)

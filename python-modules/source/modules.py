@@ -8,13 +8,12 @@ from threading import Timer, Thread
 import queue
 import time
 
-
 import paho.mqtt.client as mqtt
 from docker_secrets import getDocketSecrets
 import thermostat_logic
 import switch_logic
 import toogle_logic
-import iothub_api
+import iotcloud_api
 import utils
 import location_status
 
@@ -51,6 +50,7 @@ class Sensor:
         self.instance = None
         self.metadata = None
         self.postalCode = None
+        self.timeZone = None
         self.aux = {}
 
 
@@ -78,7 +78,10 @@ def getTags(topic):
 
 def addToQueueDelayed(queue, items, delay):
     time.sleep(delay)
-    logger.info(f"Element has been put back into the queue after {delay} seconds")
+    logger.info(
+        f"Element has been put back into the queue after {delay} seconds",
+        extra={"area": "main"},
+    )
     queue.put(items)
 
 
@@ -149,6 +152,7 @@ def onStatusWork(msg):
         logger.error(
             f"onStatus message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "status"},
         )
 
 
@@ -183,6 +187,7 @@ def onStateWork(msg):
         logger.error(
             f"onState message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "state"},
         )
 
 
@@ -213,7 +218,7 @@ def onValueWork(msg):
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error("The value received: %s is not valid" % value)
+        logger.error(f"The value received: {value} is not valid",)
 
 
 for i in range(onValueNumWorkerThreads):
@@ -242,7 +247,8 @@ def sensorUpdateWorker():
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onSensorUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"area": "sensor"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -266,10 +272,11 @@ def onSensorUpdateWork(msg):
 
         sensor = devices[deviceHash].sensors[tags["sensorId"]]
         sensor.metadata = sensorData["sensorMetadata"]
-        sensor.postalCode = sensorData["postalCode"]
     except:
         logger.error(
-            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+            "Cant retrieve the metadata for the topic: %s" % msg.topic,
+            exc_info=True,
+            extra={"area": "sensor"},
         )
         raise
 
@@ -299,7 +306,8 @@ def locationUpdateWorker():
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onLocationUpdateWork {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"area": "location"},
                 )
                 Thread(
                     target=addToQueueDelayed,
@@ -328,10 +336,13 @@ def onLocationUpdateWork(msg):
                     sensor = devices[deviceHash].sensors[sensorId]
                     sensor.metadata = sensorData["sensorMetadata"]
                     sensor.postalCode = location["postalCode"]
+                    sensor.timeZone = location["timeZone"]
 
     except:
         logger.error(
-            "Cant retrieve the metadata for the topic: %s" % msg.topic, exc_info=True
+            "Cant retrieve the metadata for the topic: %s" % msg.topic,
+            exc_info=True,
+            extra={"area": "location"},
         )
         raise
 
@@ -356,12 +367,17 @@ def auxWorker():
         try:
             onAuxWork(*item)
         except:
-            logger.error("onAux message failed. Exception: ", exc_info=True)
+            logger.error(
+                "onAux message failed. Exception: ",
+                exc_info=True,
+                extra={"area": "aux"},
+            )
             numRetries += 1
             if numRetries < maxRetries:
                 delay = numRetries ** 2 + 10
                 logger.info(
-                    f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds"
+                    f"retrying onAux {numRetries}/{maxRetries} after {delay} seconds",
+                    extra={"area": "aux"},
                 )
                 Thread(
                     target=addToQueueDelayed, args=(auxQueue, (item, numRetries), delay)
@@ -389,6 +405,7 @@ def onAuxWork(client, msg):
             sensor = devices[deviceHash].sensors[tags["sensorId"]]
             sensor.metadata = sensorData["sensorMetadata"]
             sensor.postalCode = sensorData["postalCode"]
+            sensor.timeZone = sensorData["timeZone"]
 
     # Add the value received to the aux dict
     else:
@@ -428,10 +445,10 @@ def onAux(client, userdata, msg):
     auxQueue.put(((client, msg), numRetries := 0))
 
 
-logger.info("Starting...")
+logger.info("Starting...",)
 
 # IotHub api setup
-api = iothub_api.IothubApi()
+api = iotcloud_api.IotCloudApi()
 
 # MQTT constants
 version = "v1"
@@ -463,8 +480,9 @@ def run(mqttClient):
                     if sensor.aux != sensor.instance.aux:
                         sensor.instance.updateAux(mqttClient, sensor.aux)
                     if sensor.postalCode != sensor.instance.postalCode:
-                        logger.info(sensor.postalCode)
                         sensor.instance.updatePostalCode(sensor.postalCode)
+                    if sensor.timeZone != sensor.instance.timeZone:
+                        sensor.instance.updateTimeZone(sensor.timeZone)
                     # Run the engine
                     sensor.instance.engine(mqttClient, values)
 
@@ -478,7 +496,7 @@ run(mqttclient)
 
 
 def onConnect(self, mosq, obj, rc):
-    logger.info("connected")
+    logger.info("connected",)
     # Setup subscriptions
     mqttclient.subscribe(auxTopic)
     mqttclient.subscribe(statusTopic)
@@ -528,4 +546,5 @@ for i in range(onAuxNumWorkerThreads):
 for t in threads:
     t.join()
 
-logger.info("Exiting...")
+logger.info("Exiting...",)
+

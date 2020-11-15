@@ -9,6 +9,11 @@ import (
 
 func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.DeviceRequest, input model.InputModel) {
 
+	if dfReq.RequestID == "ff36a3cc-ec34-11e6-b1a0-64510650abcf" {
+		model.ReturnAPIErrorHealthCheck(w, dfReq.RequestID)
+		return
+	}
+
 	authToken, err := getTokenFromHeaders(r)
 	if err != nil {
 		model.ReturnAPIErrorAuthFailure(w, dfReq.RequestID)

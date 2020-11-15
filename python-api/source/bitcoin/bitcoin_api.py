@@ -18,7 +18,11 @@ class BitcoinCurrent:
             result = bitcoin_price.getCurrentPrice()
 
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}",
+                exc_info=True,
+                extra={"area": "bitcoin"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -34,7 +38,11 @@ class BitcoinHistorical:
             result = bitcoin_price.getHistoricalPrice()
 
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}",
+                exc_info=True,
+                extra={"area": "bitcoin"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -57,7 +65,11 @@ class BitcoinPrice:
             }
 
         except:
-            logger.error("Exception. userId: %s." % userId, exc_info=True)
+            logger.error(
+                f"Exception. userId: {userId}",
+                exc_info=True,
+                extra={"area": "bitcoin"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )

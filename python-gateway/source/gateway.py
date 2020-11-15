@@ -25,7 +25,6 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-
 ####################################
 # Global variables
 ####################################
@@ -65,7 +64,8 @@ def onStatusWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "status"},
         )
         return
 
@@ -83,6 +83,7 @@ def onStatusWork(msg):
         logger.error(
             f"onStatusWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "status"},
         )
 
 
@@ -110,7 +111,8 @@ def onStateWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "state"},
         )
         return
 
@@ -128,6 +130,7 @@ def onStateWork(msg):
         logger.error(
             f"onStateWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "state"},
         )
 
 
@@ -156,7 +159,8 @@ def onValueWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "value"},
         )
         return
 
@@ -175,6 +179,7 @@ def onValueWork(msg):
         logger.error(
             f"onValueWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "value"},
         )
 
 
@@ -202,7 +207,8 @@ def onIPWork(msg):
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
-            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data'
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "IP"},
         )
         return
 
@@ -220,6 +226,7 @@ def onIPWork(msg):
         logger.error(
             f"onIPWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
+            extra={"area": "IP"},
         )
 
 
@@ -327,11 +334,10 @@ def stopThreads():
         IPQueue.put(None)
 
     for t in threads:
-        logger.info(t.name)
         t.join()
 
 
-logger.info("Starting...")
+logger.info("Starting...",)
 
 # Influx databse setup
 influxDb = influx.InfluxClient(

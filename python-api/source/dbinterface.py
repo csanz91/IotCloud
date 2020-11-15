@@ -13,6 +13,7 @@ import copy
 import api_utils
 
 import request_home_resync
+import weather
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +23,16 @@ logger = logging.getLogger(__name__)
 #####################################################
 
 
-def joinDicts(d1, d2):
-    d = d1.copy()
-    d.update(d2)
-    return d
-
-
 def checkArgs(*argchecks):
     def checkAllArgs(func):
         def func_wrapper(*args, **kwargs):
-            dArgs = joinDicts(dict(zip(inspect.getargspec(func).args, args)), kwargs)
+            dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
             for arg in argchecks:
                 if not dArgs[arg]:
-                    logger.warning("The argument: '%s' is not valid, is empty" % (arg))
+                    logger.warning(
+                        f"The argument: '{arg}' is not valid, is empty",
+                        extra={"area": "dbinterface"},
+                    )
                     raise ValueError("Invalid parameters.")
             return func(*args, **kwargs)
 
@@ -53,7 +51,10 @@ def validateDbResult(result):
         else:
             assert result.modified_count == 1
     except AssertionError:
-        logger.error("The database operation could not be completed successfully")
+        logger.error(
+            "The database operation could not be completed successfully",
+            extra={"area": "dbinterface"},
+        )
         raise
 
 
@@ -327,6 +328,8 @@ def insertLocation(
     if not color:
         color = "ff%06x" % random.randint(0, 0xFFFFFF)
 
+    timeZone = weather.getTimeZone(postalCode)["timeZoneId"]
+
     _id = str(ObjectId())
     result = db.usersData.update_one(
         {"_id": userId},
@@ -336,6 +339,7 @@ def insertLocation(
                     "_id": _id,
                     "locationName": locationName,
                     "postalCode": postalCode,
+                    "timeZone": timeZone,
                     "city": city,
                     "utcLocationInitialTimestamp": utcLocationInitialTimestamp,
                     "utcLocationUpdatedTimestamp": utcLocationInitialTimestamp,
@@ -401,6 +405,11 @@ def updateLocation(db, userId, locationId, updatedData):
         return True
 
     dataToUpdate["utcLocationUpdatedTimestamp"] = int(time.time())
+
+    if "postalCode" in updatedData:
+        dataToUpdate["timeZone"] = weather.getTimeZone(updatedData["postalCode"])[
+            "timeZoneId"
+        ]
 
     result = db.usersData.update_one(
         {"_id": userId, "locations._id": locationId},
@@ -902,6 +911,7 @@ def findSensor(db, locationId, deviceId, sensorId):
             for sensor in device["sensors"]:
                 if sensor["sensorId"] == sensorId:
                     sensor["postalCode"] = location["postalCode"]
+                    sensor["timeZone"] = location["timeZone"]
                     return sensor
             return {}
 

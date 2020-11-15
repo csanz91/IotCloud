@@ -40,9 +40,11 @@ class LocationDevices:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
+
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -57,8 +59,9 @@ class LocationDevices:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -85,9 +88,9 @@ class Devices:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, deviceId: %s"
-                % (userId, locationId, deviceId),
+                f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -102,9 +105,9 @@ class Devices:
             device = dbinterface.selectDevice(self.db, userId, locationId, deviceId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, deviceId: %s"
-                % (userId, locationId, deviceId),
+                f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -119,9 +122,9 @@ class Devices:
             result = dbinterface.deleteDevice(self.db, userId, locationId, deviceId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, deviceId: %s"
-                % (userId, locationId, deviceId),
+                f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -143,9 +146,9 @@ class Sensors:
             )
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, deviceId: %s"
-                % (userId, locationId, deviceId),
+                f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -172,9 +175,9 @@ class Sensors:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, deviceId: %s, sensorId: %s"
-                % (userId, locationId, deviceId, sensorId),
+                f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}, sensorId: {sensorId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -197,9 +200,10 @@ class OrderSensors:
 
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s, newSensorsOrder: %s"
-                % (userId, locationId, req.media["newSensorsOrder"]),
+                f"Exception. userId: {userId}, locationId: {locationId}, "
+                f"newSensorsOrder: {req.media['newSensorsOrder']}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -222,8 +226,9 @@ class MqttDeviceToken:
             assert token
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -252,8 +257,9 @@ class MqttSubdeviceToken:
             assert token
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -276,8 +282,9 @@ class LastSeen:
             )
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -304,8 +311,9 @@ class SensorData:
             )
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -337,8 +345,9 @@ class SensorDataTrend:
             data = [float(value["value"]) for value in data]
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -403,8 +412,9 @@ class SensorDataStats:
             }
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -428,7 +438,7 @@ class SensorStateTime:
 
         stateTimes = []
         # Go back 10 days
-        for dayIndex in xrange(10):
+        for dayIndex in range(10):
             # Get the timestamps from the selected period
             pastDay = datetimeNow - timedelta(days=dayIndex)
             (
@@ -532,8 +542,9 @@ class TotalizerStats:
             }
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -560,8 +571,9 @@ class HourlyAccumulation:
             )
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
@@ -582,8 +594,9 @@ class DeviceIP:
             ip = influxdb_interface.getDeviceIP(self.influxdb, locationId, deviceId)
         except:
             logger.error(
-                "Exception. userId: %s, locationId %s" % (userId, locationId),
+                f"Exception. userId: {userId}, locationId: {locationId}",
                 exc_info=True,
+                extra={"area": "devices"},
             )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."

@@ -37,7 +37,10 @@ class MqttAuth:
             token = req.params["username"]
             tokenData = verifyMqttToken(token)
             assert tokenData["role"]
-            logger.info("Granted MQTT connection to the user with id: %s" % token)
+            logger.info(
+                f"Granted MQTT connection to the user with id: {token}",
+                extra={"area": "mqtt"},
+            )
 
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
@@ -119,7 +122,11 @@ class MqttAcl:
         except falcon.HTTPUnauthorized:
             raise
         except:
-            logger.error("Exception. params: %s" % (req.params), exc_info=True)
+            logger.error(
+                "Exception. params: %s" % (req.params),
+                exc_info=True,
+                extra={"area": "mqtt"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
@@ -143,7 +150,11 @@ class MqttSuperUser:
         except falcon.HTTPUnauthorized:
             raise
         except:
-            logger.error("Exception. params: %s" % (req.params), exc_info=True)
+            logger.error(
+                "Exception. params: %s" % (req.params),
+                exc_info=True,
+                extra={"area": "mqtt"},
+            )
             raise falcon.HTTPBadRequest(
                 "Bad Request", "The request can not be completed."
             )
