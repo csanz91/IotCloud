@@ -77,7 +77,7 @@ class Schedule:
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
                     self.lastValue = scheduleElement[2]
-                elif currentMinute == start and self.lastValue != scheduleElement[2]:
+                elif self.lastValue != scheduleElement[2]:
                     logger.info(
                         f"Changing value from: {self.lastValue} to {scheduleElement[2]}"
                     )
