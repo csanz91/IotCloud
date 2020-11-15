@@ -75,6 +75,13 @@ class Schedule:
                     self.scheduleRunning = True
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
+                    self.lastValue = scheduleElement[2]
+                elif self.lastValue != scheduleElement[2]:
+                    logger.info(
+                        f"Changing value from: {self.lastValue} to {scheduleElement[2]}"
+                    )
+                    self.setValue(mqttClient, scheduleElement[2])
+                    self.lastValue = scheduleElement[2]
                 return
 
         # If the schudele is not active anymore, shut it down
