@@ -23,6 +23,7 @@ class Schedule:
         self.sunScheduleRunning = False
         self.setState = setState
         self.setValue = setValue
+        self.lastValue = None
 
         self.locationId = locationId
 
