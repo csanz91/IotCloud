@@ -163,7 +163,6 @@ class Thermostat:
             except (KeyError, TypeError):
                 logger.warning(
                     f"Temperature value from the topic:{temperatureReferenceTopic} not available",
-                    extra={"area": "thermostat"},
                 )
         if tempReference and factorsSum:
             tempReference = tempReference / factorsSum
@@ -222,7 +221,6 @@ class Thermostat:
         if self.alarm or not self.state:
             logger.debug(
                 f"Thermostat: {self.topicHeader} not running because is stopped or an alarm is set",
-                extra={"area": "thermostat"},
             )
             # Delete the retentive heating. The device also evaluates this condition
             if self.heating or self.setHeatingMem:
@@ -236,7 +234,6 @@ class Thermostat:
         if not tempReference or not self.setpoint:
             logger.warning(
                 f"Some of the core values are not valid. tempReference: {tempReference}, setpoint: {self.setpoint}",
-                extra={"area": "thermostat"},
             )
             return
 
@@ -253,7 +250,6 @@ class Thermostat:
         ):
             logger.warning(
                 f"Heating running for more than {self.maxHeatingTime} sec. in {self.deviceTopicHeader}. Triggering alarm",
-                extra={"area": "thermostat"},
             )
             self.setHeating(mqttClient, False)
             self.setAlarm(mqttClient, True)
@@ -263,15 +259,9 @@ class Thermostat:
         if not self.heating and tempReference <= self.setpoint + self.hysteresisLow:
             self.setHeating(mqttClient, True)
             self.startHeatingAt = int(time.time())
-            logger.info(
-                f"Start heating for: {self.deviceTopicHeader}",
-                extra={"area": "thermostat"},
-            )
+            logger.info(f"Start heating for: {self.deviceTopicHeader}",)
         # The reference temperature is above the setpoint -> stop heating
         elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
             self.setHeating(mqttClient, False)
-            logger.info(
-                f"Stop heating for: {self.deviceTopicHeader}",
-                extra={"area": "thermostat"},
-            )
+            logger.info(f"Stop heating for: {self.deviceTopicHeader}",)
 
