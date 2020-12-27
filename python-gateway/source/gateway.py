@@ -37,7 +37,8 @@ maxRetries = 5
 
 # Configure the number of workers
 onStatusNumWorkerThreads = 2
-onStateNumWorkerThreads = 5
+onStateNumWorkerThreads = 2
+onToogleNumWorkerThreads = 2
 onValueNumWorkerThreads = 10
 onIPNumWorkerThreads = 2
 
@@ -131,6 +132,53 @@ def onStateWork(msg):
             f"onStateWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
             extra={"area": "state"},
+        )
+
+
+####################################
+# Toogle message processing
+####################################
+toogleQueue = queue.Queue()
+
+
+def toogleWorker():
+    while True:
+        item = toogleQueue.get()
+        if item is None:
+            toogleQueue.task_done()
+            break
+        onToogleWork(item)
+        toogleQueue.task_done()
+
+
+def onToogleWork(msg):
+
+    try:
+        msg.payload = msg.payload.decode("utf-8")
+        toogle = msg.payload
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "toogle"},
+        )
+        return
+
+    try:
+        fields = {"setToogle": toogle}
+        tagsToSave = ["locationId", "sensorId"]
+        measurement = "sensorsData"
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
+    except:
+        logger.error(
+            f"onToogleWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+            extra={"area": "toogle"},
         )
 
 
@@ -286,6 +334,10 @@ def onState(client, userdata, msg):
     stateQueue.put(msg)
 
 
+def onToogle(client, userdata, msg):
+    toogleQueue.put(msg)
+
+
 def onValue(client, userdata, msg):
     valueQueue.put(msg)
 
@@ -304,6 +356,12 @@ def startThreads():
     for i in range(onStateNumWorkerThreads):
         t = Thread(target=stateWorker)
         t.name = "State%d" % i
+        t.start()
+        threads.append(t)
+
+    for i in range(onToogleNumWorkerThreads):
+        t = Thread(target=toogleWorker)
+        t.name = "Toogle%d" % i
         t.start()
         threads.append(t)
 
@@ -326,6 +384,9 @@ def stopThreads():
 
     for _ in range(onStateNumWorkerThreads):
         stateQueue.put(None)
+
+    for _ in range(onToogleNumWorkerThreads):
+        toogleQueue.put(None)
 
     for _ in range(onValueNumWorkerThreads):
         valueQueue.put(None)
@@ -353,6 +414,7 @@ version = "v1"
 topicHeader = "{version}/+/+/".format(version=version)
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
+toogleTopic = topicHeader + "+/aux/setToogle"
 statusTopic = topicHeader + "status"
 IPTopic = topicHeader + "ip"
 
@@ -369,6 +431,9 @@ def onConnect(self, mosq, obj, rc):
 
     mqttclient.subscribe(stateTopic)
     mqttclient.message_callback_add(stateTopic, onState)
+
+    mqttclient.subscribe(toogleTopic)
+    mqttclient.message_callback_add(toogleTopic, onToogle)
 
     mqttclient.subscribe(statusTopic)
     mqttclient.message_callback_add(statusTopic, onStatus)
