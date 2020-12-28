@@ -276,6 +276,106 @@ func GetSensorData(userID, locationID, sensorID, from, to string, maxDataPoints 
 	return nil, errors.New("It was not possible to retrieve the data")
 }
 
+// GetSensorActionData :
+func GetSensorActionData(userID, locationID, sensorID, from, to string) ([][]interface{}, error) {
+
+	postData := map[string]interface{}{
+		"from": from,
+		"to":   to,
+	}
+	postDataStr, err := json.Marshal(postData)
+	if err != nil {
+		logger.Println("Cannot serialize the post data")
+		return nil, err
+	}
+
+	maxRetries := 2
+	for numRetries := 0; numRetries < maxRetries; numRetries++ {
+		payload := strings.NewReader(string(postDataStr))
+		req, err := http.NewRequest("POST", apiURL+"users/"+userID+"/locations/"+locationID+"/m2msensoractiondata/"+sensorID, payload)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+apiAuth.AccessToken)
+		req.Header.Add("content-type", "application/json")
+		response, err := http.DefaultClient.Do(req)
+		if err != nil || response.StatusCode != http.StatusOK {
+			// Get a new token
+			if response.StatusCode == http.StatusUnauthorized {
+				newToken, err := GetAPIToken()
+				// If the token could not be retrieved abort
+				if err != nil {
+					break
+				}
+				// Set the new token and try again
+				apiAuth = newToken
+				continue
+			}
+			logger.Printf("The HTTP request failed with error %s\n", err)
+			logger.Printf("Status code %v\n", response.StatusCode)
+		}
+		// Decode the response
+		dfReq := APIDataResponse{}
+		if dfErr := json.NewDecoder(response.Body).Decode(&dfReq); dfErr != nil {
+			logger.Printf("The HTTP request cannot be decoded %s\n", dfErr)
+			continue
+		}
+		return dfReq.Data, nil
+	}
+
+	return nil, errors.New("It was not possible to retrieve the data")
+}
+
+// GetLocationActionData :
+func GetLocationActionData(userID, locationID, from, to string) ([][]interface{}, error) {
+
+	postData := map[string]interface{}{
+		"from": from,
+		"to":   to,
+	}
+	postDataStr, err := json.Marshal(postData)
+	if err != nil {
+		logger.Println("Cannot serialize the post data")
+		return nil, err
+	}
+
+	maxRetries := 2
+	for numRetries := 0; numRetries < maxRetries; numRetries++ {
+		payload := strings.NewReader(string(postDataStr))
+		req, err := http.NewRequest("POST", apiURL+"users/"+userID+"/locations/"+locationID+"/m2mlocationactiondata", payload)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Authorization", "Bearer "+apiAuth.AccessToken)
+		req.Header.Add("content-type", "application/json")
+		response, err := http.DefaultClient.Do(req)
+		if err != nil || response.StatusCode != http.StatusOK {
+			// Get a new token
+			if response.StatusCode == http.StatusUnauthorized {
+				newToken, err := GetAPIToken()
+				// If the token could not be retrieved abort
+				if err != nil {
+					break
+				}
+				// Set the new token and try again
+				apiAuth = newToken
+				continue
+			}
+			logger.Printf("The HTTP request failed with error %s\n", err)
+			logger.Printf("Status code %v\n", response.StatusCode)
+		}
+		// Decode the response
+		dfReq := APIDataResponse{}
+		if dfErr := json.NewDecoder(response.Body).Decode(&dfReq); dfErr != nil {
+			logger.Printf("The HTTP request cannot be decoded %s\n", dfErr)
+			continue
+		}
+		return dfReq.Data, nil
+	}
+
+	return nil, errors.New("It was not possible to retrieve the data")
+}
+
 func getUserTags(userID, locationID string, disableCache bool) (TagsData, error) {
 
 	currentTimestamp := time.Now().Unix()

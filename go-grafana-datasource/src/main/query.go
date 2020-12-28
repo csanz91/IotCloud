@@ -56,10 +56,6 @@ type query struct {
 	ScopedVars    map[string]Tag `json:"scopedVars"`
 }
 
-// row is used in timeseriesResponse and tableResponse.
-// Grafana's JSON contains weird arrays with mixed types!
-type row []interface{}
-
 // column is used in tableResponse.
 type column struct {
 	Text string `json:"text"`
@@ -76,9 +72,9 @@ type timeseriesResponse struct {
 
 // tableResponse is the response to send when "Type" is "table".
 type tableResponse struct {
-	Columns []column `json:"columns"`
-	Rows    []row    `json:"rows"`
-	Type    string   `json:"type"`
+	Columns []column        `json:"columns"`
+	Rows    [][]interface{} `json:"rows"`
+	Type    string          `json:"type"`
 }
 
 func (s *server) query(w http.ResponseWriter, r *http.Request) {
@@ -132,8 +128,7 @@ func (s *server) query(w http.ResponseWriter, r *http.Request) {
 	case "timeseries":
 		s.sendTimeseries(w, query, d)
 	case "table":
-		http.Error(w, "Sorry not yet", http.StatusNotImplemented)
-
+		s.sendTable(w, query, d)
 	default:
 		http.Error(w, "Fall Through", http.StatusNotImplemented)
 	}
@@ -170,6 +165,27 @@ func getDataPointsFromTarget(target string, q *query, device model.Device) ([][]
 			return nil, err
 		}
 		return datapoints, nil
+	case model.SensorActions:
+		datapoints, err := iotcloud.GetSensorActionData(
+			device.UserID,
+			device.LocationID,
+			device.SensorID,
+			q.Range.From,
+			q.Range.To)
+		if err != nil {
+			return nil, err
+		}
+		return datapoints, nil
+	case model.LocationActions:
+		datapoints, err := iotcloud.GetLocationActionData(
+			device.UserID,
+			device.LocationID,
+			q.Range.From,
+			q.Range.To)
+		if err != nil {
+			return nil, err
+		}
+		return datapoints, nil
 	}
 	return nil, errors.New("Undefined target")
 }
@@ -197,6 +213,65 @@ func (s *server) sendTimeseries(w http.ResponseWriter, q *query, device model.De
 	jsonResp, err := json.Marshal(response)
 	if err != nil {
 		writeError(w, err, "cannot marshal timeseries response")
+	}
+
+	w.Write(jsonResp)
+
+}
+
+func getColumnsFromTarget(target string, q *query, device model.Device) ([]column, error) {
+
+	switch target {
+	case model.LocationActions:
+		columns := []column{
+			column{
+				Text: "Action",
+				Type: "string",
+			},
+			column{
+				Text: "Time",
+				Type: "time",
+			},
+			column{
+				Text: "Sensor",
+				Type: "string",
+			},
+		}
+		return columns, nil
+	}
+	return nil, errors.New("Undefined target")
+}
+
+// sendTable creates and writes a JSON response to a request for table data
+func (s *server) sendTable(w http.ResponseWriter, q *query, device model.Device) {
+
+	response := []tableResponse{}
+
+	for _, t := range q.Targets {
+		target := t.Target
+
+		datapoints, err := getDataPointsFromTarget(target, q, device)
+		if err != nil {
+			writeError(w, err, "Cannot get metric for target "+target)
+			return
+		}
+
+		columns, err := getColumnsFromTarget(target, q, device)
+		if err != nil {
+			writeError(w, err, "Cannot get metric for target "+target)
+			return
+		}
+
+		response = append(response, tableResponse{
+			Columns: columns,
+			Rows:    datapoints,
+			Type:    "table",
+		})
+	}
+
+	jsonResp, err := json.Marshal(response)
+	if err != nil {
+		writeError(w, err, "cannot marshal table response")
 	}
 
 	w.Write(jsonResp)

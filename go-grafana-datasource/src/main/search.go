@@ -77,7 +77,20 @@ func (s *server) search(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		// Generic search -> measurements available
-		targetsValues = []iotcloud.Tag{iotcloud.Tag{Text: model.Analog, Value: model.Analog}}
+		targetsValues = []iotcloud.Tag{
+			iotcloud.Tag{
+				Text:  model.Analog,
+				Value: model.Analog,
+			},
+			iotcloud.Tag{
+				Text:  model.SensorActions,
+				Value: model.SensorActions,
+			},
+			iotcloud.Tag{
+				Text:  model.LocationActions,
+				Value: model.LocationActions,
+			},
+		}
 	}
 
 	resp, err := json.Marshal(targetsValues)

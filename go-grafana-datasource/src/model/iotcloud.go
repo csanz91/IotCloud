@@ -1,13 +1,15 @@
 package model
 
 const (
-	Analog     = "analog"
-	State      = "state"
-	Status     = "status"
-	Totalizer  = "totalizer"
-	LocationID = "LocationID"
-	DeviceID   = "DeviceID"
-	SensorID   = "SensorID"
+	Analog          = "analog"
+	State           = "state"
+	SensorActions   = "sensorActions"
+	LocationActions = "locationActions"
+	Status          = "status"
+	Totalizer       = "totalizer"
+	LocationID      = "LocationID"
+	DeviceID        = "DeviceID"
+	SensorID        = "SensorID"
 )
 
 // Device : Stores the information to identify the device
