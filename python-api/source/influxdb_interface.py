@@ -64,7 +64,6 @@ def getLocationActionsData(influxClient, locationId, initialTimestamp, finalTime
                     locationId='%s' AND time>=%is AND time<%is
                 GROUP BY
                     "sensorId"
-                FILL(none)
                 """ % (
         locationId,
         initialTimestamp,
@@ -87,7 +86,6 @@ def getActionsData(
                     state, setToogle
                 FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
-                FILL(none)
                 """ % (
         locationId,
         sensorId,
