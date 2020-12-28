@@ -273,9 +273,9 @@ class M2MLocationActionData:
 
                 processedData.append(
                     (
-                        str(action),
                         calendar.timegm(parse(value["time"]).timetuple()) * 1000,
                         sensorsName,
+                        str(action),
                     )
                 )
 

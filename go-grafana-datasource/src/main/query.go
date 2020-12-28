@@ -225,15 +225,15 @@ func getColumnsFromTarget(target string, q *query, device model.Device) ([]colum
 	case model.LocationActions:
 		columns := []column{
 			column{
-				Text: "Action",
-				Type: "string",
-			},
-			column{
 				Text: "Time",
 				Type: "time",
 			},
 			column{
 				Text: "Sensor",
+				Type: "string",
+			},
+			column{
+				Text: "Action",
 				Type: "string",
 			},
 		}
