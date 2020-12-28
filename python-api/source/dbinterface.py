@@ -790,7 +790,7 @@ def deleteDevice(db, userId, locationId, deviceId):
 
 @checkArgs("db", "userId", "locationId")
 def selectDevices(db, userId, locationId):
-    location = selectLocation(db, userId, locationId)
+    location = selectLocation(db, userId, locationId, includeInherited=True)
     return location["devices"]
 
 
