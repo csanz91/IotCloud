@@ -178,6 +178,120 @@ class M2MSensorData:
         resp.media = getResponseModel(True, processedData)
 
 
+def getSensorsNames(db, userId, locationId):
+    sensorsNames = {}
+    devices = dbinterface.selectDevices(db, userId, locationId)
+    for device in devices:
+        for sensor in device["sensors"]:
+            sensorsNames[sensor["sensorId"]] = sensor["sensorName"]
+
+    return sensorsNames
+
+
+class M2MSensorActionData:
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @m2mValidation
+    def on_post(self, req, resp, userId, locationId, sensorId):
+
+        # First check if the user
+        grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
+        if grantedRole < api_utils.Roles.viewer:
+            raise falcon.HTTPUnauthorized(
+                "Unauthorized", "The user is not authorized to retrive this data."
+            )
+
+        try:
+            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
+            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            data = influxdb_interface.getActionsData(
+                self.influxdb, locationId, sensorId, fromDate, toDate
+            )
+
+            sensorsNames = getSensorsNames(self.db, userId, locationId)
+
+            processedData = []
+            for value in data:
+                try:
+                    sensorsName = sensorsNames[value["sensorId"]]
+                except KeyError:
+                    continue
+
+                processedData.append(
+                    (
+                        value["value"],
+                        calendar.timegm(parse(value["time"]).timetuple()) * 1000,
+                        sensorsName,
+                    )
+                )
+
+        except:
+            logger.error(
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
+
+        resp.media = getResponseModel(True, processedData)
+
+
+class M2MLocationActionData:
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @m2mValidation
+    def on_post(self, req, resp, userId, locationId):
+
+        # First check if the user
+        grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
+        if grantedRole < api_utils.Roles.viewer:
+            raise falcon.HTTPUnauthorized(
+                "Unauthorized", "The user is not authorized to retrive this data."
+            )
+
+        try:
+            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
+            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            data = influxdb_interface.getLocationActionsData(
+                self.influxdb, locationId, fromDate, toDate
+            )
+
+            sensorsNames = getSensorsNames(self.db, userId, locationId)
+
+            processedData = []
+            for value in data:
+                try:
+                    sensorsName = sensorsNames[value["sensorId"]]
+                except KeyError:
+                    continue
+
+                processedData.append(
+                    (
+                        value["value"],
+                        calendar.timegm(parse(value["time"]).timetuple()) * 1000,
+                        sensorsName,
+                    )
+                )
+
+        except:
+            logger.error(
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "m2m"},
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
+
+        resp.media = getResponseModel(True, processedData)
+
+
 class M2MUserTags:
     def __init__(self, mongodb):
         self.db = mongodb

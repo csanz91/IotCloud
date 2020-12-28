@@ -56,6 +56,53 @@ def getData(
     return valuesList
 
 
+def getLocationActionsData(influxClient, locationId, initialTimestamp, finalTimestamp):
+
+    query = """ SELECT 
+                    state, setToogle
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND time>=%is AND time<%is
+                GROUP BY
+                    "sensorId"
+                FILL(none)
+                """ % (
+        locationId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
+def getActionsData(
+    influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
+):
+
+    query = """ SELECT 
+                    state, setToogle
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                FILL(none)
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
 def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestamp):
 
     rp = getRP(initialTimestamp, finalTimestamp)
