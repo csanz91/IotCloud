@@ -210,20 +210,16 @@ class M2MSensorActionData:
                 self.influxdb, locationId, sensorId, fromDate, toDate
             )
 
-            sensorsNames = getSensorsNames(self.db, userId, locationId)
-
             processedData = []
             for value in data:
-                try:
-                    sensorsName = sensorsNames[value["sensorId"]]
-                except KeyError:
-                    continue
 
+                action = value["state"]
+                if action is None:
+                    action = value["setToogle"]
                 processedData.append(
                     (
-                        value["value"],
+                        str(action),
                         calendar.timegm(parse(value["time"]).timetuple()) * 1000,
-                        sensorsName,
                     )
                 )
 
@@ -271,9 +267,13 @@ class M2MLocationActionData:
                 except KeyError:
                     continue
 
+                action = value["state"]
+                if action is None:
+                    action = value["setToogle"]
+
                 processedData.append(
                     (
-                        value["value"],
+                        str(action),
                         calendar.timegm(parse(value["time"]).timetuple()) * 1000,
                         sensorsName,
                     )

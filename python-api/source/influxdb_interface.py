@@ -59,7 +59,7 @@ def getData(
 def getLocationActionsData(influxClient, locationId, initialTimestamp, finalTimestamp):
 
     query = """ SELECT 
-                    state, setToogle
+                    state, setToogle, sensorId
                 FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND time>=%is AND time<%is
                 GROUP BY
