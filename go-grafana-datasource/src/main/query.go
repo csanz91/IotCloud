@@ -238,6 +238,18 @@ func getColumnsFromTarget(target string, q *query, device model.Device) ([]colum
 			},
 		}
 		return columns, nil
+	case model.SensorActions:
+		columns := []column{
+			column{
+				Text: "Action",
+				Type: "string",
+			},
+			column{
+				Text: "Time",
+				Type: "time",
+			},
+		}
+		return columns, nil
 	}
 	return nil, errors.New("Undefined target")
 }
