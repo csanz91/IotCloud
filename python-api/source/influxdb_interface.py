@@ -160,16 +160,28 @@ def getStateTime(
 ):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
-    # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
-    # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
-    # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    last(state)
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time<=%is
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+    )
+    try:
+        results = influxClient.query(query)
+        initialTimestampPrev = list(results.get_points())[0]["time"]
+    except:
+        initialTimestampPrev = initialTimestamp
 
     query = """ SELECT 
                     state
                 FROM "3years"."sensorsData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>='%s' AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
@@ -188,16 +200,28 @@ def getHeatingTime(
 ):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
-    # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
-    # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
-    # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    last(state)
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time<=%is
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+    )
+    try:
+        results = influxClient.query(query)
+        initialTimestampPrev = list(results.get_points())[0]["time"]
+    except:
+        initialTimestampPrev = initialTimestamp
 
     query = """ SELECT 
                     heating as state
                 FROM "3years"."thermostatData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>='%s' AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
