@@ -225,7 +225,7 @@ def onValueWork(msg):
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error(f"The value received: {value} is not valid",)
+        logger.error(f"The value received: {msg.payload} is not valid",)
 
 
 for i in range(onValueNumWorkerThreads):
