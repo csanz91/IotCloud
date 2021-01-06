@@ -280,13 +280,13 @@ def onIPWork(msg):
 
 def init(influxDb):
     """
-    From the docs: If you attempt to create a retention policy identical to one that 
-        already exists, InfluxDB does not return an error. If you attempt to create a 
-        retention policy with the same name as an existing retention policy but with 
+    From the docs: If you attempt to create a retention policy identical to one that
+        already exists, InfluxDB does not return an error. If you attempt to create a
+        retention policy with the same name as an existing retention policy but with
         differing attributes, InfluxDB returns an error.
     -i.e. If we want to edit some of the following values, do it in the Influx cli.
 
-    The values received will be stored for 45 days at their original resolution, 
+    The values received will be stored for 45 days at their original resolution,
         and they are aggregated every:
             -hour and stored for 1 year,
             -day and stored for 3 years,
