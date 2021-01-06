@@ -105,20 +105,36 @@ def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestam
 
     rp = getRP(initialTimestamp, finalTimestamp)
 
-    query = """ SELECT 
-                    mean("value") as mean,
-                    min("value") as min,
-                    max("value") as max
-                FROM %s WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
-                FILL(none)
-                """ % (
-        rp,
-        locationId,
-        sensorId,
-        initialTimestamp,
-        finalTimestamp,
-    )
+    if rp == "sensorsData":
+        query = """ SELECT 
+                        mean("value") as mean,
+                        min("value") as min,
+                        max("value") as max
+                    FROM %s WHERE
+                        locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    FILL(none)
+                    """ % (
+            rp,
+            locationId,
+            sensorId,
+            initialTimestamp,
+            finalTimestamp,
+        )
+    else:
+        query = """ SELECT 
+                        mean("value") as mean,
+                        min("min_value") as min,
+                        max("max_value") as max
+                    FROM %s WHERE
+                        locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    FILL(none)
+                    """ % (
+            rp,
+            locationId,
+            sensorId,
+            initialTimestamp,
+            finalTimestamp,
+        )
 
     results = influxClient.query(query)
     if not results:
