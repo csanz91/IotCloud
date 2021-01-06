@@ -316,8 +316,8 @@ def init(influxDb):
     influxDb.client.query(
         f""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON {os.environ['INFLUXDB_DB']} BEGIN
                                 SELECT mean("value") AS "value",
-                                       max("value") AS "max_value",
-                                       min("value") AS "min_value"
+                                       max("max_value") AS "max_value",
+                                       min("min_value") AS "min_value"
                                 INTO "3years"."downsampled_sensorsData_1d"
                                 FROM "1year"."downsampled_sensorsData_1h"
                                 GROUP BY time(1d), *
