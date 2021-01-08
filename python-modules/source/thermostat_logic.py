@@ -266,8 +266,16 @@ class Thermostat:
         elif self.pwmActive and tempReference >= self.setpoint + self.hysteresisHigh:
             self.pwmActive = False
 
-        # True every [pwmTime] seconds, starting True
-        pwmON = not runningTime // self.pwmTime % 2
+        # PWM period 10 minutes
+        cycleTime = 600
+        # Proportional error correction
+        pAction = 400.0
+        pwnONTime = abs(self.setpoint - tempReference) * pAction
+        # Limit ON time between 2 minutes and 6 minutes
+        pwnONTime = max(pwnONTime, 120)
+        pwnONTime = min(pwnONTime, 360)
+
+        pwmON = runningTime % cycleTime < pwnONTime
 
         if self.pwmActive and not self.heating and pwmON:
             self.setHeating(mqttClient, True)
