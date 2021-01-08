@@ -279,6 +279,10 @@ class Thermostat:
             self.pwnONTime = max(self.pwnONTime, 120)
             self.pwnONTime = min(self.pwnONTime, 360)
 
+            logger.info(
+                f"New duty cycle: {self.pwnONTime} for: {self.deviceTopicHeader}"
+            )
+
             self.pwmCycleMem = pwmCurrentCycle
 
         pwmON = runningTime % cycleTime < self.pwnONTime
