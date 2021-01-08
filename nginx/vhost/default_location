@@ -1,6 +1,23 @@
-if ($request_method = 'OPTIONS') {
-    add_header 'Access-Control-Allow-Origin' '*';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+set $cors '';
+set $cors_allowed_methods 'GET, POST, PUT, DELETE, OPTIONS';
+
+if ($http_origin = 'https://web.iotcloud.es') {
+    set $cors 'origin_matched';
+}
+
+# Preflight requests
+if ($request_method = OPTIONS) {
+    set $cors '${cors} & preflight';
+}
+
+if ($cors = 'origin_matched') {
+    add_header Access-Control-Allow-Origin 'https://web.iotcloud.es';
+    add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+}
+
+if ($cors = 'origin_matched & preflight') {
+    add_header 'Access-Control-Allow-Origin' 'https://web.iotcloud.es';
+    add_header 'Access-Control-Allow-Methods' $cors_allowed_methods;
     #
     # Custom headers and headers various browsers *should* be OK with but aren't
     #
@@ -12,28 +29,4 @@ if ($request_method = 'OPTIONS') {
     add_header 'Content-Type' 'text/plain; charset=utf-8';
     add_header 'Content-Length' 0;
     return 204;
-}
-if ($request_method = 'POST') {
-    add_header 'Access-Control-Allow-Origin' '*';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-    add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-}
-if ($request_method = 'GET') {
-    add_header 'Access-Control-Allow-Origin' '*';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-    add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-}
-if ($request_method = 'PUT') {
-    add_header 'Access-Control-Allow-Origin' '*';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-    add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-}
-if ($request_method = 'DELETE') {
-    add_header 'Access-Control-Allow-Origin' '*';
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
-    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-    add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
 }
