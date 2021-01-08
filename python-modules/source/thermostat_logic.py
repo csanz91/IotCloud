@@ -273,10 +273,10 @@ class Thermostat:
         pwmCurrentCycle = runningTime // cycleTime
         if self.pwmCycleMem != pwmCurrentCycle:
             # Proportional error correction
-            pAction = 600.0
-            self.pwnONTime = abs(self.setpoint - tempReference) * pAction
-            # Limit ON time between 2 minutes and 6 minutes
-            self.pwnONTime = max(self.pwnONTime, 120)
+            pAction = 700.0
+            self.pwnONTime = (self.setpoint - tempReference) * pAction
+            # Limit ON time between 3 minutes and 6 minutes
+            self.pwnONTime = max(self.pwnONTime, 180)
             self.pwnONTime = min(self.pwnONTime, 360)
 
             logger.info(
@@ -293,4 +293,3 @@ class Thermostat:
         elif self.heating and (not self.pwmActive or self.pwmActive and not pwmON):
             self.setHeating(mqttClient, False)
             logger.info(f"Stop heating for: {self.deviceTopicHeader}",)
-
