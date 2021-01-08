@@ -45,6 +45,8 @@ class Thermostat:
         self.progThermostatShutdownMem = False
         self.postalCode = None
         self.timeZone = None
+        self.pwmTime = 300
+        self.pwmActive = False
 
         self.subscriptionsList = subscriptionsList
 
@@ -224,6 +226,7 @@ class Thermostat:
             )
             # Delete the retentive heating. The device also evaluates this condition
             if self.heating or self.setHeatingMem:
+                self.pwmActive = False
                 self.setHeating(mqttClient, False)
             return
 
@@ -243,11 +246,11 @@ class Thermostat:
             )
             self.tempReferenceMem = tempReference
 
+        runningTime = int(time.time()) - self.startHeatingAt
+
         # If the heating has been running for more than [maxHeatingTime] there could be
         # something wrong. Trigger the alarm to protect the instalation.
-        if self.heating and self.startHeatingAt + self.maxHeatingTime < int(
-            time.time()
-        ):
+        if self.heating and runningTime > self.maxHeatingTime:
             logger.warning(
                 f"Heating running for more than {self.maxHeatingTime} sec. in {self.deviceTopicHeader}. Triggering alarm",
             )
@@ -256,12 +259,20 @@ class Thermostat:
             return
 
         # The reference temperature is below the setpoint -> start heating
-        if not self.heating and tempReference <= self.setpoint + self.hysteresisLow:
-            self.setHeating(mqttClient, True)
+        if not self.pwmActive and tempReference <= self.setpoint + self.hysteresisLow:
             self.startHeatingAt = int(time.time())
-            logger.info(f"Start heating for: {self.deviceTopicHeader}",)
+            self.pwmActive = True
         # The reference temperature is above the setpoint -> stop heating
-        elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
+        elif self.pwmActive and tempReference >= self.setpoint + self.hysteresisHigh:
+            self.pwmActive = False
+
+        # True every [pwmTime] seconds, starting True
+        pwmON = not runningTime // self.pwmTime % 2
+
+        if self.pwmActive and not self.heating and pwmON:
+            self.setHeating(mqttClient, True)
+            logger.info(f"Start heating for: {self.deviceTopicHeader}")
+        elif self.heating and (not self.pwmActive or self.pwmActive and not pwmON):
             self.setHeating(mqttClient, False)
             logger.info(f"Stop heating for: {self.deviceTopicHeader}",)
 
