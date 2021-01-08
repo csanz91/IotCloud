@@ -225,9 +225,9 @@ class Thermostat:
             logger.debug(
                 f"Thermostat: {self.topicHeader} not running because is stopped or an alarm is set",
             )
+            self.pwmActive = False
             # Delete the retentive heating. The device also evaluates this condition
             if self.heating or self.setHeatingMem:
-                self.pwmActive = False
                 self.setHeating(mqttClient, False)
             return
 
