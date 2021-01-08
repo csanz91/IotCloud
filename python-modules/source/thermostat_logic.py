@@ -45,7 +45,7 @@ class Thermostat:
         self.progThermostatShutdownMem = False
         self.postalCode = None
         self.timeZone = None
-        self.pwnONTime = 0
+        self.pwmONTime = 0
         self.pwmCycleMem = None
         self.pwmActive = False
 
@@ -274,18 +274,18 @@ class Thermostat:
         if self.pwmCycleMem != pwmCurrentCycle:
             # Proportional error correction
             pAction = 700.0
-            self.pwnONTime = (self.setpoint - tempReference) * pAction
+            self.pwmONTime = (self.setpoint - tempReference) * pAction
             # Limit ON time between 3 minutes and 6 minutes
-            self.pwnONTime = max(self.pwnONTime, 180)
-            self.pwnONTime = min(self.pwnONTime, 360)
+            self.pwmONTime = max(self.pwmONTime, 180)
+            self.pwmONTime = min(self.pwmONTime, 360)
 
             logger.info(
-                f"New duty cycle: {self.pwnONTime} for: {self.deviceTopicHeader}"
+                f"New duty cycle: {self.pwmONTime} for: {self.deviceTopicHeader}"
             )
 
             self.pwmCycleMem = pwmCurrentCycle
 
-        pwmON = runningTime % cycleTime < self.pwnONTime
+        pwmON = runningTime % cycleTime < self.pwmONTime
 
         if self.pwmActive and not self.heating and pwmON:
             self.setHeating(mqttClient, True)
