@@ -267,13 +267,13 @@ class Thermostat:
         elif self.pwmActive and tempReference >= self.setpoint + self.hysteresisHigh:
             self.pwmActive = False
 
-        # PWM period 10 minutes
-        cycleTime = 600
+        # PWM period 8 minutes
+        cycleTime = 480
 
         pwmCurrentCycle = runningTime // cycleTime
         if self.pwmCycleMem != pwmCurrentCycle:
             # Proportional error correction
-            pAction = 400.0
+            pAction = 600.0
             self.pwnONTime = abs(self.setpoint - tempReference) * pAction
             # Limit ON time between 2 minutes and 6 minutes
             self.pwnONTime = max(self.pwnONTime, 120)
