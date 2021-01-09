@@ -405,20 +405,22 @@ def onAuxWork(client, msg):
     # New module. Create the instance and get the metadata from the api
     if tags["endpoint"] in modules.keys():
         with deviceslock:
+            # Create instance if it does not exist
             if not devices[deviceHash].sensors[tags["sensorId"]].instance:
                 devices[deviceHash].sensors[tags["sensorId"]].instance = modules[
                     tags["endpoint"]
                 ](tags, client, subscriptionsList)
-                sensorData = api.getSensor(
-                    tags["locationId"], tags["deviceId"], tags["sensorId"]
-                )
-                if not sensorData:
-                    return
+            # Retrieve data from the api
+            sensorData = api.getSensor(
+                tags["locationId"], tags["deviceId"], tags["sensorId"]
+            )
+            if not sensorData:
+                return
 
-                sensor = devices[deviceHash].sensors[tags["sensorId"]]
-                sensor.metadata = sensorData["sensorMetadata"]
-                sensor.postalCode = sensorData["postalCode"]
-                sensor.timeZone = sensorData["timeZone"]
+            sensor = devices[deviceHash].sensors[tags["sensorId"]]
+            sensor.metadata = sensorData["sensorMetadata"]
+            sensor.postalCode = sensorData["postalCode"]
+            sensor.timeZone = sensorData["timeZone"]
 
     # Add the value received to the aux dict
     else:
