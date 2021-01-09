@@ -48,6 +48,8 @@ class Thermostat:
         self.pwmONTime = 0
         self.pwmCycleMem = None
         self.pwmActive = False
+        self.minPerPwmON = 40.0  # %
+        self.maxPerPwmON = 100.0  # %
 
         self.subscriptionsList = subscriptionsList
 
@@ -276,8 +278,8 @@ class Thermostat:
             pAction = 700.0
             self.pwmONTime = (self.setpoint - tempReference) * pAction
             # Limit ON time between 3 minutes and 6 minutes
-            self.pwmONTime = max(self.pwmONTime, 180)
-            self.pwmONTime = min(self.pwmONTime, 360)
+            self.pwmONTime = max(self.pwmONTime, self.minPerPwmON * cycleTime / 100.0)
+            self.pwmONTime = min(self.pwmONTime, self.maxPerPwmON * cycleTime / 100.0)
 
             logger.info(
                 f"New duty cycle: {self.pwmONTime} for: {self.deviceTopicHeader}"
