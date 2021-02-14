@@ -220,8 +220,8 @@ def getHeatingTime(
     # state before [initialTimestamp].
 
     query = """ SELECT 
-                    last(state)
-                FROM "3years"."sensorsData" WHERE
+                    last(heating)
+                FROM "3years"."thermostatData" WHERE
                     locationId='%s' AND sensorId='%s' AND time<=%is
                 """ % (
         locationId,
