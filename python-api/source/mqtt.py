@@ -118,7 +118,14 @@ class MqttAcl:
                         or (
                             isWriteAcl(acc)
                             and endpoint
-                            not in ["value", "status", "setState", "state", "ip"]
+                            not in [
+                                "value",
+                                "status",
+                                "setState",
+                                "state",
+                                "ip",
+                                "version",
+                            ]
                             and subtopics[4] not in ["aux", "ota"]
                         )
                     ):
@@ -137,7 +144,14 @@ class MqttAcl:
                         or (
                             isWriteAcl(acc)
                             and endpoint
-                            not in ["value", "status", "setState", "state", "ip"]
+                            not in [
+                                "value",
+                                "status",
+                                "setState",
+                                "state",
+                                "ip",
+                                "version",
+                            ]
                             and subtopics[4] not in ["aux", "ota"]
                         )
                     ):
