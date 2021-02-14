@@ -436,30 +436,20 @@ class SensorStateTime:
 
         timeZoneId = req.get_param("timeZoneId")
 
-        stateTimes = []
-        # Go back 10 days
-        for dayIndex in range(10):
-            # Get the timestamps from the selected period
-            pastDay = datetimeNow - timedelta(days=dayIndex)
-            (
-                pastDayLocalMidnightTimestamp,
-                pastDayLocalEndDayTimestamp,
-            ) = datetime_utils.getDayTimestamps(pastDay, timeZoneId)
+        initialTimestamp = req.get_param_as_int("initialTimestamp")
+        finalTimestamp = req.get_param_as_int("finalTimestamp")
 
-            # If the last state is on and [pastDayLocalEndDayTimestamp] is in the future, we just need
-            # to count up to now, otherwise it will count until the end of the current day
-            pastDayLocalEndDayTimestamp = min(
-                calendar.timegm(datetimeNow.timetuple()), pastDayLocalEndDayTimestamp
-            )
+        stateTimes = []
+        if initialTimestamp and finalTimestamp:
+            dataToAdd = {"timestamp": initialTimestamp}
             try:
-                dataToAdd = {"timestamp": pastDayLocalMidnightTimestamp}
                 stateTime = influxdb_interface.getStateTime(
                     self.influxdb,
                     locationId,
                     deviceId,
                     sensorId,
-                    pastDayLocalMidnightTimestamp,
-                    pastDayLocalEndDayTimestamp,
+                    initialTimestamp,
+                    finalTimestamp,
                 )
                 dataToAdd["stateTime"] = stateTime
                 if includeHeating:
@@ -468,11 +458,10 @@ class SensorStateTime:
                         locationId,
                         deviceId,
                         sensorId,
-                        pastDayLocalMidnightTimestamp,
-                        pastDayLocalEndDayTimestamp,
+                        initialTimestamp,
+                        finalTimestamp,
                     )
                     dataToAdd["heatingTime"] = heatingTime
-
                 stateTimes.append(dataToAdd)
             except:
                 logger.error(
@@ -482,6 +471,53 @@ class SensorStateTime:
                 raise falcon.HTTPBadRequest(
                     "Bad Request", "The request can not be completed."
                 )
+        else:
+            # Go back 10 days
+            for dayIndex in range(10):
+                # Get the timestamps from the selected period
+                pastDay = datetimeNow - timedelta(days=dayIndex)
+                (
+                    pastDayLocalMidnightTimestamp,
+                    pastDayLocalEndDayTimestamp,
+                ) = datetime_utils.getDayTimestamps(pastDay, timeZoneId)
+
+                # If the last state is on and [pastDayLocalEndDayTimestamp] is in the future, we just need
+                # to count up to now, otherwise it will count until the end of the current day
+                pastDayLocalEndDayTimestamp = min(
+                    calendar.timegm(datetimeNow.timetuple()),
+                    pastDayLocalEndDayTimestamp,
+                )
+                try:
+                    dataToAdd = {"timestamp": pastDayLocalMidnightTimestamp}
+                    stateTime = influxdb_interface.getStateTime(
+                        self.influxdb,
+                        locationId,
+                        deviceId,
+                        sensorId,
+                        pastDayLocalMidnightTimestamp,
+                        pastDayLocalEndDayTimestamp,
+                    )
+                    dataToAdd["stateTime"] = stateTime
+                    if includeHeating:
+                        heatingTime = influxdb_interface.getHeatingTime(
+                            self.influxdb,
+                            locationId,
+                            deviceId,
+                            sensorId,
+                            pastDayLocalMidnightTimestamp,
+                            pastDayLocalEndDayTimestamp,
+                        )
+                        dataToAdd["heatingTime"] = heatingTime
+
+                    stateTimes.append(dataToAdd)
+                except:
+                    logger.error(
+                        "Exception. userId: %s, locationId %s" % (userId, locationId),
+                        exc_info=True,
+                    )
+                    raise falcon.HTTPBadRequest(
+                        "Bad Request", "The request can not be completed."
+                    )
 
         resp.media = getResponseModel(True, stateTimes)
 
