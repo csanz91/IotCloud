@@ -21,6 +21,30 @@ class MqttRoles:
     admin = "Admin"
 
 
+class ACL:
+    NO_ACCESS = 0
+    READ = 1
+    WRITE = 2
+    READ_AND_WRITE = 3
+    SUBSCRIBE = 4
+    READ_AND_SUBSCRIBE = 5
+    WRITE_AND_SUBSCRIBE = 6
+    READ_AND_WRITE_AND_SUBSCRIBE = 7
+
+
+def isReadOnlyAcl(acc):
+    return acc in (ACL.READ, ACL.SUBSCRIBE, ACL.READ_AND_SUBSCRIBE)
+
+
+def isWriteAcl(acc):
+    return acc in (
+        ACL.WRITE,
+        ACL.READ_AND_WRITE,
+        ACL.WRITE_AND_SUBSCRIBE,
+        ACL.READ_AND_WRITE_AND_SUBSCRIBE,
+    )
+
+
 def raiseUnauthorized():
     raise falcon.HTTPUnauthorized(
         "Unauthorized", "The user is not authorized to access this topic."
@@ -62,11 +86,11 @@ class MqttAcl:
 
             grantedRole = tokenData["role"]
             topic = req.params["topic"]
-            acc = int(req.params["acc"])  # 1: read only access, 2: read-write
+            acc = int(req.params["acc"])
 
             if topic.startswith("v1/ota/update/"):
                 # All can read in this topic, only admin can write
-                if acc != 1 and grantedRole != MqttRoles.admin:
+                if not isReadOnlyAcl(acc) and grantedRole != MqttRoles.admin:
                     raiseUnauthorized()
 
             else:
@@ -81,7 +105,7 @@ class MqttAcl:
                     role = dbinterface.selectUserLocationRole(
                         self.db, tokenData["userId"], locationIdRequested
                     )
-                    if not role or (acc == 2 and role <= Roles.viewer):
+                    if not role or (isWriteAcl(acc) and role <= Roles.viewer):
                         raiseUnauthorized()
 
                 elif grantedRole == MqttRoles.device:
@@ -92,10 +116,10 @@ class MqttAcl:
                         grantedLocationId != locationIdRequested
                         or grantedDeviceId != deviceIdRequested
                         or (
-                            acc == 2
+                            isWriteAcl(acc)
                             and endpoint
                             not in ["value", "status", "setState", "state", "ip"]
-                            and subtopics[4] != "aux"
+                            and subtopics[4] not in ["aux", "ota"]
                         )
                     ):
                         raiseUnauthorized()
@@ -111,10 +135,10 @@ class MqttAcl:
                             and grantedSubdeviceId != deviceIdRequested
                         )
                         or (
-                            acc == 2
+                            isWriteAcl(acc)
                             and endpoint
                             not in ["value", "status", "setState", "state", "ip"]
-                            and subtopics[4] != "aux"
+                            and subtopics[4] not in ["aux", "ota"]
                         )
                     ):
                         raiseUnauthorized()
