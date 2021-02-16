@@ -243,7 +243,7 @@ app.add_route(
 )
 
 app.add_route(
-    "/api/v1/users/{userId}/locations/{locationId}/devices/{device}/m2mstatus",
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/m2mstatus",
     M2MLocationDeviceStatus(influx_client, db),
 )
 

@@ -180,7 +180,7 @@ def getDeviceStatus(
     # state before [initialTimestamp].
 
     query = """ SELECT 
-                    last(status) as status
+                    "status"
                 FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND deviceId='%s' AND time>=%is AND time<%is
                 """ % (
@@ -207,7 +207,7 @@ def getDevicesStatusStats(influxClient, locationId, initialTimestamp, finalTimes
     query = """ SELECT 
                     count(status) as reconnections
                 FROM "3years"."sensorsData" WHERE
-                    locationId='%s' AND time>=%is AND time<%is AND status=true
+                    locationId='%s' AND time>=%is AND time<%is AND "status"=true
                 GROUP BY "deviceId"
                 """ % (
         locationId,
@@ -219,7 +219,11 @@ def getDevicesStatusStats(influxClient, locationId, initialTimestamp, finalTimes
     if not results:
         return
 
-    valuesList = list(results.get_points())
+    # Add the deviceId tag to the points list
+    valuesList = []
+    for result in results.items():
+        valuesList.append({**next(result[1]), **result[0][1]})
+
     return valuesList
 
 

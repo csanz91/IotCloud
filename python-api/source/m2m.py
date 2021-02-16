@@ -362,19 +362,11 @@ class M2MLocationDeviceStatus:
                 self.influxdb, locationId, deviceId, fromDate, toDate
             )
 
-            devicesNames = getDevicesNames(self.db, userId, locationId)
-
             processedData = []
             for value in data:
-                try:
-                    deviceNames = devicesNames[value["deviceId"]]
-                except KeyError:
-                    continue
-
                 processedData.append(
                     (
                         calendar.timegm(parse(value["time"]).timetuple()) * 1000,
-                        deviceNames,
                         value["status"],
                     )
                 )
