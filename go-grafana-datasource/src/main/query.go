@@ -186,6 +186,27 @@ func getDataPointsFromTarget(target string, q *query, device model.Device) ([][]
 			return nil, err
 		}
 		return datapoints, nil
+	case model.LocationDevicesStatusStats:
+		datapoints, err := iotcloud.GetLocationDevicesStatusData(
+			device.UserID,
+			device.LocationID,
+			q.Range.From,
+			q.Range.To)
+		if err != nil {
+			return nil, err
+		}
+		return datapoints, nil
+	case model.LocationDeviceStatusStats:
+		datapoints, err := iotcloud.GetLocationDeviceStatus(
+			device.UserID,
+			device.LocationID,
+			device.DeviceID,
+			q.Range.From,
+			q.Range.To)
+		if err != nil {
+			return nil, err
+		}
+		return datapoints, nil
 	}
 	return nil, errors.New("Undefined target")
 }
@@ -242,6 +263,34 @@ func getColumnsFromTarget(target string, q *query, device model.Device) ([]colum
 		columns := []column{
 			column{
 				Text: "Action",
+				Type: "string",
+			},
+			column{
+				Text: "Time",
+				Type: "time",
+			},
+		}
+		return columns, nil
+	case model.LocationDevicesStatusStats:
+		columns := []column{
+			column{
+				Text: "Sensors",
+				Type: "string",
+			},
+			column{
+				Text: "Reconnections",
+				Type: "number",
+			},
+			column{
+				Text: "Time",
+				Type: "time",
+			},
+		}
+		return columns, nil
+	case model.LocationDeviceStatusStats:
+		columns := []column{
+			column{
+				Text: "Status",
 				Type: "string",
 			},
 			column{

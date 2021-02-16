@@ -90,6 +90,14 @@ func (s *server) search(w http.ResponseWriter, r *http.Request) {
 				Text:  model.LocationActions,
 				Value: model.LocationActions,
 			},
+			iotcloud.Tag{
+				Text:  model.LocationDevicesStatusStats,
+				Value: model.LocationDevicesStatusStats,
+			},
+			iotcloud.Tag{
+				Text:  model.LocationDeviceStatusStats,
+				Value: model.LocationDeviceStatusStats,
+			},
 		}
 	}
 
