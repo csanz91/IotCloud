@@ -274,16 +274,16 @@ func getColumnsFromTarget(target string, q *query, device model.Device) ([]colum
 	case model.LocationDevicesStatusStats:
 		columns := []column{
 			column{
+				Text: "Time",
+				Type: "time",
+			},
+			column{
 				Text: "Sensors",
 				Type: "string",
 			},
 			column{
 				Text: "Reconnections",
 				Type: "number",
-			},
-			column{
-				Text: "Time",
-				Type: "time",
 			},
 		}
 		return columns, nil
