@@ -50,7 +50,7 @@ def getData(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -72,7 +72,7 @@ def getLocationActionsData(influxClient, locationId, initialTimestamp, finalTime
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -95,7 +95,7 @@ def getActionsData(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -138,7 +138,7 @@ def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestam
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -192,7 +192,7 @@ def getDeviceStatus(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -217,7 +217,7 @@ def getDevicesStatusStats(influxClient, locationId, initialTimestamp, finalTimes
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     # Add the deviceId tag to the points list
     valuesList = []
@@ -346,7 +346,7 @@ def getTotalizerCurrentRate(influxClient, locationId, sensorId):
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -365,7 +365,7 @@ def getTotalizerTrendRate(influxClient, locationId, sensorId):
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -392,7 +392,7 @@ def getHourlyAccumulation(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
