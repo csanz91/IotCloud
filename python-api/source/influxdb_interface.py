@@ -171,6 +171,58 @@ def getDeviceLastTimeSeen(influxClient, locationId, deviceId):
     return lastStatusSeenTimestamp
 
 
+def getDeviceStatus(
+    influxClient, locationId, deviceId, initialTimestamp, finalTimestamp
+):
+
+    # To calculate the time between the [initialTimestamp] and the first state from the interval
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    last(status) as status
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND deviceId='%s' AND time>=%is AND time<%is
+                """ % (
+        locationId,
+        deviceId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
+def getDevicesStatusStats(influxClient, locationId, initialTimestamp, finalTimestamp):
+
+    # To calculate the time between the [initialTimestamp] and the first state from the interval
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    count(status) as reconnections
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND time>=%is AND time<%is AND status=true
+                GROUP BY "deviceId"
+                """ % (
+        locationId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
 def getStateTime(
     influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp
 ):
