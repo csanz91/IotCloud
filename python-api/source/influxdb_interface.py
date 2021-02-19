@@ -246,14 +246,14 @@ def getStateTime(
     )
     try:
         results = influxClient.query(query)
-        initialTimestampPrev = list(results.get_points())[0]["time"]
+        initialTimestampPrev = f"'{list(results.get_points())[0]['time']}'"
     except:
-        initialTimestampPrev = initialTimestamp
+        initialTimestampPrev = f"{initialTimestamp}s"
 
     query = """ SELECT 
                     state
                 FROM "3years"."sensorsData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>='%s' AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%s AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
@@ -286,14 +286,14 @@ def getHeatingTime(
     )
     try:
         results = influxClient.query(query)
-        initialTimestampPrev = list(results.get_points())[0]["time"]
+        initialTimestampPrev = f"'{list(results.get_points())[0]['time']}'"
     except:
-        initialTimestampPrev = initialTimestamp
+        initialTimestampPrev = f"{initialTimestamp}s"
 
     query = """ SELECT 
                     heating as state
                 FROM "3years"."thermostatData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>='%s' AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%s AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
