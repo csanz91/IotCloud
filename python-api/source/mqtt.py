@@ -151,6 +151,7 @@ class MqttAcl:
                                 "state",
                                 "ip",
                                 "version",
+                                "reset",
                             ]
                             and subtopics[4] not in ["aux", "ota"]
                         )
