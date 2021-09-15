@@ -3,6 +3,7 @@ import time
 
 import falcon
 import jwt
+from jwt import algorithms
 
 import api_utils
 import dbinterface
@@ -214,9 +215,9 @@ def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=
 
     tokenData["role"] = role
     encoded = jwt.encode(tokenData, secret, algorithm="HS256")
-    return encoded.decode("utf-8")
+    return encoded
 
 
 def verifyMqttToken(token):
-    decoded = jwt.decode(token, secret, algorithm="HS256")
+    decoded = jwt.decode(token, secret, algorithms=["HS256"])
     return decoded
