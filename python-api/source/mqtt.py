@@ -3,7 +3,6 @@ import time
 
 import falcon
 import jwt
-from jwt import algorithms
 
 import api_utils
 import dbinterface
