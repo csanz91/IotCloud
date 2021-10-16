@@ -62,6 +62,10 @@ from m2m import (
     M2MSensorData,
     M2MUserTags,
     M2MLocationDevices,
+    M2MSensorActionData,
+    M2MLocationActionData,
+    M2MLocationDevicesStatusStats,
+    M2MLocationDeviceStatus,
 )
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule
@@ -222,6 +226,26 @@ app.add_route(
     M2MSensorData(influx_client, db),
 )
 app.add_route("/api/v1/users/{userId}/locations/{locationId}/tags", M2MUserTags(db))
+
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/m2msensoractiondata/{sensorId}",
+    M2MSensorActionData(influx_client, db),
+)
+
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/m2mlocationactiondata",
+    M2MLocationActionData(influx_client, db),
+)
+
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/m2mdevicesstatusstats",
+    M2MLocationDevicesStatusStats(influx_client, db),
+)
+
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/m2mstatus",
+    M2MLocationDeviceStatus(influx_client, db),
+)
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())

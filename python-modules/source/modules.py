@@ -4,7 +4,7 @@ import os
 import time
 import json
 from collections import defaultdict
-from threading import Timer, Thread
+from threading import Timer, Thread, Lock
 import queue
 import time
 
@@ -94,6 +94,8 @@ def addToQueueDelayed(queue, items, delay):
 locationsStatus = defaultdict(location_status.LocationStatus)
 devices = defaultdict(Device)
 values = defaultdict(Value)
+deviceslock = Lock()
+locationsStatuslock = Lock()
 
 modules = {
     "switch": switch_logic.Switch,
@@ -141,12 +143,14 @@ def onStatusWork(msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
         deviceStatus = utils.decodeStatus(msg.payload)
-        devices[deviceHash].status = deviceStatus
+        with deviceslock:
+            devices[deviceHash].status = deviceStatus
 
         # Save the device status
         tags = getTags(msg.topic)
         locationId = tags["locationId"]
-        locationsStatus[locationId].setDeviceStatus(deviceHash, deviceStatus)
+        with locationsStatuslock:
+            locationsStatus[locationId].setDeviceStatus(deviceHash, deviceStatus)
 
     except:
         logger.error(
@@ -182,7 +186,10 @@ def onStateWork(msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
         sensorId = getTags(msg.topic)["sensorId"]
-        devices[deviceHash].sensors[sensorId].state = utils.decodeBoolean(msg.payload)
+        with deviceslock:
+            devices[deviceHash].sensors[sensorId].state = utils.decodeBoolean(
+                msg.payload
+            )
     except:
         logger.error(
             f"onState message failed. message: {msg.payload}. Exception: ",
@@ -218,7 +225,7 @@ def onValueWork(msg):
         # Just remember the latest value
         values[msg.topic] = Value(value)
     except ValueError:
-        logger.error(f"The value received: {value} is not valid",)
+        logger.error(f"The value received: {msg.payload} is not valid",)
 
 
 for i in range(onValueNumWorkerThreads):
@@ -269,9 +276,9 @@ def onSensorUpdateWork(msg):
         sensorData = api.getUserSensor(
             userId, tags["locationId"], tags["deviceId"], tags["sensorId"]
         )
-
-        sensor = devices[deviceHash].sensors[tags["sensorId"]]
-        sensor.metadata = sensorData["sensorMetadata"]
+        with deviceslock:
+            sensor = devices[deviceHash].sensors[tags["sensorId"]]
+            sensor.metadata = sensorData["sensorMetadata"]
     except:
         logger.error(
             "Cant retrieve the metadata for the topic: %s" % msg.topic,
@@ -328,13 +335,17 @@ def onLocationUpdateWork(msg):
 
         for device in location["devices"]:
             deviceId = device["deviceId"]
-            for sensorData in device["sensors"]:
-                sensorId = sensorData["sensorId"]
+            deviceHash = calculateDeviceHash(f"{version}/{locationId}/{deviceId}")
 
-                deviceHash = calculateDeviceHash(f"{version}/{locationId}/{deviceId}")
-                if deviceHash in devices:
-                    sensor = devices[deviceHash].sensors[sensorId]
-                    sensor.metadata = sensorData["sensorMetadata"]
+            with deviceslock:
+                for sensorId, sensor in devices[deviceHash].sensors.items():
+                    # Find the sensor in the list received from the api and update the metadata
+                    for apiSensor in device["sensors"]:
+                        if apiSensor["sensorId"] == sensorId:
+                            sensor.metadata = apiSensor["sensorMetadata"]
+                            break
+
+                    # Update the time data from the location
                     sensor.postalCode = location["postalCode"]
                     sensor.timeZone = location["timeZone"]
 
@@ -393,15 +404,19 @@ def onAuxWork(client, msg):
 
     # New module. Create the instance and get the metadata from the api
     if tags["endpoint"] in modules.keys():
-        if not devices[deviceHash].sensors[tags["sensorId"]].instance:
-            devices[deviceHash].sensors[tags["sensorId"]].instance = modules[
-                tags["endpoint"]
-            ](tags, client, subscriptionsList)
+        with deviceslock:
+            # Create instance if it does not exist
+            if not devices[deviceHash].sensors[tags["sensorId"]].instance:
+                devices[deviceHash].sensors[tags["sensorId"]].instance = modules[
+                    tags["endpoint"]
+                ](tags, client, subscriptionsList)
+            # Retrieve data from the api
             sensorData = api.getSensor(
                 tags["locationId"], tags["deviceId"], tags["sensorId"]
             )
             if not sensorData:
                 return
+
             sensor = devices[deviceHash].sensors[tags["sensorId"]]
             sensor.metadata = sensorData["sensorMetadata"]
             sensor.postalCode = sensorData["postalCode"]
@@ -409,9 +424,10 @@ def onAuxWork(client, msg):
 
     # Add the value received to the aux dict
     else:
-        devices[deviceHash].sensors[tags["sensorId"]].aux[
-            tags["endpoint"]
-        ] = msg.payload
+        with deviceslock:
+            devices[deviceHash].sensors[tags["sensorId"]].aux[
+                tags["endpoint"]
+            ] = msg.payload
 
 
 for i in range(onAuxNumWorkerThreads):
@@ -466,35 +482,6 @@ token = getDocketSecrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 
 
-def run(mqttClient):
-    for device in devices.copy().values():
-        # Only run the sensors that are online
-        if device.status:
-            for sensor in device.sensors.copy().values():
-                # The instance needs to be initialized
-                if sensor.instance:
-                    # Pass all the states to the instance
-                    sensor.instance.state = sensor.state
-                    if sensor.metadata != sensor.instance.metadata:
-                        sensor.instance.updateSettings(mqttClient, sensor.metadata)
-                    if sensor.aux != sensor.instance.aux:
-                        sensor.instance.updateAux(mqttClient, sensor.aux)
-                    if sensor.postalCode != sensor.instance.postalCode:
-                        sensor.instance.updatePostalCode(sensor.postalCode)
-                    if sensor.timeZone != sensor.instance.timeZone:
-                        sensor.instance.updateTimeZone(sensor.timeZone)
-                    # Run the engine
-                    sensor.instance.engine(mqttClient, values)
-
-    for locationId, locationStatus in locationsStatus.items():
-        locationStatus.checkLocationStatus(api, locationId)
-
-    Timer(1.0, run, [mqttClient]).start()
-
-
-run(mqttclient)
-
-
 def onConnect(self, mosq, obj, rc):
     logger.info("connected",)
     # Setup subscriptions
@@ -518,8 +505,38 @@ mqttclient.on_connect = onConnect
 
 # Connect
 mqttclient.connect("mosquitto")
-mqttclient.loop_forever(retry_first_connection=True)
+mqttclient.loop_start()
 
+while True:
+
+    with deviceslock:
+        for device in devices.values():
+            # Only run the sensors that are online
+            if device.status:
+                for sensor in device.sensors.values():
+                    # The instance needs to be initialized
+                    if sensor.instance:
+                        # Pass all the states to the instance
+                        sensor.instance.state = sensor.state
+                        if sensor.metadata != sensor.instance.metadata:
+                            sensor.instance.updateSettings(mqttclient, sensor.metadata)
+                        if sensor.aux != sensor.instance.aux:
+                            sensor.instance.updateAux(mqttclient, sensor.aux)
+                        if sensor.postalCode != sensor.instance.postalCode:
+                            sensor.instance.updatePostalCode(sensor.postalCode)
+                        if sensor.timeZone != sensor.instance.timeZone:
+                            sensor.instance.updateTimeZone(sensor.timeZone)
+                        # Run the engine
+                        sensor.instance.engine(mqttclient, values)
+
+    with locationsStatuslock:
+        for locationId, locationStatus in locationsStatus.items():
+            locationStatus.checkLocationStatus(api, locationId)
+
+    time.sleep(1.0)
+
+
+mqttclient.loop_stop()
 # Block until all tasks are done
 statusQueue.join()
 stateQueue.join()

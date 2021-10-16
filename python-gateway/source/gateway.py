@@ -37,7 +37,8 @@ maxRetries = 5
 
 # Configure the number of workers
 onStatusNumWorkerThreads = 2
-onStateNumWorkerThreads = 5
+onStateNumWorkerThreads = 2
+onToogleNumWorkerThreads = 2
 onValueNumWorkerThreads = 10
 onIPNumWorkerThreads = 2
 
@@ -131,6 +132,53 @@ def onStateWork(msg):
             f"onStateWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
             extra={"area": "state"},
+        )
+
+
+####################################
+# Toogle message processing
+####################################
+toogleQueue = queue.Queue()
+
+
+def toogleWorker():
+    while True:
+        item = toogleQueue.get()
+        if item is None:
+            toogleQueue.task_done()
+            break
+        onToogleWork(item)
+        toogleQueue.task_done()
+
+
+def onToogleWork(msg):
+
+    try:
+        msg.payload = msg.payload.decode("utf-8")
+        toogle = msg.payload
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "toogle"},
+        )
+        return
+
+    try:
+        fields = {"setToogle": toogle}
+        tagsToSave = ["locationId", "sensorId"]
+        measurement = "sensorsData"
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
+    except:
+        logger.error(
+            f"onToogleWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+            extra={"area": "toogle"},
         )
 
 
@@ -232,13 +280,13 @@ def onIPWork(msg):
 
 def init(influxDb):
     """
-    From the docs: If you attempt to create a retention policy identical to one that 
-        already exists, InfluxDB does not return an error. If you attempt to create a 
-        retention policy with the same name as an existing retention policy but with 
+    From the docs: If you attempt to create a retention policy identical to one that
+        already exists, InfluxDB does not return an error. If you attempt to create a
+        retention policy with the same name as an existing retention policy but with
         differing attributes, InfluxDB returns an error.
     -i.e. If we want to edit some of the following values, do it in the Influx cli.
 
-    The values received will be stored for 45 days at their original resolution, 
+    The values received will be stored for 45 days at their original resolution,
         and they are aggregated every:
             -hour and stored for 1 year,
             -day and stored for 3 years,
@@ -268,8 +316,8 @@ def init(influxDb):
     influxDb.client.query(
         f""" CREATE CONTINUOUS QUERY "sensorsData_1d" ON {os.environ['INFLUXDB_DB']} BEGIN
                                 SELECT mean("value") AS "value",
-                                       max("value") AS "max_value",
-                                       min("value") AS "min_value"
+                                       max("max_value") AS "max_value",
+                                       min("min_value") AS "min_value"
                                 INTO "3years"."downsampled_sensorsData_1d"
                                 FROM "1year"."downsampled_sensorsData_1h"
                                 GROUP BY time(1d), *
@@ -284,6 +332,10 @@ def onStatus(client, userdata, msg):
 
 def onState(client, userdata, msg):
     stateQueue.put(msg)
+
+
+def onToogle(client, userdata, msg):
+    toogleQueue.put(msg)
 
 
 def onValue(client, userdata, msg):
@@ -307,6 +359,12 @@ def startThreads():
         t.start()
         threads.append(t)
 
+    for i in range(onToogleNumWorkerThreads):
+        t = Thread(target=toogleWorker)
+        t.name = "Toogle%d" % i
+        t.start()
+        threads.append(t)
+
     for i in range(onValueNumWorkerThreads):
         t = Thread(target=valueWorker)
         t.name = "Value%d" % i
@@ -326,6 +384,9 @@ def stopThreads():
 
     for _ in range(onStateNumWorkerThreads):
         stateQueue.put(None)
+
+    for _ in range(onToogleNumWorkerThreads):
+        toogleQueue.put(None)
 
     for _ in range(onValueNumWorkerThreads):
         valueQueue.put(None)
@@ -353,6 +414,7 @@ version = "v1"
 topicHeader = "{version}/+/+/".format(version=version)
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
+toogleTopic = topicHeader + "+/aux/setToogle"
 statusTopic = topicHeader + "status"
 IPTopic = topicHeader + "ip"
 
@@ -369,6 +431,9 @@ def onConnect(self, mosq, obj, rc):
 
     mqttclient.subscribe(stateTopic)
     mqttclient.message_callback_add(stateTopic, onState)
+
+    mqttclient.subscribe(toogleTopic)
+    mqttclient.message_callback_add(toogleTopic, onToogle)
 
     mqttclient.subscribe(statusTopic)
     mqttclient.message_callback_add(statusTopic, onStatus)

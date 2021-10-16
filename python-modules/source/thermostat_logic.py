@@ -45,6 +45,11 @@ class Thermostat:
         self.progThermostatShutdownMem = False
         self.postalCode = None
         self.timeZone = None
+        self.pwmONTime = 0
+        self.pwmCycleMem = None
+        self.pwmActive = False
+        self.minPerPwmON = 40.0  # %
+        self.maxPerPwmON = 100.0  # %
 
         self.subscriptionsList = subscriptionsList
 
@@ -163,7 +168,6 @@ class Thermostat:
             except (KeyError, TypeError):
                 logger.warning(
                     f"Temperature value from the topic:{temperatureReferenceTopic} not available",
-                    extra={"area": "thermostat"},
                 )
         if tempReference and factorsSum:
             tempReference = tempReference / factorsSum
@@ -222,8 +226,8 @@ class Thermostat:
         if self.alarm or not self.state:
             logger.debug(
                 f"Thermostat: {self.topicHeader} not running because is stopped or an alarm is set",
-                extra={"area": "thermostat"},
             )
+            self.pwmActive = False
             # Delete the retentive heating. The device also evaluates this condition
             if self.heating or self.setHeatingMem:
                 self.setHeating(mqttClient, False)
@@ -236,7 +240,6 @@ class Thermostat:
         if not tempReference or not self.setpoint:
             logger.warning(
                 f"Some of the core values are not valid. tempReference: {tempReference}, setpoint: {self.setpoint}",
-                extra={"area": "thermostat"},
             )
             return
 
@@ -246,32 +249,49 @@ class Thermostat:
             )
             self.tempReferenceMem = tempReference
 
+        runningTime = int(time.time()) - self.startHeatingAt
+
         # If the heating has been running for more than [maxHeatingTime] there could be
         # something wrong. Trigger the alarm to protect the instalation.
-        if self.heating and self.startHeatingAt + self.maxHeatingTime < int(
-            time.time()
-        ):
+        if self.heating and runningTime > self.maxHeatingTime:
             logger.warning(
                 f"Heating running for more than {self.maxHeatingTime} sec. in {self.deviceTopicHeader}. Triggering alarm",
-                extra={"area": "thermostat"},
             )
             self.setHeating(mqttClient, False)
             self.setAlarm(mqttClient, True)
             return
 
         # The reference temperature is below the setpoint -> start heating
-        if not self.heating and tempReference <= self.setpoint + self.hysteresisLow:
-            self.setHeating(mqttClient, True)
+        if not self.pwmActive and tempReference <= self.setpoint + self.hysteresisLow:
             self.startHeatingAt = int(time.time())
-            logger.info(
-                f"Start heating for: {self.deviceTopicHeader}",
-                extra={"area": "thermostat"},
-            )
+            self.pwmActive = True
         # The reference temperature is above the setpoint -> stop heating
-        elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
-            self.setHeating(mqttClient, False)
+        elif self.pwmActive and tempReference >= self.setpoint + self.hysteresisHigh:
+            self.pwmActive = False
+
+        # PWM period 8 minutes
+        cycleTime = 480
+
+        pwmCurrentCycle = runningTime // cycleTime
+        if self.pwmCycleMem != pwmCurrentCycle:
+            # Proportional error correction
+            pAction = 700.0
+            self.pwmONTime = (self.setpoint - tempReference) * pAction
+            # Limit ON time between 3 minutes and 6 minutes
+            self.pwmONTime = max(self.pwmONTime, self.minPerPwmON * cycleTime / 100.0)
+            self.pwmONTime = min(self.pwmONTime, self.maxPerPwmON * cycleTime / 100.0)
+
             logger.info(
-                f"Stop heating for: {self.deviceTopicHeader}",
-                extra={"area": "thermostat"},
+                f"New duty cycle: {self.pwmONTime} for: {self.deviceTopicHeader}"
             )
 
+            self.pwmCycleMem = pwmCurrentCycle
+
+        pwmON = runningTime % cycleTime < self.pwmONTime
+
+        if self.pwmActive and not self.heating and pwmON:
+            self.setHeating(mqttClient, True)
+            logger.info(f"Start heating for: {self.deviceTopicHeader}")
+        elif self.heating and (not self.pwmActive or self.pwmActive and not pwmON):
+            self.setHeating(mqttClient, False)
+            logger.info(f"Stop heating for: {self.deviceTopicHeader}",)

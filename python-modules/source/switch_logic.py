@@ -48,7 +48,8 @@ class Switch:
 
         try:
             self.timer.importSettings(metadata["timer"])
-            logger.info(f"timer updated: {metadata['timer']}",)
+            if "8804c/5f4bd0" not in self.deviceTopicHeader:
+                logger.info(f"timer updated: {metadata['timer']}",)
         except:
             pass
 

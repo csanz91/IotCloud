@@ -145,7 +145,8 @@ class Auth0Api:
         )
 
         auth_api_token = token["access_token"]
-        logger.info(f"Loging from user: {username}")
+        if username != "healthcheck@iotcloud.es":
+            logger.info(f"Loging from user: {username}")
         return auth_api_token
 
     def recoverPassword(self, username):

@@ -50,7 +50,52 @@ def getData(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
+def getLocationActionsData(influxClient, locationId, initialTimestamp, finalTimestamp):
+
+    query = """ SELECT 
+                    state, setToogle, sensorId
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND time>=%is AND time<%is
+                GROUP BY
+                    "sensorId"
+                """ % (
+        locationId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
+def getActionsData(
+    influxClient, locationId, sensorId, initialTimestamp, finalTimestamp
+):
+
+    query = """ SELECT 
+                    state, setToogle
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -60,24 +105,40 @@ def getStats(influxClient, locationId, sensorId, initialTimestamp, finalTimestam
 
     rp = getRP(initialTimestamp, finalTimestamp)
 
-    query = """ SELECT 
-                    mean("value") as mean,
-                    min("value") as min,
-                    max("value") as max
-                FROM %s WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
-                FILL(none)
-                """ % (
-        rp,
-        locationId,
-        sensorId,
-        initialTimestamp,
-        finalTimestamp,
-    )
+    if rp == "sensorsData":
+        query = """ SELECT 
+                        mean("value") as mean,
+                        min("value") as min,
+                        max("value") as max
+                    FROM %s WHERE
+                        locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    FILL(none)
+                    """ % (
+            rp,
+            locationId,
+            sensorId,
+            initialTimestamp,
+            finalTimestamp,
+        )
+    else:
+        query = """ SELECT 
+                        mean("value") as mean,
+                        min("min_value") as min,
+                        max("max_value") as max
+                    FROM %s WHERE
+                        locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    FILL(none)
+                    """ % (
+            rp,
+            locationId,
+            sensorId,
+            initialTimestamp,
+            finalTimestamp,
+        )
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -110,21 +171,89 @@ def getDeviceLastTimeSeen(influxClient, locationId, deviceId):
     return lastStatusSeenTimestamp
 
 
+def getDeviceStatus(
+    influxClient, locationId, deviceId, initialTimestamp, finalTimestamp
+):
+
+    # To calculate the time between the [initialTimestamp] and the first state from the interval
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    "status"
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND deviceId='%s' AND time>=%is AND time<%is
+                """ % (
+        locationId,
+        deviceId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    valuesList = list(results.get_points())
+    return valuesList
+
+
+def getDevicesStatusStats(influxClient, locationId, initialTimestamp, finalTimestamp):
+
+    # To calculate the time between the [initialTimestamp] and the first state from the interval
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    count(status) as reconnections
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND time>=%is AND time<%is AND "status"=true
+                GROUP BY "deviceId"
+                """ % (
+        locationId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    # Add the deviceId tag to the points list
+    valuesList = []
+    for result in results.items():
+        valuesList.append({**next(result[1]), **result[0][1]})
+
+    return valuesList
+
+
 def getStateTime(
     influxClient, locationId, deviceId, sensorId, initialTimestamp, finalTimestamp
 ):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
-    # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
-    # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
-    # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    last(state)
+                FROM "3years"."sensorsData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time<=%is
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+    )
+    try:
+        results = influxClient.query(query)
+        initialTimestampPrev = f"'{list(results.get_points())[0]['time']}'"
+    except:
+        initialTimestampPrev = f"{initialTimestamp}s"
 
     query = """ SELECT 
                     state
                 FROM "3years"."sensorsData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%s AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
@@ -143,16 +272,28 @@ def getHeatingTime(
 ):
 
     # To calculate the time between the [initialTimestamp] and the first state from the interval
-    # we need to get which state was set before [initialTimestamp], as we dont dont know when it was,
-    # we have to go back a certain amount of time where we think a change of state happened
-    # If no state change has happened in the time we guess, the time between [initialTimestamp] and
-    # the first state in the interval wont be registered
-    initialTimestampPrev = initialTimestamp - 3600 * 24  # Go back 1 day
+    # we need to get which state was set before [initialTimestamp], for that we first query the last
+    # state before [initialTimestamp].
+
+    query = """ SELECT 
+                    last(heating)
+                FROM "3years"."thermostatData" WHERE
+                    locationId='%s' AND sensorId='%s' AND time<=%is
+                """ % (
+        locationId,
+        sensorId,
+        initialTimestamp,
+    )
+    try:
+        results = influxClient.query(query)
+        initialTimestampPrev = f"'{list(results.get_points())[0]['time']}'"
+    except:
+        initialTimestampPrev = f"{initialTimestamp}s"
 
     query = """ SELECT 
                     heating as state
                 FROM "3years"."thermostatData" WHERE
-                    locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                    locationId='%s' AND sensorId='%s' AND time>=%s AND time<%is
                 ORDER BY
                     time DESC
                 """ % (
@@ -205,7 +346,7 @@ def getTotalizerCurrentRate(influxClient, locationId, sensorId):
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -224,7 +365,7 @@ def getTotalizerTrendRate(influxClient, locationId, sensorId):
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList
@@ -251,7 +392,7 @@ def getHourlyAccumulation(
 
     results = influxClient.query(query)
     if not results:
-        return
+        return []
 
     valuesList = list(results.get_points())
     return valuesList

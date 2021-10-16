@@ -21,6 +21,7 @@ class Schedule:
         self.utcSunScheduleExpireDate = datetime.datetime.now(tz=tz.UTC)
         self.scheduleRunning = False
         self.sunScheduleRunning = False
+        self.doNotTurnOffEndSchudule = False
         self.setState = setState
         self.setValue = setValue
         self.lastValue = None
@@ -74,6 +75,10 @@ class Schedule:
                 if not self.scheduleRunning:
                     logger.info("Running manual schedule")
                     self.scheduleRunning = True
+                    try:
+                        self.doNotTurnOffEndSchudule = scheduleElement[3]
+                    except IndexError:
+                        self.doNotTurnOffEndSchudule = False
                     self.setState(mqttClient, True)
                     self.setValue(mqttClient, scheduleElement[2])
                     self.lastValue = scheduleElement[2]
@@ -88,6 +93,8 @@ class Schedule:
         # If the schudele is not active anymore, shut it down
         if self.scheduleRunning:
             self.scheduleRunning = False
+            if self.doNotTurnOffEndSchudule:
+                return
             self.setState(mqttClient, False)
 
     def runSchedule(self, mqttClient, timeZoneId):
