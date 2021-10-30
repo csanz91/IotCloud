@@ -36,9 +36,8 @@ services:
 
   api:
     container_name: api
-    image: localhost:5009/api
     build: ./python-api
-    restart: always
+    restart: unless-stopped
     expose:
       - "5000"
     volumes:
@@ -59,11 +58,10 @@ services:
 
   influx_mqtt_gateway:
     container_name: gateway
-    image: localhost:5009/gateway
     build: ./python-gateway
     env_file:
       - 'variables.env'
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./python-gateway/logs:/app/logs
     secrets:
@@ -73,11 +71,10 @@ services:
 
   weather:
     container_name: weather
-    image: localhost:5009/weather
     build: ./python-weather
     env_file:
       - 'variables.env'
-    restart: always
+    restart: unless-stopped
     expose:
       - "5003"
     volumes:
@@ -87,11 +84,10 @@ services:
 
   modules:
     container_name: modules
-    image: localhost:5009/modules
     build: ./python-modules
     env_file:
       - 'variables.env'
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./python-modules/logs:/app/logs
     secrets:
@@ -99,9 +95,8 @@ services:
 
   monitoring:
     container_name: monitoring
-    image: localhost:5009/monitoring
     build: ./python-monitoring
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./python-monitoring/logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -111,11 +106,10 @@ services:
 
   home:
     container_name: home
-    image: localhost:5009/home
     build: ./go-home
     env_file:
       - 'variables.env'
-    restart: always
+    restart: unless-stopped
     expose:
       - "5001"
     volumes:
@@ -131,11 +125,10 @@ services:
 
   grafana-datasource:
     container_name: grafana-datasource
-    image: localhost:5009/grafana-datasource
     build: ./go-grafana-datasource
     env_file:
       - 'variables.env'
-    restart: always
+    restart: unless-stopped
     expose:
       - "5002"
     volumes:
@@ -146,7 +139,7 @@ services:
 
   grafana:
     user: "$UID:$GID"
-    restart: always
+    restart: unless-stopped
     image: grafana/grafana:latest
     expose:
       - "3000"
@@ -168,7 +161,7 @@ services:
       - grafana_secrets_clientSecret
 
   mongodb:
-    restart: always
+    restart: unless-stopped
     image: mongo:4.2.5
     hostname: docker
     volumes:
@@ -188,11 +181,12 @@ services:
       - ./influxdb/config/:/etc/influxdb/
     expose:
       - "8086"
-    restart: always
+      - "8088"
+    restart: unless-stopped
 
   mosquitto:
     image: jllopis/mosquitto
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./mosquitto/data:/var/lib/mosquitto
       - ./mosquitto/log:/var/log/mosquitto
@@ -212,7 +206,7 @@ services:
 
   telegraf:
     image: telegraf
-    restart: always
+    restart: unless-stopped
     env_file:
       - 'variables.env'
     hostname: localhost
@@ -231,6 +225,7 @@ services:
 
   ota:
     image: flashspys/nginx-static
+    restart: unless-stopped
     container_name: ota
     expose:
       - "5004"
@@ -241,6 +236,66 @@ services:
       - VIRTUAL_PORT=5004
       - LETSENCRYPT_HOST=ota.iotcloud.es
       - VIRTUAL_NETWORK=iotcloud-overlay-net
+
+
+  influxdb-backup:
+    container_name: influxdb-backup
+    image: tiredofit/db-backup
+    volumes:
+      - ./backups/influxdb:/backup
+      - ./backups/post-script.sh:/assets/custom-scripts/post-script.sh
+    env_file:
+      - 'variables.env'
+    environment:
+      - DB_TYPE=influx
+      - DB_HOST=influxdb
+      - DB_NAME=iothub
+      - DB_USER=user
+      - DB_PASS=password
+      - DB_DUMP_FREQ=1440
+      - DB_DUMP_BEGIN=0000
+      - DB_CLEANUP_TIME=8640
+      - MD5=TRUE
+      - COMPRESSION=XZ
+      - SPLIT_DB=FALSE
+    restart: unless-stopped
+
+  mongodb-backup:
+    container_name: mongodb-backup
+    image: tiredofit/db-backup
+    volumes:
+      - ./backups/mongodb:/backup
+      - ./backups/post-script.sh:/assets/custom-scripts/post-script.sh
+    env_file:
+      - 'variables.env'
+    environment:
+      - DB_TYPE=mongo
+      - DB_HOST=mongodb
+      - DB_NAME=data
+      - DB_USER=user
+      - DB_PASS=password
+      - DB_DUMP_FREQ=1440
+      - DB_DUMP_BEGIN=0005
+      - DB_CLEANUP_TIME=8640
+      - MD5=TRUE
+      - COMPRESSION=XZ
+      - SPLIT_DB=FALSE
+    restart: unless-stopped
+
+  duplicati:
+      image: lscr.io/linuxserver/duplicati
+      container_name: duplicati
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/Madrid
+      volumes:
+        - ./duplicati/config:/config
+        - ./backups/influxdb:/source/influxdb
+        - ./backups/mongodb:/source/mongodb
+      ports:
+        - 8200:8200
+      restart: unless-stopped
 
 secrets:
   modules_secrets:
