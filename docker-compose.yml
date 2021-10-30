@@ -221,7 +221,6 @@ services:
       - ./nginx/logs:/var/log/nginx:ro
       - ./python-modules/logs/modules.log:/var/log/modules/modules.log:ro
       - ./python-api/logs/server.log:/var/log/api/server.log:ro
-      - ./python-modules/logs/thermostat.log:/var/log/modules/thermostat.log:ro
       - ./python-monitoring/logs/monitoring.log:/var/log/monitoring/monitoring.log:ro
       - ./python-weather/logs/weather.log:/var/log/weather/weather.log:ro
       - ./mosquitto/log/mosquitto.log:/var/log/mosquitto/mosquitto.log:ro
