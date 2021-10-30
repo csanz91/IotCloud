@@ -224,7 +224,7 @@ services:
       - ./python-monitoring/logs/monitoring.log:/var/log/monitoring/monitoring.log:ro
       - ./python-weather/logs/weather.log:/var/log/weather/weather.log:ro
       - ./mosquitto/log/mosquitto.log:/var/log/mosquitto/mosquitto.log:ro
-      - ./go-home/logs/main.log:/var/log/home/main.log:ro`
+      - ./go-home/logs/main.log:/var/log/home/main.log:ro
     depends_on:
      - influxdb
      - nginx-proxy
