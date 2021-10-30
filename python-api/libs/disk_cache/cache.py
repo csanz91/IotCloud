@@ -2,8 +2,6 @@ from hashlib import sha1
 import os
 import time
 import pickle
-import collections
-import functools
 import shutil
 
 cacheFolder = "../cache"

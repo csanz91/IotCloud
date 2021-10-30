@@ -362,15 +362,13 @@ class M2MLocationDeviceStatus:
                 self.influxdb, locationId, deviceId, fromDate, toDate
             )
 
-            processedData = []
-            for value in data:
-                processedData.append(
-                    (
-                        calendar.timegm(parse(value["time"]).timetuple()) * 1000,
-                        value["status"],
-                    )
+            processedData = [
+                (
+                    calendar.timegm(parse(value["time"]).timetuple()) * 1000,
+                    value["status"],
                 )
-
+                for value in data
+            ]
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
@@ -399,7 +397,7 @@ class M2MUserTags:
             sensorTags = []
             for location in userLocations:
                 # Filter the objects by location
-                if locationId != "*" and locationId != location["_id"]:
+                if locationId not in ["*", location["_id"]]:
                     continue
                 locationTags.append(
                     {"text": location["locationName"], "value": location["_id"]}

@@ -1,8 +1,6 @@
 import logging
 import os
 
-from logging import handlers
-
 logger = logging.getLogger()
 handler = logging.handlers.RotatingFileHandler(
     "../logs/server.log", mode="a", maxBytes=1024 * 1024 * 10, backupCount=2
@@ -17,7 +15,6 @@ logger.addHandler(handler)
 import falcon
 import falcon_auth0
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 
 from docker_secrets import getDocketSecrets
 import influx
@@ -72,7 +69,7 @@ from weather_api import Weather, SunSchedule
 from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
 
 ##############################################
-## Configuration
+# Configuration
 ##############################################
 
 

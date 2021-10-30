@@ -1,7 +1,7 @@
 import logging
 import logging.config
 import os
-from threading import Timer, Thread
+from threading import Thread
 import queue
 
 import utils

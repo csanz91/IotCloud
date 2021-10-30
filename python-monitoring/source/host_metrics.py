@@ -22,7 +22,7 @@ def getHostMetrics():
     disk_io = psutil.disk_io_counters()
     net_io = psutil.net_io_counters()
 
-    hostMetrics = {
+    return {
         "cpu_percent": psutil.cpu_percent(),
         "mem_used": mem.total - mem.available,
         "mem_percent": mem.percent,
@@ -44,5 +44,3 @@ def getHostMetrics():
         "net_bytes_recv_rate": net_bytes_recv_rate.getRate(net_io.bytes_recv),
         "up_time": time.time() - psutil.boot_time(),
     }
-
-    return hostMetrics

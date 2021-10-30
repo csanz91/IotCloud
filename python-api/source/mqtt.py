@@ -5,7 +5,6 @@ import falcon
 import jwt
 
 import api_utils
-import dbinterface
 from api_utils import Roles
 import dbinterface
 from docker_secrets import getDocketSecrets
@@ -81,86 +80,7 @@ class MqttAcl:
     def on_post(self, req, resp):
 
         try:
-            token = req.params["username"]
-            tokenData = verifyMqttToken(token)
-
-            grantedRole = tokenData["role"]
-            topic = req.params["topic"]
-            acc = int(req.params["acc"])
-
-            if topic.startswith("v1/ota/update/"):
-                # All can read in this topic, only admin can write
-                if not isReadOnlyAcl(acc) and grantedRole != MqttRoles.admin:
-                    raiseUnauthorized()
-
-            else:
-                # v1/locationId/deviceId/sensorId/...
-                subtopics = topic.split("/")
-                # version = subtopics[0]
-                locationIdRequested = subtopics[1]
-                deviceIdRequested = subtopics[2]
-                endpoint = subtopics[-1]
-
-                if grantedRole == MqttRoles.user:
-                    role = dbinterface.selectUserLocationRole(
-                        self.db, tokenData["userId"], locationIdRequested
-                    )
-                    if not role or (isWriteAcl(acc) and role <= Roles.viewer):
-                        raiseUnauthorized()
-
-                elif grantedRole == MqttRoles.device:
-                    grantedLocationId = tokenData["locationId"]
-                    grantedDeviceId = tokenData["deviceId"]
-
-                    if (
-                        grantedLocationId != locationIdRequested
-                        or grantedDeviceId != deviceIdRequested
-                        or (
-                            isWriteAcl(acc)
-                            and endpoint
-                            not in [
-                                "value",
-                                "status",
-                                "setState",
-                                "state",
-                                "ip",
-                                "version",
-                            ]
-                            and subtopics[4] not in ["aux", "ota"]
-                        )
-                    ):
-                        raiseUnauthorized()
-                elif grantedRole == MqttRoles.subdevice:
-                    grantedLocationId = tokenData["locationId"]
-                    grantedDeviceId = tokenData["deviceId"]
-                    grantedSubdeviceId = tokenData["subdeviceId"]
-
-                    if (
-                        grantedLocationId != locationIdRequested
-                        or (
-                            grantedDeviceId != deviceIdRequested
-                            and grantedSubdeviceId != deviceIdRequested
-                        )
-                        or (
-                            isWriteAcl(acc)
-                            and endpoint
-                            not in [
-                                "value",
-                                "status",
-                                "setState",
-                                "state",
-                                "ip",
-                                "version",
-                                "reset",
-                            ]
-                            and subtopics[4] not in ["aux", "ota"]
-                        )
-                    ):
-                        raiseUnauthorized()
-
-                elif grantedRole != MqttRoles.admin:
-                    raiseUnauthorized()
-
+            self.verifyPermissions(req)
         except falcon.HTTPUnauthorized:
             raise
         except:
@@ -169,6 +89,109 @@ class MqttAcl:
                 "Bad Request", "The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
+
+    def verifyPermissions(self, req):
+        token = req.params["username"]
+        tokenData = verifyMqttToken(token)
+
+        grantedRole = tokenData["role"]
+        topic = req.params["topic"]
+        acc = int(req.params["acc"])
+
+        if topic.startswith("v1/ota/update/"):
+            # All can read in this topic, only admin can write
+            if not isReadOnlyAcl(acc) and grantedRole != MqttRoles.admin:
+                raiseUnauthorized()
+            return
+
+        # v1/locationId/deviceId/sensorId/...
+        subtopics = topic.split("/")
+        # version = subtopics[0]
+        locationIdRequested = subtopics[1]
+        deviceIdRequested = subtopics[2]
+        endpoint = subtopics[-1]
+
+        if grantedRole == MqttRoles.user:
+            self.verifyUserPermissions(tokenData, acc, locationIdRequested)
+
+        elif grantedRole == MqttRoles.device:
+            self.verifyDevicePermissions(
+                tokenData,
+                acc,
+                subtopics,
+                locationIdRequested,
+                deviceIdRequested,
+                endpoint,
+            )
+        elif grantedRole == MqttRoles.subdevice:
+            self.verifySubdevicePermissions(
+                tokenData,
+                acc,
+                subtopics,
+                locationIdRequested,
+                deviceIdRequested,
+                endpoint,
+            )
+
+        elif grantedRole != MqttRoles.admin:
+            raiseUnauthorized()
+
+    def isNotAllowedMqttTopic(self, acc, subtopics, endpoint):
+        return (
+            isWriteAcl(acc)
+            and endpoint
+            not in ["value", "status", "setState", "state", "ip", "version", "reset"]
+            and subtopics[4] not in ["aux", "ota"]
+        )
+
+    def verifySubdevicePermissions(
+        self,
+        tokenData,
+        acc,
+        subtopics,
+        locationIdRequested,
+        deviceIdRequested,
+        endpoint,
+    ):
+        grantedLocationId = tokenData["locationId"]
+        grantedDeviceId = tokenData["deviceId"]
+        grantedSubdeviceId = tokenData["subdeviceId"]
+
+        if (
+            grantedLocationId != locationIdRequested
+            or (
+                grantedDeviceId != deviceIdRequested
+                and grantedSubdeviceId != deviceIdRequested
+            )
+            or (self.isNotAllowedMqttTopic(acc, subtopics, endpoint))
+        ):
+            raiseUnauthorized()
+
+    def verifyDevicePermissions(
+        self,
+        tokenData,
+        acc,
+        subtopics,
+        locationIdRequested,
+        deviceIdRequested,
+        endpoint,
+    ):
+        grantedLocationId = tokenData["locationId"]
+        grantedDeviceId = tokenData["deviceId"]
+
+        if (
+            grantedLocationId != locationIdRequested
+            or grantedDeviceId != deviceIdRequested
+            or (self.isNotAllowedMqttTopic(acc, subtopics, endpoint))
+        ):
+            raiseUnauthorized()
+
+    def verifyUserPermissions(self, tokenData, acc, locationIdRequested):
+        role = dbinterface.selectUserLocationRole(
+            self.db, tokenData["userId"], locationIdRequested
+        )
+        if not role or (isWriteAcl(acc) and role <= Roles.viewer):
+            raiseUnauthorized()
 
 
 class MqttSuperUser:
@@ -197,7 +220,7 @@ class MqttSuperUser:
 
 def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=None):
 
-    if role == MqttRoles.user or role == MqttRoles.admin:
+    if role in [MqttRoles.user, MqttRoles.admin]:
         tokenData = {"userId": userId, "exp": int(time.time()) + 3600 * 24 * 7}
 
     elif role == MqttRoles.device:
@@ -213,10 +236,8 @@ def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=
         return None
 
     tokenData["role"] = role
-    encoded = jwt.encode(tokenData, secret, algorithm="HS256")
-    return encoded
+    return jwt.encode(tokenData, secret, algorithm="HS256")
 
 
 def verifyMqttToken(token):
-    decoded = jwt.decode(token, secret, algorithms=["HS256"])
-    return decoded
+    return jwt.decode(token, secret, algorithms=["HS256"])

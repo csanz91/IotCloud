@@ -66,14 +66,12 @@ def saveHostMetrics(data):
 
 def saveDockerMetrics(containersMetrics):
 
-    dataToWrite = []
-    for name, metrics in containersMetrics.items():
-        dataToWrite.append(
-            {
-                "measurement": "containers_monitoring",
-                "tags": {"container": name, "host": utils.getHostname()},
-                "fields": metrics,
-            }
-        )
-
+    dataToWrite = [
+        {
+            "measurement": "containers_monitoring",
+            "tags": {"container": name, "host": utils.getHostname()},
+            "fields": metrics,
+        }
+        for name, metrics in containersMetrics.items()
+    ]
     influxDb.write_points(dataToWrite, retention_policy="monitoring_raw")

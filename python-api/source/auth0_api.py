@@ -4,7 +4,6 @@ from auth0.v3.authentication import GetToken
 from auth0.v3.authentication.database import Database
 from auth0.v3.management import Auth0
 from auth0.v3 import exceptions
-from auth0.v3.management import Users
 from docker_secrets import getDocketSecrets
 
 logger = logging.getLogger(__name__)
@@ -78,7 +77,7 @@ class Auth0Api:
             userId = result["user_id"]
         except (KeyError, TypeError):
             logger.error(
-                f"It was not possible to add the user with id: {userId}.",
+                f"It was not possible to add the username: {username}.",
                 exc_info=True,
                 extra={"area": "users"},
             )

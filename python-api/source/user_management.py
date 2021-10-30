@@ -3,7 +3,7 @@ import logging
 import falcon
 from auth0.v3 import exceptions
 
-from api_utils import checkUser, getResponseModel
+from api_utils import getResponseModel
 import dbinterface
 
 

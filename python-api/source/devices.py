@@ -7,7 +7,6 @@ import falcon
 import dbinterface
 import influxdb_interface
 import api_utils
-import inspect
 from api_utils import grantLocationOwnerPermissions, Roles, getResponseModel
 from mqtt import generateMqttToken, MqttRoles
 from datetime import datetime, timedelta

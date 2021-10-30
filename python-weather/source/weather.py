@@ -12,7 +12,7 @@ import datetime
 from stations_list import stationsList
 from location_list import locationsList
 from geocodes_list import geocodesList
-from cache import cache_disk, clear_cache
+from cache import cache_disk
 from docker_secrets import getDocketSecrets
 import utils
 
@@ -308,13 +308,10 @@ def getMeasurementFromPostalCode(postalCode, measurement):
 
     # Get the history of the last measurements
     numHours = min(7, len(currentWeather))
-    hist = []
-    for numHour in range(-1, -numHours, -1):
-        hist.append(
-            currentWeather[numHour][
-                measurements[measurement]["observationMeasurementName"]
-            ]
-        )
+    hist = [
+        currentWeather[numHour][measurements[measurement]["observationMeasurementName"]]
+        for numHour in range(-1, -numHours, -1)
+    ]
     hist = list(reversed(hist))
 
     # 4. Get the predicted weather for today from the location

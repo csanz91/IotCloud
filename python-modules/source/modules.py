@@ -1,10 +1,9 @@
 import logging
 import logging.config
-import os
 import time
 import json
 from collections import defaultdict
-from threading import Timer, Thread, Lock
+from threading import Thread, Lock
 import queue
 import time
 
@@ -67,13 +66,12 @@ def calculateDeviceHash(topic):
 
 def getTags(topic):
     subtopics = topic.split("/")
-    tags = {
+    return {
         "locationId": subtopics[1],
         "deviceId": subtopics[2],
         "sensorId": subtopics[3],
         "endpoint": subtopics[-1],
     }
-    return tags
 
 
 def addToQueueDelayed(queue, items, delay):
@@ -160,7 +158,7 @@ def onStatusWork(msg):
         )
 
 
-for i in range(onStatusNumWorkerThreads):
+for _ in range(onStatusNumWorkerThreads):
     t = Thread(target=statusWorker)
     t.start()
     threads.append(t)
@@ -198,7 +196,7 @@ def onStateWork(msg):
         )
 
 
-for i in range(onStateNumWorkerThreads):
+for _ in range(onStateNumWorkerThreads):
     t = Thread(target=stateWorker)
     t.start()
     threads.append(t)
@@ -228,7 +226,7 @@ def onValueWork(msg):
         logger.error(f"The value received: {msg.payload} is not valid",)
 
 
-for i in range(onValueNumWorkerThreads):
+for _ in range(onValueNumWorkerThreads):
     t = Thread(target=valueWorker)
     t.start()
     threads.append(t)
@@ -288,7 +286,7 @@ def onSensorUpdateWork(msg):
         raise
 
 
-for i in range(onSensorUpdateNumWorkerThreads):
+for _ in range(onSensorUpdateNumWorkerThreads):
     t = Thread(target=sensorUpdateWorker)
     t.start()
     threads.append(t)
@@ -358,7 +356,7 @@ def onLocationUpdateWork(msg):
         raise
 
 
-for i in range(onLocationUpdateNumWorkerThreads):
+for _ in range(onLocationUpdateNumWorkerThreads):
     t = Thread(target=locationUpdateWorker)
     t.start()
     threads.append(t)
@@ -430,7 +428,7 @@ def onAuxWork(client, msg):
             ] = msg.payload
 
 
-for i in range(onAuxNumWorkerThreads):
+for _ in range(onAuxNumWorkerThreads):
     t = Thread(target=auxWorker)
     t.start()
     threads.append(t)

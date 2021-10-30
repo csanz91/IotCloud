@@ -5,7 +5,7 @@ import time
 logger = logging.getLogger()
 
 
-class LocationStatus():
+class LocationStatus:
     def __init__(self):
         self.offlineInitialTimestamp = 0
         self.timeFilter = 50  # Seconds
@@ -22,18 +22,27 @@ class LocationStatus():
         if not self.offlineInitialTimestamp:
             self.offlineInitialTimestamp = currentTimestamp
 
-        if not self.devicesStatus or any(deviceStatus for deviceStatus in self.devicesStatus.values()):
+        if not self.devicesStatus or any(self.devicesStatus.values()):
             self.offlineInitialTimestamp = currentTimestamp
             self.notificationSent = False
             self.previousState = True
 
-        if self.previousState and not self.notificationSent and currentTimestamp - self.offlineInitialTimestamp > self.timeFilter:
+        if (
+            self.previousState
+            and not self.notificationSent
+            and currentTimestamp - self.offlineInitialTimestamp > self.timeFilter
+        ):
             self.notificationSent = True
             self.previousState = False
 
             try:
-                logger.info("Sending notification for the location:%s is offline" % locationId)
+                logger.info(
+                    "Sending notification for the location:%s is offline" % locationId
+                )
                 api.notifyLocationOffline(locationId)
-            except :
-                logger.info("Error while sending notification for the location:%s" % locationId, exc_info=True)
+            except:
+                logger.info(
+                    "Error while sending notification for the location:%s" % locationId,
+                    exc_info=True,
+                )
                 return

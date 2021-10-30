@@ -20,12 +20,12 @@ def decodeStatus(value):
 
 def getTags(topic):
     subtopics = topic.split("/")
-    tags = {"locationId": subtopics[1],
-            "deviceId": subtopics[2],
-            "sensorId": subtopics[3],
-            "endpoint": subtopics[-1]
-            }
-    return tags
+    return {
+        "locationId": subtopics[1],
+        "deviceId": subtopics[2],
+        "sensorId": subtopics[3],
+        "endpoint": subtopics[-1],
+    }
 
 
 def selectTags(selectedTags, tags):
@@ -36,7 +36,7 @@ def selectTags(selectedTags, tags):
 def calculateSensorHash(topic):
     """ Calculate the sensor hash from the topic
     """
-    subtopics = topic.split('/')
+    subtopics = topic.split("/")
     sensorHash = "|".join(subtopics[0:4])
     return sensorHash
 
@@ -53,6 +53,5 @@ def parseFloat(value):
 
 def addToQueueDelayed(queue, items, delay):
     time.sleep(delay)
-    logger.info(
-        f"Element has been put back into the queue after {delay} seconds")
+    logger.info(f"Element has been put back into the queue after {delay} seconds")
     queue.put(items)

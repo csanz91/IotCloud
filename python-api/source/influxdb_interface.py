@@ -13,14 +13,11 @@ def getRP(initialTimestamp, finalTimestamp):
 
     # > 60 days or from 360 days ago
     if intervalSeconds > 3600 * 24 * 60 or secondsFromStart > 3600 * 24 * 360:
-        rp = '"3years"."downsampled_sensorsData_1d"'
-    # > 5 days or from 44 days ago
+        return '"3years"."downsampled_sensorsData_1d"'
     elif intervalSeconds > 3600 * 24 * 32 or secondsFromStart > 3600 * 24 * 44:
-        rp = '"1year"."downsampled_sensorsData_1h"'
+        return '"1year"."downsampled_sensorsData_1h"'
     else:
-        rp = "sensorsData"
-
-    return rp
+        return "sensorsData"
 
 
 def getData(

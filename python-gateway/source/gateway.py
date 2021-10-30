@@ -1,10 +1,8 @@
 import logging
 import logging.config
 import os
-from collections import defaultdict
-from threading import Timer, Thread
+from threading import Thread
 import queue
-import time
 
 import paho.mqtt.client as mqtt
 import influx

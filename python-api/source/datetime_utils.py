@@ -1,7 +1,6 @@
 import logging
-import time
 from dateutil import tz
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 import calendar
 
@@ -40,6 +39,10 @@ def getDayTimestamps(today, timeZoneId):
     return localMidnightTimestamp, localEndDayTimestamp
 
 
+def d2dt(sourceDate: date) -> datetime:
+    return datetime(year=sourceDate.year, month=sourceDate.month, day=sourceDate.day)
+
+
 def getThisWeekTimestamps(today, timeZoneId):
 
     if not timeZoneId:
@@ -51,7 +54,6 @@ def getThisWeekTimestamps(today, timeZoneId):
     start = todayLocal - timedelta(days=todayLocal.weekday())
     end = start + timedelta(days=6)
 
-    d2dt = lambda date: datetime(year=date.year, month=date.month, day=date.day)
     localMidnightTimestamp = toUtc(
         d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0), timeZoneId
     )
@@ -72,7 +74,6 @@ def getThisMonthTimestamps(today, timeZoneId):
     start = todayLocal.replace(day=1)
     end = start + relativedelta(months=1) - timedelta(days=1)
 
-    d2dt = lambda date: datetime(year=date.year, month=date.month, day=date.day)
     localMidnightTimestamp = toUtc(
         d2dt(start).replace(hour=0, minute=0, second=0, microsecond=0), timeZoneId
     )

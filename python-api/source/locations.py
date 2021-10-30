@@ -4,7 +4,6 @@ import falcon
 
 import dbinterface
 import api_utils
-import inspect
 from api_utils import checkLocationPermissions, checkUser, checkShareOwner, Roles
 
 logger = logging.getLogger(__name__)

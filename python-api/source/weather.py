@@ -13,14 +13,12 @@ def getWeather(postalCode, measurement):
     r = requests.post(
         f"{weatherServiceUrl}/postalcode/{postalCode}/weather", json=postData,
     )
-    result = r.json()
-    return result
+    return r.json()
 
 
 def getSunSchedule(postalCode):
     r = requests.get(f"{weatherServiceUrl}/postalcode/{postalCode}/sunschedule")
-    result = r.json()
-    return result
+    return r.json()
 
 
 def getTimeZone(postalCode):

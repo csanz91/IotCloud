@@ -20,8 +20,6 @@ def getContainerCpu(data):
     :param data: docker statistics coded as a dictionary.
     :return: percentage of cpu usage.
     """
-    cpu_percent = 0.0
-
     cpu_count = len(data["cpu_stats"]["cpu_usage"]["percpu_usage"])
 
     cpu_delta = float(data["cpu_stats"]["cpu_usage"]["total_usage"]) - float(
@@ -32,10 +30,7 @@ def getContainerCpu(data):
         data["precpu_stats"]["system_cpu_usage"]
     )
 
-    if system_delta > 0.0:
-        cpu_percent = cpu_delta / system_delta * 100.0 * cpu_count
-
-    return cpu_percent
+    return cpu_delta / system_delta * 100.0 * cpu_count if system_delta > 0.0 else 0.0
 
 
 def getContainerMem(data):
@@ -43,16 +38,11 @@ def getContainerMem(data):
     :param data: docker statistics coded as a dictionary.
     :return: percentage of memory usage.
     """
-    mem_percent = 0.0
-
     mem_usage = float(data["memory_stats"]["usage"])
 
     mem_limit = float(data["memory_stats"]["limit"])
 
-    if mem_limit > 0.0:
-        mem_percent = mem_usage / mem_limit * 100
-
-    return mem_percent
+    return mem_usage / mem_limit * 100 if mem_limit > 0.0 else 0.0
 
 
 def getContainerNet(data):
@@ -94,8 +84,7 @@ def getContainersMetrics():
     containersMetrics = {}
     for container in dockerClient.containers.list():
         containerName = getContainerName(container)
-        containersMetrics[containerName] = {}
-        containersMetrics[containerName]["status"] = container.status
+        containersMetrics[containerName] = {"status": container.status}
         if container.status == "running":
             try:
                 containersMetrics[containerName] = getContainerMetrics(container)

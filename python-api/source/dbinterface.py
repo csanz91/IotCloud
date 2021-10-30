@@ -1,12 +1,8 @@
-from pymongo import MongoClient
 from pymongo.results import InsertOneResult, DeleteResult
 from bson.objectid import ObjectId
 import time
 import inspect
 import logging
-from collections import OrderedDict, defaultdict
-import json
-from bson import json_util
 import random
 import copy
 
@@ -46,9 +42,7 @@ def validateDbResult(result):
         assert result.acknowledged
         if type(result) is DeleteResult:
             assert result.deleted_count == 1
-        elif type(result) is InsertOneResult:
-            pass
-        else:
+        elif type(result) is not InsertOneResult:
             assert result.modified_count == 1
     except AssertionError:
         logger.error(
@@ -435,13 +429,10 @@ def yieldLocations(db, userId, includeInherited=False):
 
     userData = selectUser(db, userId)
 
-    for location in userData["locations"]:
-        yield location
-
+    yield from userData["locations"]
     if includeInherited:
         inheritedLocations = getInheritedLocations(db, userId)
-        for inheritedLocation in inheritedLocations:
-            yield inheritedLocation
+        yield from inheritedLocations
 
 
 def getInheritedLocations(db, userId):

@@ -66,9 +66,7 @@ class IotCloudApi:
 
     def get(self, url, auth=False):
 
-        headers = None
-        if auth:
-            headers = self.getAuthHeader()
+        headers = self.getAuthHeader() if auth else None
 
         # First we try to post de data without validating the token,
         # if we get the unauthorized code then we ask for a new token,
@@ -85,15 +83,11 @@ class IotCloudApi:
             # Send again the data with the new token
             headers = self.getAuthHeader()
 
-        # Check if the response is well formed
-        result = self.validateResponse(r)
-        return result
+        return self.validateResponse(r)
 
     def post(self, url, data, auth=False):
 
-        headers = None
-        if auth:
-            headers = self.getAuthHeader()
+        headers = self.getAuthHeader() if auth else None
 
         # First we try to post de data without validating the token,
         # if we get the unauthorized code then we ask for a new token,
@@ -112,9 +106,7 @@ class IotCloudApi:
             # Send again the data with the new token
             headers = self.getAuthHeader()
 
-        # Check if the response is well formed
-        result = self.validateResponse(r)
-        return result
+        return self.validateResponse(r)
 
     def getUserSensor(self, userId, locationId, deviceId, sensorId):
 
