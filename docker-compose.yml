@@ -234,32 +234,32 @@ services:
 
 
   backup-manager:
-      build: ./backup-manager
-      restart: unless-stopped
-      container_name: backup-manager
-      env_file:
-        - 'variables.env'
-      volumes:
-        - ./backups:/backups
+    build: ./backup-manager
+    restart: unless-stopped
+    container_name: backup-manager
+    env_file:
+      - 'variables.env'
+    volumes:
+      - ./backups:/backups
 
   duplicati:
-      image: lscr.io/linuxserver/duplicati
-      container_name: duplicati
-      environment:
-        - PUID=1000
-        - PGID=1000
-        - TZ=Europe/Madrid
-      volumes:
-        - ./duplicati/config:/config
-        - ./backups/influxdb:/source/influxdb
-        - ./backups/mongodb:/source/mongodb
-      expose:
-        - "8200"
-      environment:
-        - VIRTUAL_HOST=duplicati.iotcloud.es
-        - VIRTUAL_PORT=8200
-        - LETSENCRYPT_HOST=duplicati.iotcloud.es
-      restart: unless-stopped
+    image: lscr.io/linuxserver/duplicati
+    container_name: duplicati
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - VIRTUAL_HOST=duplicati.iotcloud.es
+      - VIRTUAL_PORT=8200
+      - LETSENCRYPT_HOST=duplicati.iotcloud.es
+    volumes:
+      - ./duplicati/config:/config
+      - ./backups/influxdb:/source/influxdb
+      - ./backups/mongodb:/source/mongodb
+    expose:
+      - "8200"
+
+    restart: unless-stopped
 
 secrets:
   modules_secrets:
