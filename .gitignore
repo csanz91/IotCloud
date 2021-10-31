@@ -132,3 +132,4 @@ cache
 pkg
 bin
 backups
+duplicati/config
