@@ -241,6 +241,7 @@ services:
       - 'variables.env'
     volumes:
       - ./backups:/backups
+      - ./grafana/data/grafana.db:/grafana.db:ro
 
   duplicati:
     image: lscr.io/linuxserver/duplicati

@@ -6,6 +6,7 @@ RUN set -ex && \
     apk upgrade && \
     apk add --no-cache \
     influxdb \
+    sqlite \
     mongodb-tools && \
     rm -rf /usr/src/* && \
     rm -rf /root/.cache /tmp/* /var/cache/apk/*
@@ -15,11 +16,15 @@ ARG group=appuser
 ARG PUID=1000
 ARG PGID=1000
 
-# Backup script
+# InfluxDB backup script
 COPY backup_influxdb.sh /bin/backup_influxdb.sh
 RUN chmod +x /bin/backup_influxdb.sh
+# MongoDB backup script
 COPY backup_mongodb.sh /bin/backup_mongodb.sh
 RUN chmod +x /bin/backup_mongodb.sh
+# Grafana backup script
+COPY backup_grafana.sh /bin/backup_grafana.sh
+RUN chmod +x /bin/backup_grafana.sh
 
 # Create user
 RUN addgroup  -g ${PGID} -S ${group} && adduser -u ${PUID} -S ${user} -G ${group} 
