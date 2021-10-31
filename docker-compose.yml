@@ -162,7 +162,7 @@ services:
 
   mongodb:
     restart: unless-stopped
-    image: mongo:4.2.5
+    image: mongo:5.0
     hostname: docker
     volumes:
       - ./mongodb:/data/db
@@ -238,49 +238,14 @@ services:
       - VIRTUAL_NETWORK=iotcloud-overlay-net
 
 
-  influxdb-backup:
-    container_name: influxdb-backup
-    image: tiredofit/db-backup
-    volumes:
-      - ./backups/influxdb:/backup
-      - ./backups/post-script.sh:/assets/custom-scripts/post-script.sh
-    env_file:
-      - 'variables.env'
-    environment:
-      - DB_TYPE=influx
-      - DB_HOST=influxdb
-      - DB_NAME=iothub
-      - DB_USER=user
-      - DB_PASS=password
-      - DB_DUMP_FREQ=1440
-      - DB_DUMP_BEGIN=0000
-      - DB_CLEANUP_TIME=8640
-      - MD5=TRUE
-      - COMPRESSION=XZ
-      - SPLIT_DB=FALSE
-    restart: unless-stopped
-
-  mongodb-backup:
-    container_name: mongodb-backup
-    image: tiredofit/db-backup
-    volumes:
-      - ./backups/mongodb:/backup
-      - ./backups/post-script.sh:/assets/custom-scripts/post-script.sh
-    env_file:
-      - 'variables.env'
-    environment:
-      - DB_TYPE=mongo
-      - DB_HOST=mongodb
-      - DB_NAME=data
-      - DB_USER=user
-      - DB_PASS=password
-      - DB_DUMP_FREQ=1440
-      - DB_DUMP_BEGIN=0005
-      - DB_CLEANUP_TIME=8640
-      - MD5=TRUE
-      - COMPRESSION=XZ
-      - SPLIT_DB=FALSE
-    restart: unless-stopped
+  backup-manager:
+      build: ./backup-manager
+      restart: unless-stopped
+      container_name: backup-manager
+      env_file:
+        - 'variables.env'
+      volumes:
+        - ./backups:/backups
 
   duplicati:
       image: lscr.io/linuxserver/duplicati
