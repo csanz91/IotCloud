@@ -257,6 +257,7 @@ services:
       - ./duplicati/config:/config
       - ./backups/influxdb:/source/influxdb
       - ./backups/mongodb:/source/mongodb
+      - ./backups/grafana:/source/grafana
     expose:
       - "8200"
 
