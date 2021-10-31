@@ -2,7 +2,7 @@
 echo 'Starting Grafana backup'
 set -e
 
-grafana_db_path=grafana.db
+grafana_db_path=/grafana.db
 bck_dir=/backups/grafana
 mkdir -p $bck_dir
 

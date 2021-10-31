@@ -136,7 +136,7 @@ services:
       - grafana_datasource_secrets
 
   grafana:
-    user: "$UID:$GID"
+    user: "1000:1000"
     restart: unless-stopped
     image: grafana/grafana:latest
     expose:
