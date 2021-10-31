@@ -54,7 +54,6 @@ services:
       - VIRTUAL_HOST=api.iotcloud.es
       - VIRTUAL_PORT=5000
       - LETSENCRYPT_HOST=api.iotcloud.es
-      - VIRTUAL_NETWORK=iotcloud-overlay-net
 
   influx_mqtt_gateway:
     container_name: gateway
@@ -121,7 +120,6 @@ services:
       - VIRTUAL_HOST=home.iotcloud.es
       - VIRTUAL_PORT=5001
       - LETSENCRYPT_HOST=home.iotcloud.es
-      - VIRTUAL_NETWORK=iotcloud-overlay-net
 
   grafana-datasource:
     container_name: grafana-datasource
@@ -155,7 +153,6 @@ services:
       - VIRTUAL_HOST=grafana.iotcloud.es
       - VIRTUAL_PORT=3000
       - LETSENCRYPT_HOST=grafana.iotcloud.es
-      - VIRTUAL_NETWORK=iotcloud-overlay-net
     secrets:
       - grafana_secrets_clientId
       - grafana_secrets_clientSecret
@@ -202,7 +199,6 @@ services:
       - VIRTUAL_HOST=mqtt.iotcloud.es
       - VIRTUAL_PORT=9001
       - LETSENCRYPT_HOST=mqtt.iotcloud.es
-      - VIRTUAL_NETWORK=iotcloud-overlay-net
 
   telegraf:
     image: telegraf
@@ -235,7 +231,6 @@ services:
       - VIRTUAL_HOST=ota.iotcloud.es
       - VIRTUAL_PORT=5004
       - LETSENCRYPT_HOST=ota.iotcloud.es
-      - VIRTUAL_NETWORK=iotcloud-overlay-net
 
 
   backup-manager:
@@ -258,8 +253,12 @@ services:
         - ./duplicati/config:/config
         - ./backups/influxdb:/source/influxdb
         - ./backups/mongodb:/source/mongodb
-      ports:
-        - 8200:8200
+      expose:
+        - "8200"
+      environment:
+        - VIRTUAL_HOST=duplicati.iotcloud.es
+        - VIRTUAL_PORT=8200
+        - LETSENCRYPT_HOST=duplicati.iotcloud.es
       restart: unless-stopped
 
 secrets:
