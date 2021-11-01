@@ -232,7 +232,6 @@ services:
       - VIRTUAL_PORT=5004
       - LETSENCRYPT_HOST=ota.iotcloud.es
 
-
   backup-manager:
     build: ./backup-manager
     restart: unless-stopped
@@ -242,26 +241,13 @@ services:
     volumes:
       - ./backups:/backups
       - ./grafana/data/grafana.db:/grafana.db:ro
+      - gdrive_config:/gdrive/config
+    secrets:
+      - gdrive_config
+      - gdrive_backup_folder
 
-  duplicati:
-    image: lscr.io/linuxserver/duplicati
-    container_name: duplicati
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-      - VIRTUAL_HOST=duplicati.iotcloud.es
-      - VIRTUAL_PORT=8200
-      - LETSENCRYPT_HOST=duplicati.iotcloud.es
     volumes:
-      - ./duplicati/config:/config
-      - ./backups/influxdb:/source/influxdb
-      - ./backups/mongodb:/source/mongodb
-      - ./backups/grafana:/source/grafana
-    expose:
-      - "8200"
-
-    restart: unless-stopped
+  gdrive_config:
 
 secrets:
   modules_secrets:
@@ -280,4 +266,7 @@ secrets:
       file: ./grafana/secrets/clientId
   grafana_secrets_clientSecret:
       file: ./grafana/secrets/clientSecret
-  
+  gdrive_config:
+      file: ./backup-manager/secrets/gdrive_config
+  gdrive_backup_folder:
+      file: ./backup-manager/secrets/gdrive_backup_folder
