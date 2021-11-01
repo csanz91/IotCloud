@@ -11,12 +11,12 @@ if ($request_method = OPTIONS) {
 }
 
 if ($cors = 'origin_matched') {
-    add_header Access-Control-Allow-Origin 'https://web.iotcloud.es';
+    add_header Access-Control-Allow-Origin 'https://web.iotcloud.es' always;
     add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
 }
 
 if ($cors = 'origin_matched & preflight') {
-    add_header 'Access-Control-Allow-Origin' 'https://web.iotcloud.es';
+    add_header 'Access-Control-Allow-Origin' 'https://web.iotcloud.es' always;
     add_header 'Access-Control-Allow-Methods' $cors_allowed_methods;
     #
     # Custom headers and headers various browsers *should* be OK with but aren't
