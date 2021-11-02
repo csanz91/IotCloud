@@ -246,7 +246,7 @@ services:
       - gdrive_config
       - gdrive_backup_folder
 
-    volumes:
+volumes:
   gdrive_config:
 
 secrets:
