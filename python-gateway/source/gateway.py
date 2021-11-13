@@ -290,9 +290,9 @@ def init(influxDb):
             -day and stored for 3 years,
     """
     # Setup the retention policies
-    influxDb.client.create_retention_policy("raw", "45d", 1, default=True)
-    influxDb.client.create_retention_policy("1year", "365d", 1)
-    influxDb.client.create_retention_policy("3years", "1080d", 1)
+    influxDb.client.create_retention_policy("raw", "547d", 1, default=True)
+    influxDb.client.create_retention_policy("1year", "0s", 1)
+    influxDb.client.create_retention_policy("3years", "0s", 1)
 
     influxDb.client.query(
         f""" DROP CONTINUOUS QUERY "sensorsData_1h" ON {os.environ['INFLUXDB_DB']};"""
