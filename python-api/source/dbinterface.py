@@ -896,11 +896,16 @@ def findLocation(db, locationId):
 @checkArgs("db")
 def findModulesLocations(db):
 
-    locations = db.usersData.find(
+    usersData = db.usersData.find(
         {"locations.modulesEnabled": True}, {"locations.$": True}
     )
 
-    return list(locations)
+    locations = []
+    for userData in usersData:
+        for location in userData["locations"]:
+            locations.append(location)
+
+    return locations
 
 
 @checkArgs("db", "locationId", "deviceId", "sensorId")
