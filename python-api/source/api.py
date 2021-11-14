@@ -140,7 +140,7 @@ mqttclient.loop_start()
 # Api instance
 ##############################################
 middleware = falcon_auth0.Auth0Middleware(cfg, claims)
-app = falcon.API(middleware=[middleware])
+app = falcon.App(middleware=[middleware])
 app.req_options.auto_parse_form_urlencoded = True
 
 ##############################################
