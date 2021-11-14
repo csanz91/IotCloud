@@ -92,6 +92,17 @@ services:
     secrets:
       - modules_secrets
 
+  modules2:
+    container_name: modules2
+    build: ./python-modules2
+    env_file:
+      - 'variables.env'
+    restart: unless-stopped
+    volumes:
+      - ./python-modules2/logs:/app/logs
+    secrets:
+      - modules_secrets
+
   monitoring:
     container_name: monitoring
     build: ./python-monitoring
