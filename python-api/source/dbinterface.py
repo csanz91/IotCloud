@@ -313,7 +313,7 @@ def insertLocation(
     city,
     utcLocationInitialTimestamp=None,
     color=None,
-    thirdPartiesVisible=True,
+    thirdPartiesVisible=False,
 ):
 
     if not utcLocationInitialTimestamp:
@@ -342,7 +342,8 @@ def insertLocation(
                     "color": color,
                     "role": api_utils.Roles.owner,
                     "rooms": [],
-                    "thirdPartiesVisible": False,
+                    "thirdPartiesVisible": thirdPartiesVisible,
+                    "modulesEnabled": True,
                 }
             }
         },
@@ -362,7 +363,7 @@ def getDataToUpdate(updatedData, allowedFieldsToUpdate):
 
 
 individualLocationFields = ["locationName", "color", "thirdPartiesVisible"]
-sharedLocationFields = ["postalCode", "city"]
+sharedLocationFields = ["postalCode", "city", "modulesEnabled"]
 
 
 @checkArgs("db", "userId", "locationId")
@@ -890,6 +891,16 @@ def findLocation(db, locationId):
     )
 
     return userData["locations"][0]
+
+
+@checkArgs("db")
+def findModulesLocations(db):
+
+    locations = db.usersData.find(
+        {"locations.modulesEnabled": True}, {"locations.$": True}
+    )
+
+    return list(locations)
 
 
 @checkArgs("db", "locationId", "deviceId", "sensorId")

@@ -15,6 +15,7 @@ logger.addHandler(handler)
 import falcon
 import falcon_auth0
 from pymongo import MongoClient
+import paho.mqtt.client as mqtt
 
 from docker_secrets import getDocketSecrets
 import influx
@@ -63,6 +64,7 @@ from m2m import (
     M2MLocationActionData,
     M2MLocationDevicesStatusStats,
     M2MLocationDeviceStatus,
+    M2MModulesLocations,
 )
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule
@@ -117,6 +119,23 @@ influx_client = influx.InfluxDBClient(
 ##############################################
 auth0 = Auth0Api()
 
+
+##############################################
+# MQTT Server Connection
+##############################################
+def onConnect(self, mosq, obj, rc):
+    logger.info("MQTT Connected",)
+
+
+mqttclient = mqtt.Client(client_id="api")
+token = getDocketSecrets("mqtt_token")
+mqttclient.username_pw_set(token, "_")
+mqttclient.on_connect = onConnect
+
+# Connect
+mqttclient.connect("mosquitto")
+mqttclient.loop_start()
+
 ##############################################
 # Api instance
 ##############################################
@@ -137,7 +156,7 @@ app.add_route(
     "/api/v1/users/{userId}/permissionvalidation", ValidateLocationPermissions(db)
 )
 app.add_route("/api/v1/users/{userId}/mqttauth", MqttUserToken())
-app.add_route("/api/v1/users/{userId}/locations", UserLocations(db))
+app.add_route("/api/v1/users/{userId}/locations", UserLocations(db, mqttclient))
 app.add_route("/api/v1/users/{userId}/weather", Weather())
 app.add_route("/api/v1/users/{userId}/sunschedule", SunSchedule())
 app.add_route("/api/v1/users/{userId}/sensors", UserSensors(db))
@@ -146,9 +165,12 @@ app.add_route("/api/v1/users/{userId}/bitcoin/current", BitcoinCurrent())
 app.add_route("/api/v1/users/{userId}/bitcoin/historical", BitcoinHistorical())
 app.add_route("/api/v1/users/{userId}/bitcoin", BitcoinPrice())
 app.add_route("/api/v1/users/{userId}/firebasetoken", FirebaseUserToken(db))
-app.add_route("/api/v1/users/{userId}/locations/{locationId}", Locations(db))
 app.add_route(
-    "/api/v1/users/{userId}/locations/{locationId}/devices", LocationDevices(db)
+    "/api/v1/users/{userId}/locations/{locationId}", Locations(db, mqttclient)
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices",
+    LocationDevices(db, mqttclient),
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db)
@@ -162,7 +184,8 @@ app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/rooms/{roomId}", LocationRoom(db)
 )
 app.add_route(
-    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}", Devices(db)
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}",
+    Devices(db, mqttclient),
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/mqttauth",
@@ -182,7 +205,7 @@ app.add_route(
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensors/{sensorId}",
-    Sensors(db),
+    Sensors(db, mqttclient),
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsdata/{sensorId}",
@@ -243,6 +266,7 @@ app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/m2mstatus",
     M2MLocationDeviceStatus(influx_client, db),
 )
+app.add_route("/api/v1/locations/modulesEnabled", M2MModulesLocations(db))
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())

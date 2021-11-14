@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 secret = getDocketSecrets("mqtt_auth_secret")
 
 
+class MqttActions:
+    ADDED = "added"
+    UPDATED = "updated"
+    DELETED = "deleted"
+
+
 class MqttRoles:
     user = "User"
     device = "Device"

@@ -11,3 +11,4 @@ auth0-python
 -e libs/disk_cache
 python-dateutil
 firebase_admin
+paho-mqtt
