@@ -127,7 +127,7 @@ def onConnect(self, mosq, obj, rc):
     logger.info("MQTT Connected",)
 
 
-mqttclient = mqtt.Client(client_id="api")
+mqttclient = mqtt.Client()
 token = getDocketSecrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 mqttclient.on_connect = onConnect
