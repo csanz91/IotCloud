@@ -14,8 +14,10 @@ logger = logging.getLogger()
 
 
 class Location:
-    def __init__(self, locationData, mqttclient: MqttClient, api: IotCloudApi):
-        self.locationId = ""
+    def __init__(
+        self, locationId, locationData, mqttclient: MqttClient, api: IotCloudApi
+    ):
+        self.locationId = locationId
         self.locationName = ""
         self.postalCode = 0
         self.timeZone = ""
@@ -30,7 +32,7 @@ class Location:
         self.api = api
 
         # Set location data
-        self.setLocationData(locationData)
+        self.setLocationData(locationData, mqttclient)
 
         # Set MQTT topics and handlers
         self.updatedDeviceTopic = f"v1/{self.locationId}/+/updatedDevice"
@@ -88,7 +90,7 @@ class Location:
                     self.addSensor(sensorId, deviceId, metadata, mqttclient)
 
     def onLocationUpdated(self, mqttclient: MqttClient, msg):
-        action = msg.payload
+        action = msg.payload.decode("utf-8")
         logger.info(f"Received: {action} from location: {self.locationId}")
 
     @retryFunc
@@ -108,7 +110,7 @@ class Location:
             sensor.setSensorData(metadata)
 
     def onDeviceUpdated(self, mqttclient: MqttClient, userdata, msg):
-        action = msg.payload
+        action = msg.payload.decode("utf-8")
         deviceId = msg.topic.split("/")[2]
         logger.info(
             f"Received: {action} from location: {self.locationId} and device: {deviceId}"
@@ -119,7 +121,7 @@ class Location:
                 del self.sensors[deviceId]
 
     def onSensorUpdated(self, mqttclient: MqttClient, userdata, msg):
-        action = msg.payload
+        action = msg.payload.decode("utf-8")
         _, locationId, deviceId, sensorId, _ = msg.topic.split("/")
         logger.info(
             f"Received: {action} from location: {self.locationId} and device: {deviceId}"
@@ -152,7 +154,7 @@ class Location:
                 logger.info(
                     f"Sending notification for the location: {self.locationId} is offline"
                 )
-                self.api.notifyLocationOffline(self.locationId)
+                self.api.notifyLocationOffline(self.locationId, self.locationName)
             except:
                 logger.error(
                     f"Error while sending notification for the location: {self.locationId}",
@@ -161,9 +163,9 @@ class Location:
 
     def run(self):
 
-        devicesStatus = None
+        devicesStatus = False
         with self.sensorsLock:
-            for device in self.sensors:
+            for device in self.sensors.values():
                 device.run()
                 devicesStatus = devicesStatus or device.status
 

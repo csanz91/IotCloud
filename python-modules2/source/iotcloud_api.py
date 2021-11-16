@@ -46,7 +46,7 @@ class IotCloudApi:
         logger.info("authenticate: User authenticated successfully.")
         return True
 
-    def validateResponse(self, response):
+    def validateResponse(self, response: requests.Response) -> dict:
 
         assert response.status_code == 200
 
@@ -59,12 +59,9 @@ class IotCloudApi:
             )
             raise
 
-        try:
-            return result["data"]
-        except KeyError:
-            return True
+        return result["data"]
 
-    def get(self, url, auth=False):
+    def get(self, url, auth=False) -> dict:
 
         headers = self.getAuthHeader() if auth else None
 
@@ -72,20 +69,20 @@ class IotCloudApi:
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
         for numRetries in range(2):
-            r = self.session.get(self.iotcloudApiUrl + url, headers=headers, timeout=30)
+            r = self.session.get(self.iotcloudApiUrl + url, headers=headers, timeout=10)
             if r.status_code != requests.codes.unauthorized:
                 break
 
             # Get the auth token
             authenticationResult = self.authenticate()
             if numRetries == 1 or not authenticationResult:
-                return
+                raise Exception("Could not authenticate")
             # Send again the data with the new token
             headers = self.getAuthHeader()
 
         return self.validateResponse(r)
 
-    def post(self, url, data, auth=False):
+    def post(self, url, data, auth=False) -> dict:
 
         headers = self.getAuthHeader() if auth else None
 
@@ -102,13 +99,13 @@ class IotCloudApi:
             # Get the auth token
             authenticationResult = self.authenticate()
             if numRetries == 1 or not authenticationResult:
-                return
+                raise Exception("Could not authenticate")
             # Send again the data with the new token
             headers = self.getAuthHeader()
 
         return self.validateResponse(r)
 
-    def getSensor(self, locationId, deviceId, sensorId):
+    def getSensor(self, locationId, deviceId, sensorId) -> dict:
 
         sensor = self.get(
             f"locations/{locationId}/devices/{deviceId}/sensors/{sensorId}", auth=True

@@ -34,7 +34,7 @@ locationsLock = Lock()
 def addLocation(locationId: str, mqttclient: mqtt.Client, api: IotCloudApi):
     locationData = api.getLocation(locationId)
     with locationsLock:
-        location = Location(locationData, mqttclient, api)
+        location = Location(locationId, locationData, mqttclient, api)
         location.subscribe(mqttclient)
         locations[locationId] = location
 
@@ -49,7 +49,7 @@ def updateLocation(locationId: str, mqttclient: mqtt.Client, api: IotCloudApi):
 
 def onLocationUpdated(mqttclient: mqtt.Client, userdata, message):
     locationId = message.topic.split("/")[1]
-    action = message.payload
+    action = message.payload.decode("utf-8")
     api: IotCloudApi = userdata["api"]
     logger.info(f"Received action: {action} from the location: {locationId}")
 
@@ -68,7 +68,7 @@ def onLocationUpdated(mqttclient: mqtt.Client, userdata, message):
                 del locations[locationId]
 
 
-def onConnect(mqttclient, obj, rc):
+def onConnect(mqttclient, userdata, flags, rc):
     logger.info("Connected to the MQTT broker")
     mqttclient.subscribe(updatedLocationTopic)
     with locationsLock:
@@ -76,7 +76,7 @@ def onConnect(mqttclient, obj, rc):
             location.subscribe(mqttclient)
 
 
-logger.info("Starting...",)
+logger.info("Starting...")
 
 # IotHub api setup
 api = IotCloudApi()
@@ -93,8 +93,8 @@ mqttclient.on_connect = onConnect
 # Get the locations
 modulesLocations = api.getModulesLocations()
 for locationData in modulesLocations:
-    locationId = locationData["locationId"]
-    locations[locationId] = Location(locationData, mqttclient, api)
+    locationId = locationData["_id"]
+    locations[locationId] = Location(locationId, locationData, mqttclient, api)
 
 # Connect
 mqttclient.connect("mosquitto")
@@ -109,4 +109,4 @@ try:
         time.sleep(1.0)
 finally:
     mqttclient.loop_stop()
-    logger.info("Exiting...",)
+    logger.info("Exiting...")

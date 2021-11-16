@@ -24,7 +24,7 @@ class Sensor:
         self.status = False
 
         self.statusTopic = baseTopic + "/status"
-        mqttclient.message_callback_add(self.updatedLocationTopic, self.onDeviceStatus)
+        mqttclient.message_callback_add(self.statusTopic, self.onDeviceStatus)
 
     def subscribe(self, mqttclient: MqttClient) -> None:
         mqttclient.subscribe(self.statusTopic)
