@@ -7,11 +7,8 @@ set -e
 bck_dir=/backups/mongodb
 mkdir -p $bck_dir
 
-min_dirs=16
-#we are saving only last 14 backups (2 weeks)
-if [ $(find "$bck_dir" -maxdepth 1 -type d | wc -l) -ge $min_dirs ]
-  then find "$bck_dir" -maxdepth 1 | sort | head -n 2 | sort -r | head -n 1 | xargs rm -rf
-fi
+# Save last weeks backup and the first backup of each month
+find "$bck_dir" -maxdepth 1 ! -name '*[0-9][0-9][0-9][0-9]-[0-9][0-9]-01-*' -mtime +7 -exec rm -r {} \;
 
 #all backups are in /backup folder
 #every backup is in a folder with name which is date when a backup has been created
