@@ -14,5 +14,8 @@ COPY ./ /app
 # Generate logs folder if it doesn't exist
 RUN mkdir -p /app/logs
 
+RUN useradd -m workeruser
+USER workeruser
+
 WORKDIR /app/source
 CMD [ "./run_gateway.sh" ] 
