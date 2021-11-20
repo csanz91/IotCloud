@@ -17,6 +17,9 @@ RUN mkdir -p /app/logs
 # Generate cache folder if it doesn't exist
 RUN mkdir -p /app/cache
 
+RUN useradd -m workeruser
+USER workeruser
+
 WORKDIR /app/source
 EXPOSE 5003
 CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "--workers", "1", "--threads", "2", "-b", "0.0.0.0:5003", "api:app"]
