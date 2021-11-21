@@ -6,6 +6,7 @@ import queue
 
 import paho.mqtt.client as mqtt
 import influx
+from influxdb import exceptions
 from docker_secrets import getDocketSecrets
 import utils
 import thermostat_gw
@@ -284,13 +285,16 @@ def init(influxDb):
         differing attributes, InfluxDB returns an error.
     -i.e. If we want to edit some of the following values, do it in the Influx cli.
 
-    The values received will be stored for 45 days at their original resolution,
+    The values received will be stored for 547 days at their original resolution,
         and they are aggregated every:
             -hour and stored for 1 year,
             -day and stored for 3 years,
     """
     # Setup the retention policies
-    influxDb.client.create_retention_policy("raw", "547d", 1, default=True)
+    try:
+        influxDb.client.create_retention_policy("raw", "547d", 1, default=True)
+    except exceptions.InfluxDBClientError:
+        pass
     influxDb.client.create_retention_policy("1year", "0s", 1)
     influxDb.client.create_retention_policy("3years", "0s", 1)
 
