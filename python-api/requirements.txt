@@ -1,8 +1,6 @@
 falcon
 gunicorn
-pretend
-python-jose-cryptodome==1.3.2
-six
+pyjwt[crypto]
 pymongo
 falcon-auth
 auth0-python

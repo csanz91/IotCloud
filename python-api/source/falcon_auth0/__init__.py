@@ -1,16 +1,18 @@
 # System Imports
 from copy import deepcopy
-from json import dumps, loads
+from json import loads
+import logging
+import json
 
 # Third-Party Imports
-from falcon import HTTPBadRequest, Request, Response
-from falcon.status_codes import HTTP_400, HTTP_401, HTTP_403, HTTP_404
-from jose import jwt
+from falcon import HTTPBadRequest
+from falcon.status_codes import HTTP_401
+import jwt
 from six.moves.urllib.request import urlopen
 
 # Local Source Imports
 from .__http_factory import http_error_factory
-from .logger import logger
+logger = logging.getLogger(__name__)
 
 # See https://auth0.com/docs/quickstart/backend/python/01-authorization
 
@@ -104,7 +106,7 @@ class Auth0Middleware(object):
 
         :raises: HTTPError := HTTPUnauthorized
         """
-        logger.info("Pulling the Authorization header from the Request.")
+        logger.debug("Pulling the Authorization header from the Request.")
         try:
             _auth_token = req.get_header("Authorization")
             (_bearer, _token) = _auth_token.split()
@@ -175,7 +177,7 @@ class Auth0Middleware(object):
         :return: JWKS Dictionary or None if the endpoint could not be reached.
         :rtype: Union[dict, None]
         """
-        logger.info("Getting JWKS from Auth0.")
+        logger.debug("Getting JWKS from Auth0.")
         _jwks_uri = self.config.get(self.__environment, self.config).get(
             "jwks_uri", None
         )
@@ -211,7 +213,7 @@ class Auth0Middleware(object):
         :return: Processed claims
         :rtype: Dict[str, Union[bool, str, List[Dict[]], int]]
         """
-        logger.info("Processing decoded JWT Claims.")
+        logger.debug("Processing decoded JWT Claims.")
         _claims = deepcopy(claims)
 
         if self.claims:
@@ -232,7 +234,7 @@ class Auth0Middleware(object):
         :param resp: Response object that will be routed to the on_* responder.
         """
 
-        logger.info("Processing incoming Request.")
+        logger.debug("Processing incoming Request.")
         if self.__jwks is None:
             logger.warning("No JWKS has been set.")
             self.__jwks = self.__create_jwks()
@@ -243,7 +245,7 @@ class Auth0Middleware(object):
     def verifyToken(self, req, _token):
         try:
             _unverified_header = jwt.get_unverified_header(_token)
-        except jwt.JWTError:
+        except jwt.PyJWTError:
             raise http_error_factory(
                 status=HTTP_401,
                 title="invalid_header",
@@ -263,7 +265,7 @@ class Auth0Middleware(object):
             )
 
         _rsa_key = {}
-        logger.info("Generating RSA Key.")
+        logger.debug("Generating RSA Key.")
         for key in self.__jwks.get("keys", []):
             if key.get("kid") == _unverified_header.get("kid"):
                 _rsa_key = {
@@ -274,11 +276,12 @@ class Auth0Middleware(object):
                     "e": key["e"],
                 }
                 if _rsa_key:
-                    logger.info("Decoding JWT.")
+                    pubkey = jwt.algorithms.RSAAlgorithm.from_jwk(
+                        json.dumps(_rsa_key))
                     try:
                         _claims = jwt.decode(
                             _token,
-                            _rsa_key,
+                            pubkey,
                             algorithms=self.config.get(
                                 self.__environment, self.config
                             ).get("alg", ["RS256"]),
@@ -289,7 +292,8 @@ class Auth0Middleware(object):
                                 "domain", None
                             ),
                         )
-                        req.context.update({"auth": self.__process_claims(_claims)})
+                        req.context.update(
+                            {"auth": self.__process_claims(_claims)})
                     except jwt.ExpiredSignatureError as e:
                         raise http_error_factory(
                             status=HTTP_401,
@@ -299,7 +303,7 @@ class Auth0Middleware(object):
                             href_text=None,
                             code=None,
                         )
-                    except jwt.JWTClaimsError as e:
+                    except jwt.MissingRequiredClaimError as e:
                         raise http_error_factory(
                             status=HTTP_401,
                             title="Invalid Claims",
@@ -334,7 +338,8 @@ def requires_scope(req, resp, resource, params, required_scope):
             if token_scope == required_scope:
                 return True
 
-    logger.warning("User does not have the requiered scope: %s." % required_scope)
+    logger.warning("User does not have the requiered scope: %s." %
+                   required_scope)
     raise http_error_factory(
         status=HTTP_401,
         title="Invalid Scope",
@@ -343,4 +348,3 @@ def requires_scope(req, resp, resource, params, required_scope):
         href_text=None,
         code=None,
     )
-
