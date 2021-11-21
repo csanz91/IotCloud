@@ -40,7 +40,8 @@ class IotCloudApi:
             decodedResult = result.json()
             self.accessToken = decodedResult["access_token"]
         except (KeyError, TypeError, ValueError):
-            logger.error("authenticate: User could NOT be successfully authenticated.")
+            logger.error(
+                "authenticate: User could NOT be successfully authenticated.")
             return False
 
         logger.info("authenticate: User authenticated successfully.")
@@ -59,7 +60,10 @@ class IotCloudApi:
             )
             raise
 
-        return result["data"]
+        try:
+            return result["data"]
+        except KeyError:
+            return {}
 
     def get(self, url, auth=False) -> dict:
 
@@ -69,7 +73,8 @@ class IotCloudApi:
         # if we get the unauthorized code then we ask for a new token,
         # and if we are not able to get the token after 1 try we abandon
         for numRetries in range(2):
-            r = self.session.get(self.iotcloudApiUrl + url, headers=headers, timeout=10)
+            r = self.session.get(self.iotcloudApiUrl + url,
+                                 headers=headers, timeout=10)
             if r.status_code != requests.codes.unauthorized:
                 break
 
@@ -124,7 +129,8 @@ class IotCloudApi:
 
     def getLocationSunSchedule(self, locationId):
 
-        sunSchedule = self.get(f"locations/{locationId}/sunschedule", auth=True)
+        sunSchedule = self.get(
+            f"locations/{locationId}/sunschedule", auth=True)
         return sunSchedule
 
     def notifyLocationOffline(self, locationId, locationName):
@@ -136,4 +142,5 @@ class IotCloudApi:
             "notificationBodyArgs": [locationName],
         }
 
-        self.post(f"locations/{locationId}/locationnotification", data=data, auth=True)
+        self.post(
+            f"locations/{locationId}/locationnotification", data=data, auth=True)

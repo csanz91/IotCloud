@@ -17,29 +17,21 @@ class Sensor:
         metadata: typing.Dict,
         mqttclient: MqttClient,
     ) -> None:
-
+        super().__init__()
         self.baseTopic = baseTopic
         self.sensorId = sensorId
         self.metadata = metadata
-        self.status = False
 
-        self.statusTopic = baseTopic + "/status"
-        mqttclient.message_callback_add(self.statusTopic, self.onDeviceStatus)
+        logger.info(f"Created sensor with id: {self.sensorId}")
 
     def subscribe(self, mqttclient: MqttClient) -> None:
-        mqttclient.subscribe(self.statusTopic)
+        pass
 
     def unsubscribe(self, mqttclient: MqttClient) -> None:
-        mqttclient.unsubscribe(self.statusTopic)
-
-    def onDeviceStatus(self, mqttclient: MqttClient, userdata, msg) -> None:
-        try:
-            self.status = utils.decodeBoolean(msg.payload)
-        except:
-            logger.error(f"The status received: {msg.payload} is not valid")
+        pass
 
     def setSensorData(self, metadata: typing.Dict) -> None:
         self.metadata = metadata
 
-    def run(self):
+    def run(self, mqttclient: MqttClient) -> None:
         pass

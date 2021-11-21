@@ -104,7 +104,7 @@ try:
     while True:
         with locationsLock:
             for location in locations.values():
-                location.run()
+                location.run(mqttclient)
 
         time.sleep(1.0)
 finally:
