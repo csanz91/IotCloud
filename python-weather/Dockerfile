@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.10
 
 # Create app directory
 WORKDIR /app
@@ -13,11 +13,11 @@ COPY ./ /app
 
 # Generate logs folder if it doesn't exist
 RUN mkdir -p /app/logs
-
 # Generate cache folder if it doesn't exist
 RUN mkdir -p /app/cache
 
 RUN useradd -m workeruser
+RUN chown -R workeruser:workeruser /app/cache
 USER workeruser
 
 WORKDIR /app/source
