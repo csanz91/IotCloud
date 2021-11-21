@@ -20,6 +20,7 @@ RUN mkdir -p /app/cache
 WORKDIR /app/source
 
 RUN useradd -m workeruser
+RUN chown -R workeruser:workeruser /app/cache
 USER workeruser
 
 EXPOSE 5000
