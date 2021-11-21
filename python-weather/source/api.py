@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-app = falcon.API()
+app = falcon.App()
 app.req_options.auto_parse_form_urlencoded = True
 
 app.add_route("/api/postalcode/{postalCode}/weather", weather_api.Weather())
