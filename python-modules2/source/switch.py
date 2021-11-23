@@ -4,28 +4,35 @@ import typing
 
 from paho.mqtt.client import Client as MqttClient
 
+from locationdatamanager import LocationDataManager
 from sensor import Sensor
 from timer import Timer
+from schedule import Schedule
 import utils
 
 logger = logging.getLogger()
 
 
-class Switch(Sensor, Timer):
+class Switch(Sensor, Timer, Schedule):
     def __init__(
         self,
         baseTopic: str,
         sensorId: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
+        locationData: LocationDataManager
     ) -> None:
-        super().__init__(baseTopic, sensorId, metadata, mqttclient)
+        super().__init__(baseTopic, sensorId, metadata, mqttclient, locationData)
 
         self.state = False
 
+        # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"
         self.setStateTopic = f"{baseTopic}{sensorId}/setState"
         mqttclient.message_callback_add(self.stateTopic, self.onDeviceState)
+
+        # Enable the retrieval of the sun schedule
+        locationData.registerSunSchedule()
 
     def subscribe(self, mqttclient: MqttClient) -> None:
         super().subscribe(mqttclient)
@@ -41,8 +48,13 @@ class Switch(Sensor, Timer):
         except:
             logger.error(f"The state received: {msg.payload} is not valid")
 
-    def setState(self, mqttClient, state):
-        mqttClient.publish(self.setStateTopic, state, qos=1, retain=True)
+    def setState(self,  mqttclient: MqttClient, state) -> None:
+        logger.info(f"Setting state : {state}")
+        mqttclient.publish(self.setStateTopic, state, qos=1, retain=True)
 
-    def run(self, mqttclient: MqttClient) -> None:
+    def setValue(self,  mqttclient: MqttClient, value) -> None:
+        pass
+
+    def run(self, mqttclient: MqttClient, locationData: LocationDataManager) -> None:
         self.runTimer(mqttclient)
+        self.runSchedule(mqttclient, locationData)

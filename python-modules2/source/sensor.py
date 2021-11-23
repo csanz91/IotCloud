@@ -4,7 +4,7 @@ import typing
 
 from paho.mqtt.client import Client as MqttClient
 
-import utils
+from locationdatamanager import LocationDataManager
 
 logger = logging.getLogger()
 
@@ -16,6 +16,7 @@ class Sensor:
         sensorId: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
+        locationData: LocationDataManager
     ) -> None:
         super().__init__()
         self.baseTopic = baseTopic
@@ -31,7 +32,8 @@ class Sensor:
         pass
 
     def setSensorData(self, metadata: typing.Dict) -> None:
+        logger.info(f"Setting sensor data for {self.sensorId}, metadata: {metadata}", )
         self.metadata = metadata
 
-    def run(self, mqttclient: MqttClient) -> None:
+    def run(self, mqttclient: MqttClient, locationData: LocationDataManager) -> None:
         pass

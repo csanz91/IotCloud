@@ -2,10 +2,19 @@ import logging
 import logging.config
 import time
 
+from typing import Callable
+
 logger = logging.getLogger()
 
 class Timer(object):
+
+    # Just for type hinting
+    metadata: dict
+    setState: Callable
+
     def __init__(self):
+        super().__init__()
+
         self.timerRunning = False
 
     def runTimer(self, mqttclient):
@@ -14,7 +23,6 @@ class Timer(object):
             initialTimestamp = self.metadata['timer']['initialTimestamp']
             duration = self.metadata['timer']['duration']
         except KeyError:
-            logger.error(f"initialTimestamp not found in metadata. Metadata: {self.metadata}")
             return
 
         currentTimestamp = int(time.time())

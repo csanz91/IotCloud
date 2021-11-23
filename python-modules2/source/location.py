@@ -1,13 +1,14 @@
 import logging
 import logging.config
-import time
 from threading import Lock
+import time
 import typing
 
 from paho.mqtt.client import Client as MqttClient
 
-from iotcloud_api import IotCloudApi
 from device import Device
+from iotcloud_api import IotCloudApi
+from locationdatamanager import LocationDataManager
 from utils import MqttActions
 
 logger = logging.getLogger()
@@ -23,7 +24,10 @@ class Location:
         self.timeZone = ""
         self.devices: typing.Dict[str, Device] = {}
         self.devicesLock = Lock()
-        self.sunSchedule = []
+        self.timeZone = ""
+
+        # Manage the location dinamic data like the weather or the sun schedule
+        self.dataManager = LocationDataManager(locationId, api)
 
         # Location status check data
         self.offlineInitialTimestamp = 0
@@ -42,9 +46,6 @@ class Location:
         logger.info(
             f"Created location: {self.locationName} with {len(self.devices)} devices")
 
-    def getSunSchedule(self):
-        self.sunSchedule = self.api.getLocationSunSchedule(self.locationId)
-
     def subscribe(self, mqttclient: MqttClient):
         mqttclient.subscribe(self.updatedDeviceTopic)
         with self.devicesLock:
@@ -61,6 +62,7 @@ class Location:
         self.locationName = locationData["locationName"]
         self.postalCode = locationData["postalCode"]
         self.timeZone = locationData["timeZone"]
+        self.dataManager.timeZone = self.timeZone
 
         # Add or update the devices
         for deviceData in locationData["devices"]:
@@ -74,7 +76,7 @@ class Location:
             except KeyError:
                 with self.devicesLock:
                     device = Device(self.locationId, deviceId,
-                                    sensorsData, mqttclient)
+                                    sensorsData, mqttclient, self.dataManager)
                     self.devices[deviceId] = device
 
     def onLocationUpdated(self, mqttclient: MqttClient, msg):
@@ -125,7 +127,8 @@ class Location:
         devicesStatus = False
         with self.devicesLock:
             for device in self.devices.values():
-                device.run(mqttclient)
+                device.run(mqttclient, self.dataManager)
                 devicesStatus = devicesStatus or device.status
 
         self.checkLocationStatus(devicesStatus)
+        self.dataManager.run()

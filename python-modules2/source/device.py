@@ -1,21 +1,22 @@
 import logging
 import logging.config
+from threading import Lock, Thread
 import time
-from threading import Thread, Lock
 import typing
 
-from iotcloud_api import IotCloudApi
 from paho.mqtt.client import Client as MqttClient
 
+from iotcloud_api import IotCloudApi
+from locationdatamanager import LocationDataManager
 from sensor import Sensor
 from switch import Switch
-from utils import MqttActions, retryFunc, decodeBoolean
+from utils import MqttActions, decodeStatus, retryFunc
 
 logger = logging.getLogger()
 
 
 class Device:
-    def __init__(self, locationId, deviceId, sensorsData, mqttclient: MqttClient):
+    def __init__(self, locationId, deviceId, sensorsData, mqttclient: MqttClient, locationData: LocationDataManager):
 
         self.locationId = locationId
         self.deviceId = deviceId
@@ -23,6 +24,8 @@ class Device:
 
         self.sensors: typing.Dict[str, Sensor] = {}
         self.sensorsLock = Lock()
+
+        self.locationData = locationData
 
         # Set location data
         self.setDeviceData(sensorsData, mqttclient)
@@ -55,7 +58,7 @@ class Device:
 
     def onDeviceStatus(self, mqttclient: MqttClient, userdata, msg) -> None:
         try:
-            self.status = decodeBoolean(msg.payload)
+            self.status = decodeStatus(msg.payload)
             logger.info(
                 f"Device {self.deviceId} status changed to {self.status}")
         except:
@@ -71,9 +74,11 @@ class Device:
         baseTopic = f"v1/{self.locationId}/{self.deviceId}/"
 
         if sensorType == "switch":
-            sensor = Switch(baseTopic, sensorId, metadata, mqttClient)
+            sensor = Switch(baseTopic, sensorId, metadata,
+                            mqttClient, self.locationData)
         else:
-            sensor = Sensor(baseTopic, sensorId, metadata, mqttClient)
+            sensor = Sensor(baseTopic, sensorId, metadata,
+                            mqttClient, self.locationData)
 
         with self.sensorsLock:
             sensor.subscribe(mqttClient)
@@ -123,7 +128,7 @@ class Device:
                 daemon=True,
             ).start()
 
-    def run(self, mqttclient: MqttClient):
+    def run(self, mqttclient: MqttClient, locationData: LocationDataManager):
 
         # Only run if the device is active
         if not self.status:
@@ -131,4 +136,4 @@ class Device:
 
         with self.sensorsLock:
             for sensor in self.sensors.values():
-                sensor.run(mqttclient)
+                sensor.run(mqttclient, locationData)
