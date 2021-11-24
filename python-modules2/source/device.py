@@ -10,6 +10,7 @@ from iotcloud_api import IotCloudApi
 from locationdatamanager import LocationDataManager
 from sensor import Sensor
 from switch import Switch
+from thermostat import Thermostat
 from utils import MqttActions, decodeStatus, retryFunc
 
 logger = logging.getLogger()
@@ -73,12 +74,15 @@ class Device:
     ):
         baseTopic = f"v1/{self.locationId}/{self.deviceId}/"
 
-        if sensorType == "switch":
+        if sensorType == Switch.SENSOR_TYPE:
             sensor = Switch(baseTopic, sensorId, metadata,
                             mqttClient, self.locationData)
+        elif sensorType == Thermostat.SENSOR_TYPE:
+            sensor = Thermostat(baseTopic, sensorId, metadata,
+                                mqttClient, self.locationData)
         else:
-            sensor = Sensor(baseTopic, sensorId, metadata,
-                            mqttClient, self.locationData)
+            logger.info(f"Sensor type {sensorType} not supported.")
+            return
 
         with self.sensorsLock:
             sensor.subscribe(mqttClient)
@@ -94,12 +98,12 @@ class Device:
             try:
                 with self.sensorsLock:
                     sensor = self.sensors[sensorId]
-                    sensor.setSensorData(sensorData)
+                    sensor.setSensorData(sensorData, mqttclient)
             except KeyError:
                 self.addSensor(sensorId, sensorType, metadata, mqttclient)
 
     @retryFunc
-    def updateSensor(self, sensorId: str, api: IotCloudApi):
+    def updateSensor(self, sensorId: str, mqttclient: MqttClient, api: IotCloudApi):
         sensorData = api.getSensor(self.locationId, self.deviceId, sensorId)
         try:
             sensor = self.sensors[sensorId]
@@ -112,7 +116,7 @@ class Device:
 
         metadata = sensorData["sensorMetadata"]
         with self.sensorsLock:
-            sensor.setSensorData(metadata)
+            sensor.setSensorData(metadata, mqttclient)
 
     def onSensorUpdated(self, mqttclient: MqttClient, userdata, msg):
         action = msg.payload.decode("utf-8")
@@ -124,7 +128,7 @@ class Device:
         if action == MqttActions.UPDATED:
             Thread(
                 target=self.updateSensor,
-                args=(sensorId, api),
+                args=(sensorId, mqttclient, api),
                 daemon=True,
             ).start()
 

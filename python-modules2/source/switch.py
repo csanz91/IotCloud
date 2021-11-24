@@ -14,6 +14,9 @@ logger = logging.getLogger()
 
 
 class Switch(Sensor, Timer, Schedule):
+
+    SENSOR_TYPE = "switch"
+
     def __init__(
         self,
         baseTopic: str,

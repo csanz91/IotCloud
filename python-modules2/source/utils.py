@@ -27,6 +27,16 @@ def decodeStatus(value):
     return status
 
 
+def notIsNaN(num):
+    assert num == num
+
+
+def parseFloat(value):
+    parsedFloat = float(value)
+    notIsNaN(parsedFloat)
+    return parsedFloat
+
+
 def retryFunc(func):
     def wrapper(*args, **kwargs):
 

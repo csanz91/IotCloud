@@ -10,6 +10,9 @@ logger = logging.getLogger()
 
 
 class Sensor:
+
+    SENSOR_TYPE = "generic"
+
     def __init__(
         self,
         baseTopic: str,
@@ -31,7 +34,7 @@ class Sensor:
     def unsubscribe(self, mqttclient: MqttClient) -> None:
         pass
 
-    def setSensorData(self, metadata: typing.Dict) -> None:
+    def setSensorData(self, metadata: typing.Dict, mqttclient: MqttClient) -> None:
         logger.info(f"Setting sensor data for {self.sensorId}, metadata: {metadata}", )
         self.metadata = metadata
 
