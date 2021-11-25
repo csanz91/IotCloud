@@ -1,8 +1,9 @@
 import logging
 import logging.config
 import time
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 import typing
+import signal
 
 import paho.mqtt.client as mqtt
 from docker_secrets import getDocketSecrets
@@ -28,6 +29,15 @@ logger.addHandler(handler)
 ####################################
 locations: typing.Dict[str, Location] = {}
 locationsLock = Lock()
+exitEvent = Event()
+
+
+def exit_gracefully(signum, frame):
+    exitEvent.set()
+
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
 
 
 @retryFunc
@@ -59,7 +69,8 @@ def onLocationUpdated(mqttclient: mqtt.Client, userdata, message):
         ).start()
     elif action == MqttActions.UPDATED:
         Thread(
-            target=updateLocation, args=(locationId, mqttclient, api), daemon=True
+            target=updateLocation, args=(
+                locationId, mqttclient, api), daemon=True
         ).start()
     elif action == MqttActions.DELETED:
         if locationId in locations:
@@ -101,7 +112,7 @@ mqttclient.connect("mosquitto")
 mqttclient.loop_start()
 
 try:
-    while True:
+    while not exitEvent.is_set():
         with locationsLock:
             for location in locations.values():
                 location.run(mqttclient)

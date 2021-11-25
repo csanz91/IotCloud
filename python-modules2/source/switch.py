@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 class Switch(Sensor, Timer, Schedule):
 
-    SENSOR_TYPE = "switch"
+    SENSOR_TYPES = ["switch", "led", "ledRGB"]
 
     def __init__(
         self,
@@ -52,9 +52,9 @@ class Switch(Sensor, Timer, Schedule):
             logger.error(f"The state received: {msg.payload} is not valid")
 
     def setState(self,  mqttclient: MqttClient, state) -> None:
-        logger.info(f"Setting state : {state}")
         mqttclient.publish(self.setStateTopic, state, qos=1, retain=True)
 
+    # Requiered by the Schedule class
     def setValue(self,  mqttclient: MqttClient, value) -> None:
         pass
 

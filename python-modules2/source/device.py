@@ -11,6 +11,7 @@ from locationdatamanager import LocationDataManager
 from sensor import Sensor
 from switch import Switch
 from thermostat import Thermostat
+from toogle import Toogle
 from utils import MqttActions, decodeStatus, retryFunc
 
 logger = logging.getLogger()
@@ -42,8 +43,6 @@ class Device:
     def subscribe(self, mqttclient: MqttClient):
         mqttclient.subscribe(self.statusTopic)
         mqttclient.subscribe(self.updatedSensorTopic)
-        logger.info(
-            f"Subscribed to {self.statusTopic} and {self.updatedSensorTopic}")
 
         with self.sensorsLock:
             for sensor in self.sensors.values():
@@ -74,12 +73,15 @@ class Device:
     ):
         baseTopic = f"v1/{self.locationId}/{self.deviceId}/"
 
-        if sensorType == Switch.SENSOR_TYPE:
+        if sensorType in Switch.SENSOR_TYPES:
             sensor = Switch(baseTopic, sensorId, metadata,
                             mqttClient, self.locationData)
-        elif sensorType == Thermostat.SENSOR_TYPE:
+        elif sensorType in Thermostat.SENSOR_TYPES:
             sensor = Thermostat(baseTopic, sensorId, metadata,
                                 mqttClient, self.locationData)
+        elif sensorType in Toogle.SENSOR_TYPES:
+            sensor = Toogle(baseTopic, sensorId, metadata,
+                            mqttClient, self.locationData)
         else:
             logger.info(f"Sensor type {sensorType} not supported.")
             return

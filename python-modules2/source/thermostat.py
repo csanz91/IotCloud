@@ -27,7 +27,7 @@ class TempValue():
 
 class Thermostat(Sensor, Timer, Schedule):
 
-    SENSOR_TYPE = "thermostat"
+    SENSOR_TYPES = ["thermostat"]
 
     def __init__(
         self,
@@ -61,9 +61,9 @@ class Thermostat(Sensor, Timer, Schedule):
         # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"
         self.auxTopic = f"{baseTopic}{sensorId}/aux/"
-        self.heatingTopic = self.auxTopic + "/heating"
-        self.setpointTopic = self.auxTopic + "/setpoint"
-        self.ackAlarmTopic = self.auxTopic + "/ackAlarm"
+        self.heatingTopic = self.auxTopic + "heating"
+        self.setpointTopic = self.auxTopic + "setpoint"
+        self.ackAlarmTopic = self.auxTopic + "ackAlarm"
         self.setStateTopic = f"{baseTopic}{sensorId}/setState"
         mqttclient.message_callback_add(self.stateTopic, self.onDeviceState)
         mqttclient.message_callback_add(self.heatingTopic, self.onHeating)

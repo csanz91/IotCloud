@@ -11,7 +11,7 @@ logger = logging.getLogger()
 
 class Sensor:
 
-    SENSOR_TYPE = "generic"
+    SENSOR_TYPES = ["generic"]
 
     def __init__(
         self,
