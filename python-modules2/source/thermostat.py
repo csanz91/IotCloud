@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 import logging.config
 import time
@@ -22,7 +22,7 @@ class AbortException(Exception):
 @dataclass(frozen=True)
 class TempValue():
     value: float
-    timestamp: int = int(time.time())
+    timestamp: int = field(default_factory=lambda: int(time.time()))
 
 
 class Thermostat(Sensor, Timer, Schedule):
