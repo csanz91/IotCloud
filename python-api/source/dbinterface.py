@@ -897,13 +897,17 @@ def findLocation(db, locationId):
 def findModulesLocations(db):
 
     usersData = db.usersData.find(
-        {"locations.modulesEnabled": True}, {"locations.$": True}
+        {"locations.modulesEnabled": True}, {"locations": True}
     )
 
     locations = []
     for userData in usersData:
         for location in userData["locations"]:
+            try:
+                assert location["modulesEnabled"]
             locations.append(location)
+            except (AssertionError, KeyError):
+                continue
 
     return locations
 
