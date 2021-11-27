@@ -50,6 +50,7 @@ class Thermostat(Sensor, Timer, Schedule):
         # Default settings
         self.startHeatingAt = int(time.time())
         self.setpoint = 0.0
+        self.stateChanged = False
         self.hysteresisHigh = -0.1
         self.hysteresisLow = -0.8
         self.maxHeatingTime = 3600 * 8  # 8 hours
@@ -147,6 +148,7 @@ class Thermostat(Sensor, Timer, Schedule):
     def onDeviceState(self, mqttclient: MqttClient, userdata, msg) -> None:
         try:
             self.state = utils.decodeBoolean(msg.payload)
+            self.stateChanged = self.state
         except:
             logger.error(f"The state received: {msg.payload} is not valid")
 
@@ -177,6 +179,7 @@ class Thermostat(Sensor, Timer, Schedule):
     def onSetpoint(self, mqttclient: MqttClient, userdata, msg) -> None:
         try:
             self.setpoint = utils.parseFloat(msg.payload)
+            self.stateChanged = True
         except:
             logger.error(f"The setpoint received: {msg.payload} is not valid")
 
@@ -266,7 +269,7 @@ class Thermostat(Sensor, Timer, Schedule):
 
     def heatingLogic(self, tempReference: float, currentTime: int, mqttclient: MqttClient) -> None:
         # The reference temperature is below the setpoint -> start heating
-        if not self.heating and tempReference <= self.setpoint + self.hysteresisLow:
+        if not self.heating and (tempReference <= self.setpoint + self.hysteresisLow or self.stateChanged and tempReference < self.setpoint + self.hysteresisHigh):
             self.setHeating(mqttclient, True)
             self.startHeatingAt = currentTime
             logger.info(f"Start heating for: {self.baseTopic}")
@@ -274,6 +277,8 @@ class Thermostat(Sensor, Timer, Schedule):
         elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
             self.setHeating(mqttclient, False)
             logger.info(f"Stop heating for: {self.baseTopic}")
+
+        self.stateChanged = False
 
     def run(self, mqttclient: MqttClient, locationData: LocationDataManager) -> None:
         # Check the timer
