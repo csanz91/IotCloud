@@ -1,16 +1,19 @@
 import logging
 import logging.config
 import os
-from threading import Thread
 import queue
+import signal
+from threading import Event, Thread
+import time
 
+from docker_secrets import getDocketSecrets
 import paho.mqtt.client as mqtt
+
 import influx
 from influxdb import exceptions
-from docker_secrets import getDocketSecrets
-import utils
 import thermostat_gw
 import totalizer_gw
+import utils
 
 # Logging setup
 logger = logging.getLogger()
@@ -23,6 +26,16 @@ formatter = logging.Formatter(
 logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+exitEvent = Event()
+
+
+def exit_gracefully(signum, frame):
+    exitEvent.set()
+
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
 
 ####################################
 # Global variables
@@ -455,12 +468,16 @@ mqttclient.connect("mosquitto")
 startThreads()
 totalizer_gw.startThreads()
 thermostat_gw.startThreads()
+mqttclient.loop_start()
 
-mqttclient.loop_forever(retry_first_connection=True)
+try:
+    while not exitEvent.is_set():
+        time.sleep(1.0)
+finally:
+    mqttclient.loop_stop()
+    influxDb.close()
+    stopThreads()
+    totalizer_gw.stopThreads()
+    thermostat_gw.stopThreads()
 
-influxDb.close()
-stopThreads()
-totalizer_gw.stopThreads()
-thermostat_gw.stopThreads()
-
-logger.info("Exiting...")
+    logger.info("Exiting...")

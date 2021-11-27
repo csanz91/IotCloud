@@ -15,4 +15,5 @@ RUN useradd -m workeruser
 USER workeruser
 
 WORKDIR /app/source
-CMD [ "./run_gateway.sh" ] 
+
+ENTRYPOINT [ "python", "gateway.py" ] 

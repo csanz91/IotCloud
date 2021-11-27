@@ -3,8 +3,6 @@ import logging
 import time
 from threading import Thread, Event
 from collections import defaultdict
-import atexit
-import signal
 import queue
 
 logger = logging.getLogger(__name__)
@@ -27,12 +25,6 @@ class InfluxClient():
         self.dataBucket = defaultdict(queue.Queue)
         self.dataPackedQueue = queue.Queue()
 
-        # Make sure the instance is always properly closed and no data is lose
-        atexit.register(self.close)
-        try:
-            signal.signal(signal.SIGTERM, self.close)
-        except ValueError:
-            pass
 
         self.endEvent = Event()
 
