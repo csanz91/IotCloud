@@ -48,11 +48,11 @@ threads = []
 maxRetries = 5
 
 # Configure the number of workers
-onStatusNumWorkerThreads = 2
-onStateNumWorkerThreads = 2
-onToogleNumWorkerThreads = 2
-onValueNumWorkerThreads = 10
-onIPNumWorkerThreads = 2
+onStatusNumWorkerThreads = 1
+onStateNumWorkerThreads = 1
+onToogleNumWorkerThreads = 1
+onValueNumWorkerThreads = 1
+onIPNumWorkerThreads = 1
 
 ####################################
 # Status message processing
