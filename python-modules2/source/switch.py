@@ -29,6 +29,8 @@ class Switch(Sensor, Timer, Schedule):
 
         self.state = False
 
+        self.setSensorData(metadata, mqttclient)
+
         # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"
         self.setStateTopic = f"{baseTopic}{sensorId}/setState"

@@ -58,6 +58,8 @@ class Thermostat(Sensor, Timer, Schedule):
         self.progThermostatShutdownTime = 0
         self.progThermostatShutdownMem = False
 
+        self.setSensorData(metadata, mqttclient)
+
         # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"
         self.auxTopic = f"{baseTopic}{sensorId}/aux/"

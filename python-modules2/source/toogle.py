@@ -25,6 +25,8 @@ class Toogle(Sensor, Schedule):
     ) -> None:
         super().__init__(baseTopic, sensorId, metadata, mqttclient, locationData)
 
+        self.setSensorData(metadata, mqttclient)
+
         # Set up the relevant MQTT topics
         self.setStateTopic = f"{baseTopic}{sensorId}/aux/setToogle"
 
