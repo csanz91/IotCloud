@@ -154,7 +154,7 @@ class Thermostat(Sensor, Timer, Schedule):
 
     def setState(self,  mqttclient: MqttClient, state) -> None:
         logger.debug(f"Setting state : {state}")
-        mqttclient.publish(self.setStateTopic, state, qos=1, retain=True)
+        mqttclient.publish(self.setStateTopic, state, qos=1)
 
     def setValue(self,  mqttclient: MqttClient, setpoint) -> None:
         mqttclient.publish(self.auxTopic + "setpoint",
@@ -166,8 +166,7 @@ class Thermostat(Sensor, Timer, Schedule):
 
     def setHeating(self, mqttclient: MqttClient, heating: bool) -> None:
         self.setHeatingMem = heating
-        mqttclient.publish(self.auxTopic + "setHeating",
-                           heating, qos=1, retain=True)
+        mqttclient.publish(self.auxTopic + "setHeating", heating, qos=1)
 
     def onHeating(self, mqttclient: MqttClient, userdata, msg) -> None:
         try:
