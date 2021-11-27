@@ -101,7 +101,8 @@ class Thermostat(Sensor, Timer, Schedule):
             self.tempRefValues[msg.topic] = TempValue(
                 utils.parseFloat(msg.payload))
         except:
-            logger.error(f"The setpoint received: {msg.payload} is not valid")
+            logger.error(
+                f"The temp value received: {msg.payload} is not valid")
 
     def addTempReference(self, mqttclient: MqttClient, tempRefTopic: str, factor: float):
         if tempRefTopic not in self.tempReferences:
