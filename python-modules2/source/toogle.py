@@ -13,7 +13,7 @@ logger = logging.getLogger()
 
 class Toogle(Sensor, Schedule):
 
-    SENSOR_TYPES = ["Toogle"]
+    SENSOR_TYPES = ["toogle"]
 
     def __init__(
         self,

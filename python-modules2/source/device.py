@@ -73,6 +73,7 @@ class Device:
     ):
         baseTopic = f"v1/{self.locationId}/{self.deviceId}/"
 
+        sensorType = sensorType.lower()
         if sensorType in Switch.SENSOR_TYPES:
             sensor = Switch(baseTopic, sensorId, metadata,
                             mqttClient, self.locationData)
@@ -111,9 +112,10 @@ class Device:
             sensor = self.sensors[sensorId]
         except KeyError:
             logger.error(
-                f"Sensor: {sensorId} not found in the device location: {self.deviceId}."
+                f"Sensor: {sensorId} not found in the device: {self.deviceId}. "
                 "It was not possible to update it."
             )
+            logger.info(f"Sensors: {list(self.sensors.keys())}")
             return
 
         metadata = sensorData["sensorMetadata"]
