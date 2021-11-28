@@ -58,6 +58,8 @@ class Thermostat(Sensor, Timer, Schedule):
         self.progThermostatShutdownEnabled = False
         self.progThermostatShutdownTime = 0
         self.progThermostatShutdownMem = False
+        self.filterTime = 90  # seconds
+        self.filterTimeMem = 0
 
         self.setSensorData(metadata, mqttclient)
 
@@ -268,8 +270,21 @@ class Thermostat(Sensor, Timer, Schedule):
             raise AbortException
 
     def heatingLogic(self, tempReference: float, currentTime: int, mqttclient: MqttClient) -> None:
-        # The reference temperature is below the setpoint -> start heating
-        if not self.heating and (tempReference <= self.setpoint + self.hysteresisLow or self.stateChanged and tempReference < self.setpoint + self.hysteresisHigh):
+        # The reference temperature is below the hysteris window
+        tempBelowRef = tempReference <= self.setpoint + self.hysteresisLow
+
+        # Start heating after the filter time has elapsed
+        if tempBelowRef and self.filterTimeMem == 0:
+            self.filterTimeMem = currentTime
+        elif not tempBelowRef:
+            self.filterTimeMem = 0
+        startHeating = tempBelowRef and currentTime > self.filterTimeMem + self.filterTime
+
+        # Start heating if the user changed some parameter and temperature is within the hysteresis range
+        startHeatingWithUserInput = self.stateChanged and tempReference < self.setpoint + self.hysteresisHigh
+
+        # The heating is not active and the reference temperature is below the setpoint
+        if not self.heating and (startHeating or startHeatingWithUserInput):
             self.setHeating(mqttclient, True)
             self.startHeatingAt = currentTime
             logger.info(f"Start heating for: {self.baseTopic}")
