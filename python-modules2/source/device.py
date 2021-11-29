@@ -125,7 +125,7 @@ class Device:
     def onSensorUpdated(self, mqttclient: MqttClient, userdata, msg):
         action = msg.payload.decode("utf-8")
         sensorId = msg.topic.split("/")[-2]
-        logger.info(
+        logger.debug(
             f"Received: {action} from location: {self.locationId} and device: {self.deviceId}"
         )
         api = userdata["api"]

@@ -35,7 +35,7 @@ class Sensor:
         pass
 
     def setSensorData(self, metadata: typing.Dict, mqttclient: MqttClient) -> None:
-        logger.info(f"Setting sensor data for {self.sensorId}, metadata: {metadata}", )
+        logger.debug(f"Setting sensor data for {self.sensorId}, metadata: {metadata}", )
         self.metadata = metadata
 
     def run(self, mqttclient: MqttClient, locationData: LocationDataManager) -> None:
