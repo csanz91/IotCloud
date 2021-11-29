@@ -190,6 +190,7 @@ class Thermostat(Sensor, Timer, Schedule):
             ackAlarm = utils.decodeBoolean(msg.payload)
             assert ackAlarm
             self.setAlarm(mqttclient, False)
+            self.stateChanged = True
         except:
             logger.error(f"The alarm ACK received: {msg.payload} is not valid")
 
