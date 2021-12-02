@@ -59,7 +59,8 @@ class Thermostat(Sensor, Timer, Schedule):
         self.progThermostatShutdownTime = 0
         self.progThermostatShutdownMem = False
         self.filterTime = 90  # seconds
-        self.filterTimeMem = 0
+        self.startHeatingfilterTime = 0
+        self.stopHeatingfilterTime = 0
 
         self.setSensorData(metadata, mqttclient)
 
@@ -275,14 +276,22 @@ class Thermostat(Sensor, Timer, Schedule):
         tempBelowRef = tempReference <= self.setpoint + self.hysteresisLow
 
         # Start heating after the filter time has elapsed
-        if tempBelowRef and self.filterTimeMem == 0:
-            self.filterTimeMem = currentTime
+        if tempBelowRef and self.startHeatingfilterTime == 0:
+            self.startHeatingfilterTime = currentTime
         elif not tempBelowRef:
-            self.filterTimeMem = 0
-        startHeating = tempBelowRef and currentTime > self.filterTimeMem + self.filterTime
+            self.startHeatingfilterTime = 0
+        startHeating = tempBelowRef and currentTime > self.startHeatingfilterTime + self.filterTime
 
         # Start heating if the user changed some parameter and temperature is within the hysteresis range
         startHeatingWithUserInput = self.stateChanged and tempReference < self.setpoint + self.hysteresisHigh
+
+        # Stop heating after the filter time has elapsed
+        tempAboveRef = tempReference >= self.setpoint + self.hysteresisHigh
+        if tempAboveRef and self.stopHeatingfilterTime == 0:
+            self.stopHeatingfilterTime = currentTime
+        elif not tempAboveRef:
+            self.stopHeatingfilterTime = 0
+        stopHeating = tempAboveRef and currentTime > self.stopHeatingfilterTime + self.filterTime
 
         # The heating is not active and the reference temperature is below the setpoint
         if not self.heating and (startHeating or startHeatingWithUserInput):
@@ -290,7 +299,7 @@ class Thermostat(Sensor, Timer, Schedule):
             self.startHeatingAt = currentTime
             logger.info(f"Start heating for: {self.baseTopic}")
         # The reference temperature is above the setpoint -> stop heating
-        elif self.heating and tempReference >= self.setpoint + self.hysteresisHigh:
+        elif self.heating and stopHeating:
             self.setHeating(mqttclient, False)
             logger.info(f"Stop heating for: {self.baseTopic}")
 
