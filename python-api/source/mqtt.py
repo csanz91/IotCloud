@@ -146,7 +146,7 @@ class MqttAcl:
         return (
             isWriteAcl(acc)
             and endpoint
-            not in ["value", "status", "setState", "state", "ip", "version", "reset"]
+            not in ["value", "status", "setState", "state", "ip", "version", "reset", "model"]
             and subtopics[4] not in ["aux", "ota"]
         )
 
