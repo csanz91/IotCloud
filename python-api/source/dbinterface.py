@@ -24,7 +24,7 @@ def checkArgs(*argchecks):
         def func_wrapper(*args, **kwargs):
             dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
             for arg in argchecks:
-                if not dArgs[arg]:
+                if dArgs[arg] == None:
                     logger.warning(
                         f"The argument: '{arg}' is not valid, is empty",
                         extra={"area": "dbinterface"},
