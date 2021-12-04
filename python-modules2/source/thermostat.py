@@ -293,13 +293,16 @@ class Thermostat(Sensor, Timer, Schedule):
             self.stopHeatingfilterTime = 0
         stopHeating = tempAboveRef and currentTime > self.stopHeatingfilterTime + self.filterTime
 
+        # Stop heating if the user changed some parameter and temperature is within the hysteresis range
+        stopHeatingWithUserInput = self.stateChanged and tempAboveRef
+
         # The heating is not active and the reference temperature is below the setpoint
         if not self.heating and (startHeating or startHeatingWithUserInput):
             self.setHeating(mqttclient, True)
             self.startHeatingAt = currentTime
             logger.info(f"Start heating for: {self.baseTopic}")
         # The reference temperature is above the setpoint -> stop heating
-        elif self.heating and stopHeating:
+        elif self.heating and (stopHeating or stopHeatingWithUserInput):
             self.setHeating(mqttclient, False)
             logger.info(f"Stop heating for: {self.baseTopic}")
 
