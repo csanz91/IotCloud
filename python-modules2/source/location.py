@@ -86,6 +86,8 @@ class Location:
     def onDeviceUpdated(self, mqttclient: MqttClient, userdata, msg):
         action = msg.payload.decode("utf-8")
         deviceId = msg.topic.split("/")[2]
+        if deviceId not in self.devices:
+            return
         logger.info(
             f"Received: {action} from location: {self.locationId} and device: {deviceId}"
         )
