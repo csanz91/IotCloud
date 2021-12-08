@@ -1,15 +1,12 @@
 import logging
-import os
-import socket
+import signal
+
+from threading import Event
 import time
 
-from logging import handlers
-
-import influxdb_interface
 import docker_metrics
 import host_metrics
-import utils
-
+import influxdb_interface
 
 logger = logging.getLogger()
 handler = logging.handlers.RotatingFileHandler(
@@ -22,17 +19,30 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+exitEvent = Event()
+
+
+def exit_gracefully(signum, frame):
+    exitEvent.set()
+
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
+
+
 MONITORING_FREC = 10  # seconds
 
 logger.info("Starting...")
 
 
-while True:
+try:
+    while not exitEvent.is_set():
+        hostMetrics = host_metrics.getHostMetrics()
+        influxdb_interface.saveHostMetrics(hostMetrics)
 
-    hostMetrics = host_metrics.getHostMetrics()
-    influxdb_interface.saveHostMetrics(hostMetrics)
+        dockerMetrics = docker_metrics.getContainersMetrics()
+        influxdb_interface.saveDockerMetrics(dockerMetrics)
 
-    dockerMetrics = docker_metrics.getContainersMetrics()
-    influxdb_interface.saveDockerMetrics(dockerMetrics)
-
-    time.sleep(MONITORING_FREC)
+        time.sleep(MONITORING_FREC)
+finally:
+    logger.info("Exiting...")

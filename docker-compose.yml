@@ -92,6 +92,17 @@ services:
     secrets:
       - modules_secrets
 
+  modules2:
+    container_name: modules2
+    build: ./python-modules2
+    env_file:
+      - 'variables.env'
+    restart: unless-stopped
+    volumes:
+      - ./python-modules2/logs:/app/logs
+    secrets:
+      - modules_secrets
+
   monitoring:
     container_name: monitoring
     build: ./python-monitoring
@@ -189,7 +200,6 @@ services:
       - ./mosquitto/log:/var/log/mosquitto
       - ./mosquitto/config:/etc/mosquitto
       - ./mosquitto/mosquitto.d:/etc/mosquitto.d
-      - ./nginx/certs/mqtt.iotcloud.es:/etc/mosquitto/certs:ro
     ports:
       - "8883:8883"
       - "1883:1883"
@@ -209,7 +219,7 @@ services:
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - ./nginx/logs:/var/log/nginx:ro
-      - ./python-modules/logs/modules.log:/var/log/modules/modules.log:ro
+      - ./python-modules2/logs/modules.log:/var/log/modules/modules.log:ro
       - ./python-api/logs/server.log:/var/log/api/server.log:ro
       - ./python-monitoring/logs/monitoring.log:/var/log/monitoring/monitoring.log:ro
       - ./python-weather/logs/weather.log:/var/log/weather/weather.log:ro
@@ -227,6 +237,7 @@ services:
       - "5004"
     volumes:
       - ./ota/data:/static
+      - ./ota/config/default.conf:/etc/nginx/conf.d/default.conf
     environment:
       - VIRTUAL_HOST=ota.iotcloud.es
       - VIRTUAL_PORT=5004

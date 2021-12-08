@@ -450,3 +450,23 @@ class M2MLocationDevices:
             )
 
         resp.media = getResponseModel(True, location)
+
+
+class M2MModulesLocations:
+    def __init__(self, db):
+        self.db = db
+
+    @m2mValidation
+    def on_get(self, req, resp):
+
+        try:
+            locations = dbinterface.findModulesLocations(self.db)
+        except:
+            logger.error(
+                "Exception.", exc_info=True,
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
+
+        resp.media = getResponseModel(True, locations)

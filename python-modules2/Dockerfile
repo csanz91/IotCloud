@@ -15,4 +15,4 @@ RUN useradd -m workeruser
 USER workeruser
 
 WORKDIR /app/source
-CMD [ "./run_modules.sh" ] 
+ENTRYPOINT [ "python", "modules.py" ] 

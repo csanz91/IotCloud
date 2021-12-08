@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 secret = getDocketSecrets("mqtt_auth_secret")
 
 
+class MqttActions:
+    ADDED = "added"
+    UPDATED = "updated"
+    DELETED = "deleted"
+
+
 class MqttRoles:
     user = "User"
     device = "Device"
@@ -140,7 +146,7 @@ class MqttAcl:
         return (
             isWriteAcl(acc)
             and endpoint
-            not in ["value", "status", "setState", "state", "ip", "version", "reset"]
+            not in ["value", "status", "setState", "state", "ip", "version", "reset", "model"]
             and subtopics[4] not in ["aux", "ota"]
         )
 

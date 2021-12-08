@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.10
 
 # Create app directory
 WORKDIR /app
@@ -11,8 +11,11 @@ RUN pip install -r requirements.txt
 # Bundle app source
 COPY ./ /app
 
-# Generate logs folder if it doesn't exist
-RUN mkdir -p /app/logs
+# 119 is the group id of docker in ubuntu
+RUN groupadd -g 119 docker 
+RUN useradd -m workeruser
+RUN usermod -aG docker workeruser
+USER workeruser
 
 WORKDIR /app/source
-CMD [ "./start.sh" ] 
+ENTRYPOINT [ "python", "monitoring.py" ] 

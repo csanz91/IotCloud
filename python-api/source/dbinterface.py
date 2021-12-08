@@ -24,7 +24,7 @@ def checkArgs(*argchecks):
         def func_wrapper(*args, **kwargs):
             dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
             for arg in argchecks:
-                if not dArgs[arg]:
+                if dArgs[arg] == None:
                     logger.warning(
                         f"The argument: '{arg}' is not valid, is empty",
                         extra={"area": "dbinterface"},
@@ -313,7 +313,7 @@ def insertLocation(
     city,
     utcLocationInitialTimestamp=None,
     color=None,
-    thirdPartiesVisible=True,
+    thirdPartiesVisible=False,
 ):
 
     if not utcLocationInitialTimestamp:
@@ -342,7 +342,8 @@ def insertLocation(
                     "color": color,
                     "role": api_utils.Roles.owner,
                     "rooms": [],
-                    "thirdPartiesVisible": False,
+                    "thirdPartiesVisible": thirdPartiesVisible,
+                    "modulesEnabled": True,
                 }
             }
         },
@@ -362,7 +363,7 @@ def getDataToUpdate(updatedData, allowedFieldsToUpdate):
 
 
 individualLocationFields = ["locationName", "color", "thirdPartiesVisible"]
-sharedLocationFields = ["postalCode", "city"]
+sharedLocationFields = ["postalCode", "city", "modulesEnabled"]
 
 
 @checkArgs("db", "userId", "locationId")
@@ -890,6 +891,25 @@ def findLocation(db, locationId):
     )
 
     return userData["locations"][0]
+
+
+@checkArgs("db")
+def findModulesLocations(db):
+
+    usersData = db.usersData.find(
+        {"locations.modulesEnabled": True}, {"locations": True}
+    )
+
+    locations = []
+    for userData in usersData:
+        for location in userData["locations"]:
+            try:
+                assert location["modulesEnabled"]
+            locations.append(location)
+            except (AssertionError, KeyError):
+                continue
+
+    return locations
 
 
 @checkArgs("db", "locationId", "deviceId", "sensorId")

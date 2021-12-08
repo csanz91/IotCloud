@@ -1,0 +1,26 @@
+version: '3.3'
+services:
+
+  mongodb:
+    restart: unless-stopped
+    image: mongo:5.0
+    volumes:
+      - ./mongodb:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod --setParameter diagnosticDataCollectionEnabled=false # --quiet
+
+
+  ota:
+    image: flashspys/nginx-static
+    restart: unless-stopped
+    container_name: ota
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./ota/data:/static
+      - ./ota/config/default.conf:/etc/nginx/conf.d/default.conf
+    environment:
+      - VIRTUAL_HOST=ota.iotcloud.es
+      - VIRTUAL_PORT=5004
+      - LETSENCRYPT_HOST=ota.iotcloud.es

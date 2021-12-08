@@ -1,15 +1,19 @@
 import logging
 import logging.config
 import os
-from threading import Thread
 import queue
+import signal
+from threading import Event, Thread
+import time
 
-import paho.mqtt.client as mqtt
-import influx
 from docker_secrets import getDocketSecrets
-import utils
+import paho.mqtt.client as mqtt
+
+import influx
+from influxdb import exceptions
 import thermostat_gw
 import totalizer_gw
+import utils
 
 # Logging setup
 logger = logging.getLogger()
@@ -23,6 +27,16 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+exitEvent = Event()
+
+
+def exit_gracefully(signum, frame):
+    exitEvent.set()
+
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
+
 ####################################
 # Global variables
 ####################################
@@ -34,11 +48,11 @@ threads = []
 maxRetries = 5
 
 # Configure the number of workers
-onStatusNumWorkerThreads = 2
-onStateNumWorkerThreads = 2
-onToogleNumWorkerThreads = 2
-onValueNumWorkerThreads = 10
-onIPNumWorkerThreads = 2
+onStatusNumWorkerThreads = 1
+onStateNumWorkerThreads = 1
+onToogleNumWorkerThreads = 1
+onValueNumWorkerThreads = 1
+onDeviceDataNumWorkerThreads = 1
 
 ####################################
 # Status message processing
@@ -232,24 +246,24 @@ def onValueWork(msg):
 ####################################
 # IP message processing
 ####################################
-IPQueue = queue.Queue()
+deviceDataQueue = queue.Queue()
 
 
-def IPWorker():
+def deviceDataWorker():
     while True:
-        item = IPQueue.get()
+        item = deviceDataQueue.get()
         if item is None:
-            IPQueue.task_done()
+            deviceDataQueue.task_done()
             break
-        onIPWork(item)
-        IPQueue.task_done()
+        onDeviceDataWork(item)
+        deviceDataQueue.task_done()
 
 
-def onIPWork(msg):
+def onDeviceDataWork(msg):
     try:
         msg.payload = msg.payload.decode("utf-8")
-        IP = msg.payload
-        assert IP
+        data = msg.payload
+        assert data
         tags = utils.getTags(msg.topic)
     except:
         logger.error(
@@ -258,10 +272,21 @@ def onIPWork(msg):
         )
         return
 
+    match tags["endpoint"]:
+        case "ip":
+            fields = {"ip": data}
+        case "model":
+            fields = {"model": data}
+        case "version":
+            fields = {"version": data}
+        case _:
+            logger.error(
+                f"Endpoint: '{tags['endpoint']}' not recognized. Topic: {msg.topic}. Ignoring data")
+            return
+
     try:
-        fields = {"IP": IP}
         tagsToSave = ["locationId", "deviceId"]
-        measurement = "devicesIPs"
+        measurement = "devicesData"
         influxDb.writeData(
             measurement,
             utils.selectTags(tagsToSave, tags),
@@ -271,8 +296,7 @@ def onIPWork(msg):
     except:
         logger.error(
             f"onIPWork message failed. message: {msg.payload}. Exception: ",
-            exc_info=True,
-            extra={"area": "IP"},
+            exc_info=True
         )
 
 
@@ -284,13 +308,16 @@ def init(influxDb):
         differing attributes, InfluxDB returns an error.
     -i.e. If we want to edit some of the following values, do it in the Influx cli.
 
-    The values received will be stored for 45 days at their original resolution,
+    The values received will be stored for 547 days at their original resolution,
         and they are aggregated every:
             -hour and stored for 1 year,
             -day and stored for 3 years,
     """
     # Setup the retention policies
-    influxDb.client.create_retention_policy("raw", "547d", 1, default=True)
+    try:
+        influxDb.client.create_retention_policy("raw", "547d", 1, default=True)
+    except exceptions.InfluxDBClientError:
+        pass
     influxDb.client.create_retention_policy("1year", "0s", 1)
     influxDb.client.create_retention_policy("3years", "0s", 1)
 
@@ -340,8 +367,8 @@ def onValue(client, userdata, msg):
     valueQueue.put(msg)
 
 
-def onIP(client, userdata, msg):
-    IPQueue.put(msg)
+def onDeviceData(client, userdata, msg):
+    deviceDataQueue.put(msg)
 
 
 def startThreads():
@@ -369,9 +396,9 @@ def startThreads():
         t.start()
         threads.append(t)
 
-    for i in range(onIPNumWorkerThreads):
-        t = Thread(target=IPWorker)
-        t.name = "IP%d" % i
+    for i in range(onDeviceDataNumWorkerThreads):
+        t = Thread(target=deviceDataWorker)
+        t.name = "DeviceData%d" % i
         t.start()
         threads.append(t)
 
@@ -389,8 +416,8 @@ def stopThreads():
     for _ in range(onValueNumWorkerThreads):
         valueQueue.put(None)
 
-    for _ in range(onIPNumWorkerThreads):
-        IPQueue.put(None)
+    for _ in range(onDeviceDataNumWorkerThreads):
+        deviceDataQueue.put(None)
 
     for t in threads:
         t.join()
@@ -415,6 +442,8 @@ stateTopic = topicHeader + "+/state"
 toogleTopic = topicHeader + "+/aux/setToogle"
 statusTopic = topicHeader + "status"
 IPTopic = topicHeader + "ip"
+modelTopic = topicHeader + "model"
+versionTopic = topicHeader + "version"
 
 # Setup MQTT client
 mqttclient = mqtt.Client()
@@ -437,7 +466,11 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(statusTopic, onStatus)
 
     mqttclient.subscribe(IPTopic)
-    mqttclient.message_callback_add(IPTopic, onIP)
+    mqttclient.subscribe(modelTopic)
+    mqttclient.subscribe(versionTopic)
+    mqttclient.message_callback_add(IPTopic, onDeviceData)
+    mqttclient.message_callback_add(modelTopic, onDeviceData)
+    mqttclient.message_callback_add(versionTopic, onDeviceData)
 
     thermostat_gw.onConnect(mqttclient, influxDb)
     totalizer_gw.onConnect(mqttclient, influxDb)
@@ -451,12 +484,16 @@ mqttclient.connect("mosquitto")
 startThreads()
 totalizer_gw.startThreads()
 thermostat_gw.startThreads()
+mqttclient.loop_start()
 
-mqttclient.loop_forever(retry_first_connection=True)
+try:
+    while not exitEvent.is_set():
+        time.sleep(1.0)
+finally:
+    mqttclient.loop_stop()
+    influxDb.close()
+    stopThreads()
+    totalizer_gw.stopThreads()
+    thermostat_gw.stopThreads()
 
-influxDb.close()
-stopThreads()
-totalizer_gw.stopThreads()
-thermostat_gw.stopThreads()
-
-logger.info("Exiting...")
+    logger.info("Exiting...")

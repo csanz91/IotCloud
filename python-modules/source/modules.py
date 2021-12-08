@@ -270,6 +270,8 @@ def onSensorUpdateWork(msg):
     try:
         deviceHash = calculateDeviceHash(msg.topic)
         tags = getTags(msg.topic)
+        if msg.payload.decode("utf-8") == "updated" or msg.payload.decode("utf-8") == "added" or msg.payload.decode("utf-8") == "deleted":
+            return
         userId = json.loads(msg.payload)
         sensorData = api.getUserSensor(
             userId, tags["locationId"], tags["deviceId"], tags["sensorId"]

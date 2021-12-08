@@ -4,14 +4,20 @@ import falcon
 
 import dbinterface
 import api_utils
+from mqtt import MqttActions
 from api_utils import checkLocationPermissions, checkUser, checkShareOwner, Roles
 
 logger = logging.getLogger(__name__)
 
 
+def notifyLocationUpdated(mqttclient, locationId, action):
+    mqttclient.publish(f"v1/{locationId}/updatedLocation", action, qos=2)
+
+
 class UserLocations:
-    def __init__(self, db):
+    def __init__(self, db, mqttclient):
         self.db = db
+        self.mqttclient = mqttclient
 
     @checkUser
     def on_post(self, req, resp, userId):
@@ -25,7 +31,7 @@ class UserLocations:
                 req.media["city"],
                 color=req.media.get("color", None),
             )
-
+            notifyLocationUpdated(self.mqttclient, locationId, MqttActions.ADDED)
         except:
             logger.error(
                 f"Exception. userId: {userId}.",
@@ -53,8 +59,9 @@ class UserLocations:
 
 
 class Locations:
-    def __init__(self, db):
+    def __init__(self, db, mqttclient):
         self.db = db
+        self.mqttclient = mqttclient
 
     # As the locations are individual per user, anyone can edit
     # their own location. To update a shared location field
@@ -64,7 +71,7 @@ class Locations:
 
         try:
             result = dbinterface.updateLocation(self.db, userId, locationId, req.media)
-
+            notifyLocationUpdated(self.mqttclient, locationId, MqttActions.UPDATED)
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}",
@@ -99,6 +106,7 @@ class Locations:
 
         try:
             result = dbinterface.deleteLocation(self.db, userId, locationId)
+            notifyLocationUpdated(self.mqttclient, locationId, MqttActions.DELETED)
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}",
