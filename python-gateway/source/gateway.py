@@ -470,7 +470,7 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.subscribe(versionTopic)
     mqttclient.message_callback_add(IPTopic, onDeviceData)
     mqttclient.message_callback_add(modelTopic, onDeviceData)
-    mqttclient.message_callback_add(statusTopic, onDeviceData)
+    mqttclient.message_callback_add(versionTopic, onDeviceData)
 
     thermostat_gw.onConnect(mqttclient, influxDb)
     totalizer_gw.onConnect(mqttclient, influxDb)
