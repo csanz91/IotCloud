@@ -1,17 +1,17 @@
-import logging
+import calendar
+from datetime import datetime, timedelta
 import json
+import logging
 import time
 
-import falcon
-
-import dbinterface
-import influxdb_interface
 import api_utils
-from api_utils import grantLocationOwnerPermissions, Roles, getResponseModel
-from mqtt import generateMqttToken, MqttRoles, MqttActions
-from datetime import datetime, timedelta
+from api_utils import Roles, getResponseModel, grantLocationOwnerPermissions
 import datetime_utils
-import calendar
+import dbinterface
+import falcon
+import influxdb_interface
+from locations import notifyLocationUpdated
+from mqtt import MqttActions, MqttRoles, generateMqttToken
 
 
 logger = logging.getLogger(__name__)
@@ -46,9 +46,8 @@ class LocationDevices:
                 deviceTargetVersion=req.media.get("deviceTargetVersion", None),
                 deviceId=req.media.get("deviceId", None),
             )
-            notifyDeviceUpdated(
-                self.mqttclient, locationId, deviceId, MqttActions.ADDED
-            )
+            notifyLocationUpdated(
+                self.mqttclient, locationId, MqttActions.UPDATED)
 
         except:
             logger.error(
