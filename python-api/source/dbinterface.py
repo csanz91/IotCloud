@@ -905,7 +905,7 @@ def findModulesLocations(db):
         for location in userData["locations"]:
             try:
                 assert location["modulesEnabled"]
-            locations.append(location)
+                locations.append(location)
             except (AssertionError, KeyError):
                 continue
 
