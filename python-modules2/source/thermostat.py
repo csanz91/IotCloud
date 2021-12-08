@@ -49,7 +49,7 @@ class Thermostat(Sensor, Timer, Schedule):
 
         # Default settings
         self.startHeatingAt = int(time.time())
-        self.setpoint = 0.0
+        self.setpoint = 20.0
         self.stateChanged = False
         self.hysteresisHigh = -0.1
         self.hysteresisLow = -0.8
