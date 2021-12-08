@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def notifyDeviceUpdated(mqttclient, locationId, deviceId, action):
-    mqttclient.publish(f"v1/{locationId}/{deviceId}/updatedDevice", action, qos=2)
+    mqttclient.publish(
+        f"v1/{locationId}/{deviceId}/updatedDevice", action, qos=2)
 
 
 def notifySensorUpdated(mqttclient, locationId, deviceId, sensorId, action):
@@ -111,7 +112,8 @@ class Devices:
     def on_get(self, req, resp, userId, locationId, deviceId):
 
         try:
-            device = dbinterface.selectDevice(self.db, userId, locationId, deviceId)
+            device = dbinterface.selectDevice(
+                self.db, userId, locationId, deviceId)
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}, deviceId: {deviceId}",
@@ -127,7 +129,8 @@ class Devices:
     def on_delete(self, req, resp, userId, locationId, deviceId):
 
         try:
-            result = dbinterface.deleteDevice(self.db, userId, locationId, deviceId)
+            result = dbinterface.deleteDevice(
+                self.db, userId, locationId, deviceId)
             notifyDeviceUpdated(
                 self.mqttclient, locationId, deviceId, MqttActions.DELETED
             )
@@ -463,7 +466,8 @@ class SensorStateTime:
                 stateTimes.append(dataToAdd)
             except:
                 logger.error(
-                    "Exception. userId: %s, locationId %s" % (userId, locationId),
+                    "Exception. userId: %s, locationId %s" % (
+                        userId, locationId),
                     exc_info=True,
                 )
                 raise falcon.HTTPBadRequest(
@@ -510,7 +514,8 @@ class SensorStateTime:
                     stateTimes.append(dataToAdd)
                 except:
                     logger.error(
-                        "Exception. userId: %s, locationId %s" % (userId, locationId),
+                        "Exception. userId: %s, locationId %s" % (
+                            userId, locationId),
                         exc_info=True,
                     )
                     raise falcon.HTTPBadRequest(
@@ -621,7 +626,8 @@ class DeviceIP:
     def on_get(self, req, resp, userId, locationId, deviceId):
 
         try:
-            ip = influxdb_interface.getDeviceIP(self.influxdb, locationId, deviceId)
+            ip = influxdb_interface.getDeviceIP(
+                self.influxdb, locationId, deviceId)
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
