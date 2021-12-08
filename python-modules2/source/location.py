@@ -77,11 +77,8 @@ class Location:
                 with self.devicesLock:
                     device = Device(self.locationId, deviceId,
                                     sensorsData, mqttclient, self.dataManager)
+                    device.subscribe(mqttclient)
                     self.devices[deviceId] = device
-
-    def onLocationUpdated(self, mqttclient: MqttClient, msg):
-        action = msg.payload.decode("utf-8")
-        logger.info(f"Received: {action} from location: {self.locationId}")
 
     def onDeviceUpdated(self, mqttclient: MqttClient, userdata, msg):
         action = msg.payload.decode("utf-8")
