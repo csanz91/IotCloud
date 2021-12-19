@@ -101,7 +101,7 @@ class Device:
             try:
                 with self.sensorsLock:
                     sensor = self.sensors[sensorId]
-                    sensor.setSensorData(sensorData, mqttclient)
+                    sensor.setSensorData(metadata, mqttclient)
             except KeyError:
                 self.addSensor(sensorId, sensorType, metadata, mqttclient)
 
