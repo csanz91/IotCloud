@@ -24,3 +24,20 @@ services:
       - VIRTUAL_HOST=ota.iotcloud.es
       - VIRTUAL_PORT=5004
       - LETSENCRYPT_HOST=ota.iotcloud.es
+
+  modules2:
+    container_name: modules2
+    build: ./python-modules2
+    env_file:
+      - 'variables.env'
+    restart: unless-stopped
+    volumes:
+      - ./python-modules2/logs:/app/logs
+    secrets:
+      - modules_secrets
+    cap_add:
+      - SYS_PTRACE
+
+secrets:
+  modules_secrets:
+      file: ./python-modules/secrets
