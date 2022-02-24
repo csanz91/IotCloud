@@ -3,6 +3,7 @@ services:
   nginx-proxy:
     image: jwilder/nginx-proxy
     container_name: nginx-proxy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -22,6 +23,7 @@ services:
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
     container_name: nginx-proxy-letsencrypt
+    restart: unless-stopped
     depends_on:
       - "nginx-proxy"
     volumes:
