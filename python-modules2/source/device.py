@@ -12,6 +12,7 @@ from sensor import Sensor
 from switch import Switch
 from thermostat import Thermostat
 from toogle import Toogle
+from notifier import Notifier
 from utils import MqttActions, decodeStatus, retryFunc
 
 logger = logging.getLogger()
@@ -83,6 +84,9 @@ class Device:
         elif sensorType in Toogle.SENSOR_TYPES:
             sensor = Toogle(baseTopic, sensorId, metadata,
                             mqttClient, self.locationData)
+        elif sensorType in Notifier.SENSOR_TYPES:
+            sensor = Notifier(baseTopic, sensorId, metadata,
+                              mqttClient, self.locationData)
         else:
             logger.info(f"Sensor type {sensorType} not supported.")
             return
