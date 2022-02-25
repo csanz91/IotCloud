@@ -144,3 +144,15 @@ class IotCloudApi:
 
         self.post(
             f"locations/{locationId}/locationnotification", data=data, auth=True)
+
+    def sendLocationNotification(self, locationId, notificationTitle, notificationBody):
+
+        data = {
+            "notificationTitle": notificationTitle,
+            "notificationBody": notificationBody,
+            "notificationTitleArgs": [],
+            "notificationBodyArgs": [],
+        }
+
+        self.post(
+            f"locations/{locationId}/locationnotification", data=data, auth=True)

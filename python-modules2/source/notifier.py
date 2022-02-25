@@ -28,6 +28,9 @@ class Notifier(Sensor):
 
         self.setSensorData(metadata, mqttclient)
 
+        self.api = locationData.api
+        self.locationId = locationData.locationId
+
         # Set up the relevant MQTT topics
         self.notificationTopic = f"{baseTopic}{sensorId}/aux/notification"
         mqttclient.message_callback_add(
@@ -42,4 +45,9 @@ class Notifier(Sensor):
         mqttclient.unsubscribe(self.notificationTopic)
 
     def onDeviceNotification(self, mqttclient: MqttClient, userdata, msg) -> None:
-        logger.info(f"The notification received: {msg.payload}")
+        try:
+            self.api.sendLocationNotification(
+                self.locationId, "Notification from the device", msg.payload.decode("utf-8"))
+        except:
+            logger.error(
+                f"It was not possible to send the notification: {msg.payload}")
