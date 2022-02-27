@@ -47,7 +47,8 @@ class Schedule(object):
                 )
 
             # If the schedule is activated:
-            logger.debug(f"Current minute: {currentMinute}, sunschedule: {sunHour}, offset: {offset}")
+            logger.debug(
+                f"Current minute: {currentMinute}, sunschedule: {sunHour}, offset: {offset}")
             if currentMinute == sunHour + offset:
                 # If the state is different from the setpoint
                 if not self.sunScheduleRunning:
@@ -96,6 +97,16 @@ class Schedule(object):
             self.setState(mqttclient, False)
 
     def runSchedule(self, mqttclient: MqttClient, locationData: LocationDataManager):
+
+        try:
+            enabled = self.metadata["schedule"]["enabled"]
+        except KeyError:
+            enabled = True
+
+        if not enabled:
+            self.scheduleRunning = False
+            self.sunScheduleRunning = False
+            return
 
         timeZone = locationData.timeZone
         if not timeZone:
