@@ -83,17 +83,6 @@ services:
     secrets:
       - weather_secrets
 
-  modules:
-    container_name: modules
-    build: ./python-modules
-    env_file:
-      - 'variables.env'
-    restart: unless-stopped
-    volumes:
-      - ./python-modules/logs:/app/logs
-    secrets:
-      - modules_secrets
-
   modules2:
     container_name: modules2
     build: ./python-modules2
