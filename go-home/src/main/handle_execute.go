@@ -135,7 +135,7 @@ func handleDeviceExecute(w http.ResponseWriter, r *http.Request, dfReq model.Dev
 				} else if execution.Command == "action.devices.commands.BrightnessAbsolute" {
 					brightness := execution.Params["brightness"].(float64) / 100.0
 
-					if err := mqtt.SetAux(locationID, deviceID, sensorID, "setBrightness", fmt.Sprintf("%.2f", brightness), true); err == nil {
+					if err := mqtt.SetAux(locationID, deviceID, sensorID, "setBrightness", fmt.Sprintf("%.2f", brightness), false); err == nil {
 						responsesModels["pending"] = addID(responsesModels["pending"], ID)
 					} else {
 						responsesModels["protocolError"] = addID(responsesModels["protocolError"], ID)
