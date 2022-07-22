@@ -105,6 +105,17 @@ func Connect() {
 	}
 	opts.SetUsername(mqttToken)
 	opts.SetPassword("_")
+	opts.ConnectRetry = true
+	opts.AutoReconnect = true
+
+	opts.OnConnect = OnConnect
+
+	opts.OnConnectionLost = func(cl MQTT.Client, err error) {
+		logger.Println("Connection lost to MQTT broker")
+	}
+	opts.OnReconnecting = func(MQTT.Client, *MQTT.ClientOptions) {
+		logger.Println("Attempting to reconnect to the MQTT broker")
+	}
 
 	//create and start a client using the above ClientOptions
 	mqttClient = MQTT.NewClient(opts)
@@ -113,6 +124,12 @@ func Connect() {
 		logger.Panicf("The mqtt client could not connect. Error: %s\n", token.Error())
 		panic(token.Error())
 	}
+
+}
+
+func OnConnect(c MQTT.Client) {
+
+	logger.Println("Connected to the MQTT broker")
 
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
