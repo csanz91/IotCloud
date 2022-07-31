@@ -30,7 +30,10 @@ def getHistoricalPrice():
         "https://api.coindesk.com/v1/bpi/historical/close.json", params=params
     )
     decodedResponse = response.json()
-    prices = decodedResponse["bpi"]
+    try:
+    	prices = decodedResponse["bpi"]
+    except KeyError:
+        prices = {}
     sortedDates = sorted(prices)
 
     sortedPrices = [prices[date] for date in sortedDates]
