@@ -40,6 +40,7 @@ from devices import (
     SensorDataTrend,
     SensorDataStats,
     SensorStateTime,
+    SensorActionData,
     LastSeen,
     TotalizerStats,
     HourlyAccumulation,
@@ -222,6 +223,10 @@ app.add_route(
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensorsstatetime/{sensorId}",
     SensorStateTime(influx_client, db),
+)
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/sensoractiondata/{sensorId}",
+    SensorActionData(influx_client, db),
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}/totalizerstats/{sensorId}",

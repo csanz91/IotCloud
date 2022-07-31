@@ -4,6 +4,8 @@ import json
 import logging
 import time
 
+from dateutil.parser import parse
+
 import api_utils
 from api_utils import Roles, getResponseModel, grantLocationOwnerPermissions
 import datetime_utils
@@ -223,6 +225,46 @@ class OrderSensors:
             )
 
         resp.media = api_utils.getResponseModel(result)
+
+
+class SensorActionData:
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @grantLocationOwnerPermissions(Roles.viewer)
+    def on_post(self, req, resp, userId, locationId, sensorId):
+
+        try:
+            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
+            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            data = influxdb_interface.getActionsData(
+                self.influxdb, locationId, sensorId, fromDate, toDate
+            )
+
+            processedData = []
+            for value in data:
+
+                action = value["state"]
+                if action is None:
+                    action = value["setToogle"]
+                processedData.append(
+                    (
+                        str(action),
+                        calendar.timegm(
+                            parse(value["time"]).timetuple()) * 1000,
+                    )
+                )
+
+        except:
+            logger.error(
+                f"Exception. userId: {userId}, locationId: {locationId}, sensorId: {sensorId}", exc_info=True,
+            )
+            raise falcon.HTTPBadRequest(
+                "Bad Request", "The request can not be completed."
+            )
+
+        resp.media = getResponseModel(True, processedData)
 
 
 class MqttDeviceToken:
