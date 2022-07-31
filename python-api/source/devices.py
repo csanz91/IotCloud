@@ -233,13 +233,14 @@ class SensorActionData:
         self.db = mongodb
 
     @grantLocationOwnerPermissions(Roles.viewer)
-    def on_post(self, req, resp, userId, locationId, sensorId):
+    def on_get(self, req, resp, userId, locationId, deviceId, sensorId):
 
         try:
-            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
-            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            finalTimestamp = int(time.time())
+            initialTimestamp = finalTimestamp - 3600 * 24 * 7
+
             data = influxdb_interface.getActionsData(
-                self.influxdb, locationId, sensorId, fromDate, toDate
+                self.influxdb, locationId, sensorId, initialTimestamp, finalTimestamp
             )
 
             processedData = []

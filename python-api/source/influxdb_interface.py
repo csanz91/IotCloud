@@ -83,6 +83,8 @@ def getActionsData(
                     state, setToogle
                 FROM "3years"."sensorsData" WHERE
                     locationId='%s' AND sensorId='%s' AND time>=%is AND time<%is
+                ORDER BY
+                    time DESC
                 """ % (
         locationId,
         sensorId,
