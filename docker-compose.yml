@@ -260,7 +260,7 @@ volumes:
 
 secrets:
   modules_secrets:
-      file: ./python-modules/secrets
+      file: ./python-modules2/secrets
   weather_secrets:
     file: ./python-weather/secrets
   home_secrets:
