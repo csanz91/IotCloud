@@ -1,7 +1,7 @@
 version: '3.3'
 services:
   nginx-proxy:
-    image: jwilder/nginx-proxy
+    image: nginxproxy/nginx-proxy
     container_name: nginx-proxy
     restart: unless-stopped
     ports:
@@ -11,28 +11,28 @@ services:
       - ./nginx/logs:/var/log/nginx
       - ./nginx/conf:/etc/nginx/conf.d
       - ./nginx/vhost:/etc/nginx/vhost.d
-      - ./nginx/dhparam:/etc/nginx/dhparam
-      - ./nginx/html:/usr/share/nginx/html
-      - ./nginx/certs:/etc/nginx/certs:ro
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-    environment:
-      - DHPARAM_GENERATION=false
+      - nginx_dhparam:/etc/nginx/dhparam
+      - nginx_html:/usr/share/nginx/html
+      - nginx_certs:/etc/nginx/certs:ro
+      - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
 
   letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion
+    image: nginxproxy/acme-companion
     container_name: nginx-proxy-letsencrypt
     restart: unless-stopped
     depends_on:
       - "nginx-proxy"
     volumes:
-      - ./nginx/conf:/etc/nginx/conf.d
+      - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx_acme:/etc/acme.sh
       - ./nginx/vhost:/etc/nginx/vhost.d
-      - ./nginx/dhparam:/etc/nginx/dhparam
-      - ./nginx/html:/usr/share/nginx/html
-      - ./nginx/certs:/etc/nginx/certs:rw
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx_html:/usr/share/nginx/html
+      - nginx_dhparam:/etc/nginx/dhparam
+      - nginx_certs:/etc/nginx/certs
     environment:
        - DEFAULT_EMAIL=cesarsanz91@gmail.com
 
@@ -250,6 +250,11 @@ services:
 
 volumes:
   gdrive_config:
+  nginx_acme:
+  nginx_vhost:
+  nginx_dhparam:
+  nginx_html:
+  nginx_certs:
 
 secrets:
   modules_secrets:
