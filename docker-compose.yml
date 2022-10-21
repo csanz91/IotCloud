@@ -146,7 +146,6 @@ services:
     volumes:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/config:/etc/grafana
-      - ./certs:/grafana/certs
       - ./grafana/log:/var/log/grafana
     environment:
       - GF_INSTALL_PLUGINS=simpod-json-datasource 0.2.6
