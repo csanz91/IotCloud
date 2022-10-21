@@ -100,7 +100,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./python-monitoring/logs:/app/logs
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/hostname:/app/hostname:ro
     env_file:
       - 'variables.env'
