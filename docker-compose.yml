@@ -161,7 +161,7 @@ services:
 
   mongodb:
     restart: unless-stopped
-    image: mongo:5.0
+    image: mongo:6.0
     hostname: docker
     volumes:
       - mongodb_data:/data/db
