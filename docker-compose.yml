@@ -164,7 +164,7 @@ services:
     image: mongo:5.0
     hostname: docker
     volumes:
-      - ./mongodb:/data/db
+      - mongodb_data:/data/db
     expose:
       - "27017"
     command: mongod --setParameter diagnosticDataCollectionEnabled=false # --quiet
@@ -175,7 +175,7 @@ services:
       - 'variables.env'
     volumes:
       # Mount for influxdb data directory
-      - ./influxdb/data:/var/lib/influxdb
+      - influxdb_data:/var/lib/influxdb
       # Mount for influxdb configuration
       - ./influxdb/config/:/etc/influxdb/
     expose:
@@ -250,6 +250,8 @@ services:
 
 volumes:
   gdrive_config:
+  mongodb_data:
+  influxdb_data:
   nginx_acme:
   nginx_vhost:
   nginx_dhparam:
