@@ -11,9 +11,6 @@ RUN pip install -r requirements.txt
 # Bundle app source
 COPY ./ /app
 
-RUN useradd -m workeruser
-USER workeruser
-
 WORKDIR /app/source
 
 ENTRYPOINT [ "python", "gateway.py" ] 

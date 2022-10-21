@@ -13,11 +13,7 @@ COPY ./ /app
 
 # Generate cache folder if it doesn't exist
 RUN mkdir -p /app/cache
-
-RUN useradd -m workeruser
-RUN chown -R workeruser:workeruser /app/cache
-
-USER workeruser
+RUN mkdir -p /app/logs
 
 WORKDIR /app/source
 EXPOSE 5003
