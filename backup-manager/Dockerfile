@@ -11,11 +11,6 @@ RUN set -ex && \
     rm -rf /usr/src/* && \
     rm -rf /root/.cache /tmp/* /var/cache/apk/*
 
-ARG user=appuser
-ARG group=appuser
-ARG PUID=1000
-ARG PGID=1000
-
 # InfluxDB backup script
 COPY backup_influxdb.sh /bin/backup_influxdb.sh
 RUN chmod +x /bin/backup_influxdb.sh
@@ -29,11 +24,8 @@ RUN chmod +x /bin/backup_grafana.sh
 COPY upload_to_gdrive.sh /bin/upload_to_gdrive.sh
 RUN chmod +x /bin/upload_to_gdrive.sh
 
-# Create user
-RUN addgroup  -g ${PGID} -S ${group} && adduser -u ${PUID} -S ${user} -G ${group} 
-
 # Setup crontab
-COPY cron.conf /var/spool/cron/crontabs/${user}
+COPY cron.conf /var/spool/cron/crontabs/root
 
 # Download gdrive, extract it and make it executable
 ARG GDRIVE_URL='https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_amd64.tar.gz'
