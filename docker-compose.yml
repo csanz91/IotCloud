@@ -141,6 +141,7 @@ services:
   grafana:
     restart: unless-stopped
     image: grafana/grafana:latest
+    user: '0'
     expose:
       - "3000"
     volumes:
