@@ -1,7 +1,7 @@
 import logging
 
 import falcon
-from auth0.v3 import exceptions
+from auth0 import exceptions
 
 from api_utils import getResponseModel
 import dbinterface

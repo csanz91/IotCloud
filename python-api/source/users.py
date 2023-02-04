@@ -2,7 +2,7 @@ import logging
 import inspect
 
 import falcon
-from auth0.v3 import exceptions
+from auth0 import exceptions
 
 import dbinterface
 import api_utils
