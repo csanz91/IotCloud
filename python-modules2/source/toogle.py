@@ -34,10 +34,16 @@ class Toogle(Sensor, Schedule):
         locationData.registerSunSchedule()
 
     def setState(self,  mqttclient: MqttClient, state) -> None:
-        action = "up" if state else "down"
+        if "bidirectional" in self.metadata and self.metadata["bidirectional"]:
+            action = "up" if state else "down"
+        elif not state:
+            return
+        else:
+            action = "toogle"
+
         mqttclient.publish(self.setStateTopic, action, qos=1, retain=False)
 
-    # Requiered by the Schedule class
+    # Required by the Schedule class
     def setValue(self,  mqttclient: MqttClient, value) -> None:
         pass
 
