@@ -50,7 +50,7 @@ class Auth0Api:
         token = self.tokenManager.client_credentials(
             self.non_interactive_client_id,
             self.non_interactive_client_secret,
-            "https://{}/api/v2/".format(self.domain),
+            f"https://{self.domain}/api/v2/"
         )
         mgmt_api_token = token["access_token"]
         self.token = mgmt_api_token
@@ -82,7 +82,7 @@ class Auth0Api:
                 extra={"area": "users"},
             )
             return
-        logger.info(f"User added with id: {userId}",)
+        logger.info(f"User added with id: {userId}")
         return userId
 
     @autoAuthenticate
@@ -116,13 +116,13 @@ class Auth0Api:
             assert result["user_id"]
         except (KeyError, TypeError, AssertionError):
             logger.error(
-                "It was not possible to update the user with id: %s." % userId,
+                f"It was not possible to update the user with id: {userId}.",
                 exc_info=True,
                 extra={"area": "users"},
             )
             return
 
-        logger.info("Updated user with id: %s" % userId)
+        logger.info(f"Updated user with id: {userId}")
         return result
 
     @autoAuthenticate
@@ -145,7 +145,7 @@ class Auth0Api:
 
         auth_api_token = token["access_token"]
         if username != "healthcheck@iotcloud.es":
-            logger.info(f"Loging from user: {username}")
+            logger.info(f"Logging from user: {username}")
         return auth_api_token
 
     def recoverPassword(self, username):
