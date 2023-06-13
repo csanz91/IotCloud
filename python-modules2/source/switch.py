@@ -54,7 +54,7 @@ class Switch(Sensor, Timer, Schedule):
             logger.error(f"The state received: {msg.payload} is not valid")
 
     def setState(self,  mqttclient: MqttClient, state) -> None:
-        mqttclient.publish(self.setStateTopic, state, qos=1, retain=True)
+        mqttclient.publish(self.setStateTopic, state, qos=1, retain=False)
 
     # Requiered by the Schedule class
     def setValue(self,  mqttclient: MqttClient, value) -> None:
