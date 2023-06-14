@@ -120,13 +120,13 @@ class Auth0Api:
             assert result["user_id"]
         except (KeyError, TypeError, AssertionError):
             logger.error(
-                "It was not possible to update the user with id: %s." % userId,
+                f"It was not possible to update the user with id: {userId}.",
                 exc_info=True,
                 extra={"area": "users"},
             )
             return
 
-        logger.info("Updated user with id: %s" % userId)
+        logger.info(f"Updated user with id: {userId}")
         return result
 
     @autoAuthenticate
@@ -148,7 +148,7 @@ class Auth0Api:
 
         auth_api_token = token["access_token"]
         if username != "healthcheck@iotcloud.es":
-            logger.info(f"Loging from user: {username}")
+            logger.info(f"Logging from user: {username}")
         return auth_api_token
 
     def recoverPassword(self, username):

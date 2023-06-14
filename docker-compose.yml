@@ -186,6 +186,7 @@ services:
   mosquitto:
     image: jllopis/mosquitto
     restart: unless-stopped
+    user: '0'
     volumes:
       - ./mosquitto/data:/var/lib/mosquitto
       - ./mosquitto/log:/var/log/mosquitto
