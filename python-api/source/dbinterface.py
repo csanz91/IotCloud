@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def checkArgs(*argchecks):
     def checkAllArgs(func):
         def func_wrapper(*args, **kwargs):
-            dArgs = {**dict(zip(inspect.getargspec(func).args, args)), **kwargs}
+            dArgs = {**dict(zip(inspect.signature(func).parameters, args)), **kwargs}
             for arg in argchecks:
                 if dArgs[arg] == None:
                     logger.warning(

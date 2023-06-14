@@ -1,17 +1,16 @@
 import logging
 
-from auth0.v3.authentication import GetToken
-from auth0.v3.authentication.database import Database
-from auth0.v3.management import Auth0
-from auth0.v3 import exceptions
+from auth0.authentication import GetToken
+from auth0.authentication.database import Database
+from auth0.management import Auth0
+from auth0 import exceptions
 from docker_secrets import getDocketSecrets
 
 logger = logging.getLogger(__name__)
 
 
 def autoAuthenticate(method):
-    """ Catch an unauthorized exception and try to get a new token once.
-    """
+    """Catch an unauthorized exception and try to get a new token once."""
 
     def wrapper(*args, **kwargs):
         self = args[0]
@@ -21,7 +20,9 @@ def autoAuthenticate(method):
             except exceptions.Auth0Error as e:
                 # 401(Unauthorized) code and first time.
                 if e.status_code == 401 and i == 0:
-                    logger.info("Getting new token...",)
+                    logger.info(
+                        "Getting new token...",
+                    )
                     self.initAuth0()
                     continue
                 raise
@@ -41,23 +42,24 @@ class Auth0Api:
     connection = "Username-Password-Authentication"
 
     def __init__(self):
-
         self.initAuth0()
         if not self.token:
             raise ValueError("Could not get the auth token.")
 
     def getToken(self):
         token = self.tokenManager.client_credentials(
-            self.non_interactive_client_id,
-            self.non_interactive_client_secret,
-            f"https://{self.domain}/api/v2/"
+            "https://{}/api/v2/".format(self.domain)
         )
         mgmt_api_token = token["access_token"]
         self.token = mgmt_api_token
 
     def initAuth0(self):
-        self.tokenManager = GetToken(self.domain)
-        self.databaseManager = Database(self.domain)
+        self.tokenManager = GetToken(
+            self.domain,
+            self.non_interactive_client_id,
+            client_secret=self.non_interactive_client_secret,
+        )
+        self.databaseManager = Database(self.domain, self.non_interactive_client_id)
         self.getToken()
         self.auth0 = Auth0(self.domain, self.token)
 
@@ -82,7 +84,9 @@ class Auth0Api:
                 extra={"area": "users"},
             )
             return
-        logger.info(f"User added with id: {userId}")
+        logger.info(
+            f"User added with id: {userId}",
+        )
         return userId
 
     @autoAuthenticate
@@ -131,7 +135,6 @@ class Auth0Api:
         return userData
 
     def login(self, username, password):
-
         token = self.tokenManager.login(
             self.application_client_id,
             self.interactive_client_secret,
