@@ -170,18 +170,22 @@ services:
     command: mongod --setParameter diagnosticDataCollectionEnabled=false # --quiet
 
   influxdb:
-    image: influxdb:1.8
+    image: influxdb:2.7
     env_file:
       - 'variables.env'
     volumes:
       # Mount for influxdb data directory
       - influxdb_data:/var/lib/influxdb
+      - influxdb2_data:/var/lib/influxdb2
       # Mount for influxdb configuration
       - ./influxdb/config/:/etc/influxdb/
+      - ./influxdb2/config/:/etc/influxdb2/
     expose:
       - "8086"
       - "8088"
     restart: unless-stopped
+    secrets:
+      - influxdb_init_password
 
   mosquitto:
     image: jllopis/mosquitto
@@ -253,6 +257,7 @@ volumes:
   gdrive_config:
   mongodb_data:
   influxdb_data:
+  influxdb2_data:
   nginx_acme:
   nginx_vhost:
   nginx_dhparam:
@@ -280,3 +285,5 @@ secrets:
       file: ./backup-manager/secrets/gdrive_config
   gdrive_backup_folder:
       file: ./backup-manager/secrets/gdrive_backup_folder
+  influxdb_init_password:
+      file: ./influxdb2/secrets/init_password
