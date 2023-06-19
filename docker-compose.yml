@@ -184,14 +184,12 @@ services:
     restart: unless-stopped
 
   mosquitto:
-    image: jllopis/mosquitto
+    image: iegomez/mosquitto-go-auth
     restart: unless-stopped
-    user: '0'
     volumes:
       - ./mosquitto/data:/var/lib/mosquitto
       - ./mosquitto/log:/var/log/mosquitto
       - ./mosquitto/config:/etc/mosquitto
-      - ./mosquitto/mosquitto.d:/etc/mosquitto.d
     ports:
       - "8883:8883"
       - "1883:1883"
