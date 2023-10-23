@@ -52,39 +52,58 @@ def isWriteAcl(acc):
 
 def raiseUnauthorized():
     raise falcon.HTTPUnauthorized(
-        "Unauthorized", "The user is not authorized to access this topic."
+        title="Unauthorized",
+        description="The user is not authorized to access this topic.",
     )
 
 
-class MqttAuth:
+def getToken(req):
+    try:
+        headerParts = req.auth.split()
+    except:
+        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
+        raise falcon.HTTPBadRequest("Bad Request", "The request can not be completed.")
 
+    if len(headerParts) == 2 and headerParts[0] == "Bearer":
+        token = headerParts[1]
+    else:
+        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
+        raise falcon.HTTPBadRequest(
+            "Bad Request", "Invalid Authorization header format."
+        )
+
+    return token
+
+
+class MqttAuth:
     auth = {"authDisabled": True}
 
     def on_post(self, req, resp):
-
         try:
-            token = req.params["username"]
+            token = getToken(req)
             tokenData = verifyMqttToken(token)
             assert tokenData["role"]
             logger.info(f"Granted MQTT connection to the user with id: {token}")
 
         except:
-            logger.error("Exception. params: %s" % (req.params), exc_info=True)
+            logger.error(
+                "Exception. params: %s, %s, %s, %s"
+                % (req.params, req.headers, req, resp),
+                exc_info=True,
+            )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+                title="Bad Request", description="The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
 
 class MqttAcl:
-
     auth = {"authDisabled": True}
 
     def __init__(self, db):
         self.db = db
 
     def on_post(self, req, resp):
-
         try:
             self.verifyPermissions(req)
         except falcon.HTTPUnauthorized:
@@ -92,12 +111,12 @@ class MqttAcl:
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+                title="Bad Request", description="The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
     def verifyPermissions(self, req):
-        token = req.params["username"]
+        token = getToken(req)
         tokenData = verifyMqttToken(token)
 
         grantedRole = tokenData["role"]
@@ -146,7 +165,16 @@ class MqttAcl:
         return (
             isWriteAcl(acc)
             and endpoint
-            not in ["value", "status", "setState", "state", "ip", "version", "reset", "model"]
+            not in [
+                "value",
+                "status",
+                "setState",
+                "state",
+                "ip",
+                "version",
+                "reset",
+                "model",
+            ]
             and subtopics[4] not in ["aux", "ota"]
         )
 
@@ -201,14 +229,11 @@ class MqttAcl:
 
 
 class MqttSuperUser:
-
     auth = {"authDisabled": True}
 
     def on_post(self, req, resp):
-
         try:
-
-            token = req.params["username"]
+            token = getToken(req)
             tokenData = verifyMqttToken(token)
 
             if tokenData["role"] != MqttRoles.admin:
@@ -219,13 +244,12 @@ class MqttSuperUser:
         except:
             logger.error("Exception. params: %s" % (req.params), exc_info=True)
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+                title="Bad Request", description="The request can not be completed."
             )
         resp.media = api_utils.getResponseModel(True)
 
 
 def generateMqttToken(userId, role, locationId=None, deviceId=None, subdeviceId=None):
-
     if role in [MqttRoles.user, MqttRoles.admin]:
         tokenData = {"userId": userId, "exp": int(time.time()) + 3600 * 24 * 7}
 
