@@ -136,14 +136,10 @@ class Auth0Api:
 
     def login(self, username, password):
         token = self.tokenManager.login(
-            self.application_client_id,
-            self.interactive_client_secret,
-            username,
-            password,
-            "",
-            "",
-            self.audience,
-            "password",
+            username=username,
+            password=password,
+            realm='Username-Password-Authentication',
+            audience=self.audience
         )
 
         auth_api_token = token["access_token"]
