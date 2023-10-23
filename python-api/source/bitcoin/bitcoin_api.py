@@ -24,7 +24,7 @@ class BitcoinCurrent:
                 extra={"area": "bitcoin"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, result)
@@ -44,7 +44,7 @@ class BitcoinHistorical:
                 extra={"area": "bitcoin"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, result)
@@ -71,7 +71,7 @@ class BitcoinPrice:
                 extra={"area": "bitcoin"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, data)

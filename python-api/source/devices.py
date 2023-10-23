@@ -58,7 +58,7 @@ class LocationDevices:
             )
 
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, deviceId)
@@ -74,7 +74,7 @@ class LocationDevices:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
         resp.media = getResponseModel(True, devices)
 
@@ -105,7 +105,7 @@ class Devices:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -122,7 +122,7 @@ class Devices:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, device)
@@ -142,7 +142,7 @@ class Devices:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -166,7 +166,7 @@ class Sensors:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, sensor)
@@ -196,7 +196,7 @@ class Sensors:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -221,7 +221,7 @@ class OrderSensors:
                 exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -262,7 +262,7 @@ class SensorActionData:
                 f"Exception. userId: {userId}, locationId: {locationId}, sensorId: {sensorId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -285,7 +285,7 @@ class MqttDeviceToken:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, token)
@@ -314,7 +314,7 @@ class MqttSubdeviceToken:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, token)
@@ -337,7 +337,7 @@ class LastSeen:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, lastSeen)
@@ -364,7 +364,7 @@ class SensorData:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, data)
@@ -396,7 +396,7 @@ class SensorDataTrend:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, data)
@@ -461,7 +461,7 @@ class SensorDataStats:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, data)
@@ -627,7 +627,7 @@ class TotalizerStats:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, data)
@@ -654,7 +654,7 @@ class HourlyAccumulation:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, data)
@@ -676,7 +676,7 @@ class DeviceIP:
                 f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, ip)

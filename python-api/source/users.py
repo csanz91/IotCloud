@@ -28,7 +28,7 @@ class Users:
                 f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, user)
@@ -51,7 +51,7 @@ class Users:
                 extra={"area": "users"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(response)
@@ -74,7 +74,7 @@ class Users:
                 extra={"area": "users"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(response)
@@ -95,7 +95,7 @@ class ValidateLocationPermissions:
             )
 
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, pendingShares)
@@ -115,7 +115,7 @@ class ValidateLocationPermissions:
                 f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True)
@@ -141,7 +141,7 @@ class ChangePassword:
                 extra={"area": "users"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, response)
@@ -159,7 +159,7 @@ class MqttUserToken:
                 f"Exception. userId: {userId}", exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, token)
@@ -184,7 +184,7 @@ class FirebaseUserToken:
                 extra={"area": "users"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True)

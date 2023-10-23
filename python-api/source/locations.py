@@ -21,7 +21,6 @@ class UserLocations:
 
     @checkUser
     def on_post(self, req, resp, userId):
-
         try:
             locationId = dbinterface.insertLocation(
                 self.db,
@@ -40,19 +39,18 @@ class UserLocations:
             )
 
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, locationId)
 
     @checkUser
     def on_get(self, req, resp, userId):
-
         try:
             locations = dbinterface.selectLocations(self.db, userId, True)
         except:
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, locations)
@@ -68,7 +66,6 @@ class Locations:
     # the requiered roles are checked inside each function
     @checkLocationPermissions(Roles.viewer)
     def on_put(self, req, resp, userId, locationId):
-
         try:
             result = dbinterface.updateLocation(self.db, userId, locationId, req.media)
             notifyLocationUpdated(self.mqttclient, locationId, MqttActions.UPDATED)
@@ -79,14 +76,13 @@ class Locations:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
 
     @checkLocationPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId):
-
         try:
             location = dbinterface.selectLocation(self.db, userId, locationId, True)
         except:
@@ -96,14 +92,13 @@ class Locations:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, location)
 
     @checkLocationPermissions(Roles.viewer)
     def on_delete(self, req, resp, userId, locationId):
-
         try:
             result = dbinterface.deleteLocation(self.db, userId, locationId)
             notifyLocationUpdated(self.mqttclient, locationId, MqttActions.DELETED)
@@ -114,7 +109,7 @@ class Locations:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -126,7 +121,6 @@ class LocationsPermissions:
 
     @checkLocationPermissions(Roles.owner)
     def on_post(self, req, resp, userId, locationId):
-
         try:
             otherUserId = dbinterface.findUserIdByEmail(self.db, req.media["email"])
             if not otherUserId:
@@ -161,14 +155,13 @@ class LocationsPermissions:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, result)
 
     @checkLocationPermissions(Roles.owner)
     def on_get(self, req, resp, userId, locationId):
-
         try:
             locationPermissions = dbinterface.selectLocationShares(
                 self.db, userId, locationId
@@ -180,7 +173,7 @@ class LocationsPermissions:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, locationPermissions)
@@ -192,7 +185,6 @@ class LocationPermission:
 
     @checkShareOwner
     def on_put(self, req, resp, userId, shareId):
-
         try:
             updatedData = {"role": req.media["newRole"]}
             result = dbinterface.updateUserLocationShare(self.db, shareId, updatedData)
@@ -200,14 +192,13 @@ class LocationPermission:
         except:
             logger.error("Exception. userId: %s" % (userId), exc_info=True)
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
 
     @checkUser
     def on_delete(self, req, resp, userId, shareId):
-
         try:
             result = dbinterface.deleteUserLocationShare(self.db, userId, shareId)
         except:
@@ -217,7 +208,7 @@ class LocationPermission:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
@@ -229,7 +220,6 @@ class LocationRooms:
 
     @checkLocationPermissions(Roles.editor)
     def on_post(self, req, resp, userId, locationId):
-
         try:
             roomId = dbinterface.insertRoom(
                 self.db, userId, locationId, req.media.get("roomName")
@@ -242,14 +232,13 @@ class LocationRooms:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, roomId)
 
     @checkLocationPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId):
-
         try:
             rooms = dbinterface.selectRooms(self.db, userId, locationId)
         except:
@@ -259,7 +248,7 @@ class LocationRooms:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, rooms)
@@ -271,7 +260,6 @@ class LocationRoom:
 
     @checkLocationPermissions(Roles.editor)
     def on_put(self, req, resp, userId, locationId, roomId):
-
         try:
             result = dbinterface.updateRoom(
                 self.db, userId, locationId, roomId, req.media
@@ -284,14 +272,13 @@ class LocationRoom:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)
 
     @checkLocationPermissions(Roles.viewer)
     def on_get(self, req, resp, userId, locationId, roomId):
-
         try:
             room = dbinterface.selectRoom(self.db, userId, locationId, roomId)
         except:
@@ -301,14 +288,13 @@ class LocationRoom:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True, room)
 
     @checkLocationPermissions(Roles.editor)
     def on_delete(self, req, resp, userId, locationId, roomId):
-
         try:
             result = dbinterface.deleteRoom(self.db, userId, locationId, roomId)
         except:
@@ -318,7 +304,7 @@ class LocationRoom:
                 extra={"area": "locations"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(result)

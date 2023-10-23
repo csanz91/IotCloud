@@ -19,15 +19,15 @@ class FindSensor:
 
     @m2mValidation
     def on_get(self, req, resp, locationId, deviceId, sensorId):
-
         try:
             sensor = dbinterface.findSensor(self.db, locationId, deviceId, sensorId)
         except:
             logger.error(
-                f"Exception. sensorId: {sensorId}", exc_info=True,
+                f"Exception. sensorId: {sensorId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, sensor)
@@ -39,15 +39,15 @@ class UserSensors:
 
     @m2mValidation
     def on_get(self, req, resp, userId):
-
         try:
             sensors = dbinterface.selectUserSensors(self.db, userId)
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True,
+                f"Exception. userId: {userId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, sensors)
@@ -59,7 +59,6 @@ class LocationSunSchedule:
 
     @m2mValidation
     def on_get(self, req, resp, locationId):
-
         try:
             location = dbinterface.findLocation(self.db, locationId)
             postalCode = location["postalCode"]
@@ -67,10 +66,11 @@ class LocationSunSchedule:
 
         except:
             logger.error(
-                f"Exception. locationId: {locationId}", exc_info=True,
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = result
@@ -82,7 +82,6 @@ class SendNotification:
 
     @m2mValidation
     def on_post(self, req, resp, locationId):
-
         try:
             # Extract the request data
             notificationTitle = req.media["notificationTitle"]
@@ -115,10 +114,11 @@ class SendNotification:
 
         except:
             logger.error(
-                f"Exception. locationId: {locationId}", exc_info=True,
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = api_utils.getResponseModel(True)
@@ -131,12 +131,12 @@ class M2MSensorData:
 
     @m2mValidation
     def on_post(self, req, resp, userId, locationId, sensorId):
-
         # First check if the user
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         try:
@@ -161,10 +161,11 @@ class M2MSensorData:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -197,12 +198,12 @@ class M2MSensorActionData:
 
     @m2mValidation
     def on_post(self, req, resp, userId, locationId, sensorId):
-
         # First check if the user
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         try:
@@ -214,7 +215,6 @@ class M2MSensorActionData:
 
             processedData = []
             for value in data:
-
                 action = value["state"]
                 if action is None:
                     action = value["setToogle"]
@@ -227,10 +227,11 @@ class M2MSensorActionData:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -243,12 +244,12 @@ class M2MLocationActionData:
 
     @m2mValidation
     def on_post(self, req, resp, userId, locationId):
-
         # First check if the user
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         try:
@@ -281,10 +282,11 @@ class M2MLocationActionData:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -297,12 +299,12 @@ class M2MLocationDevicesStatusStats:
 
     @m2mValidation
     def on_post(self, req, resp, userId, locationId):
-
         # First check if the user
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         try:
@@ -331,10 +333,11 @@ class M2MLocationDevicesStatusStats:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -347,12 +350,12 @@ class M2MLocationDeviceStatus:
 
     @m2mValidation
     def on_post(self, req, resp, userId, locationId, deviceId):
-
         # First check if the user
         grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
         if grantedRole < api_utils.Roles.viewer:
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         try:
@@ -371,10 +374,11 @@ class M2MLocationDeviceStatus:
             ]
         except:
             logger.error(
-                f"Exception. userId: {userId}, locationId: {locationId}", exc_info=True,
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, processedData)
@@ -386,7 +390,6 @@ class M2MUserTags:
 
     @m2mValidation
     def on_get(self, req, resp, userId, locationId):
-
         try:
             userLocations = dbinterface.selectLocations(
                 self.db, userId, includeInherited=True
@@ -423,10 +426,11 @@ class M2MUserTags:
 
         except:
             logger.error(
-                f"Exception. userId: {userId}", exc_info=True,
+                f"Exception. userId: {userId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, response)
@@ -438,15 +442,15 @@ class M2MLocationDevices:
 
     @m2mValidation
     def on_get(self, req, resp, locationId):
-
         try:
             location = dbinterface.findLocation(self.db, locationId)
         except:
             logger.error(
-                f"Exception. locationId: {locationId}", exc_info=True,
+                f"Exception. locationId: {locationId}",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, location)
@@ -458,15 +462,15 @@ class M2MModulesLocations:
 
     @m2mValidation
     def on_get(self, req, resp):
-
         try:
             locations = dbinterface.findModulesLocations(self.db)
         except:
             logger.error(
-                "Exception.", exc_info=True,
+                "Exception.",
+                exc_info=True,
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = getResponseModel(True, locations)

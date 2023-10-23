@@ -24,7 +24,7 @@ class Weather:
                 extra={"area": "weather"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = result
@@ -44,7 +44,7 @@ class SunSchedule:
                 extra={"area": "weather"},
             )
             raise falcon.HTTPBadRequest(
-                "Bad Request", "The request can not be completed."
+               title="Bad Request", description="The request can not be completed."
             )
 
         resp.media = result

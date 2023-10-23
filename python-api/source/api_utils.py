@@ -61,7 +61,8 @@ def checkLocationPermissions(requiredRole):
                 extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         return func_wrapper
@@ -82,7 +83,7 @@ def grantLocationOwnerPermissions(requiredRole):
                     "Programing error, the args available for this "
                     "function are not valid for this decorator"
                 )
-                logger.error(errorMsg,)
+                logger.error(errorMsg)
                 raise SyntaxError(errorMsg)
 
             userIdReq = req.context["auth"]["subject"]
@@ -103,7 +104,8 @@ def grantLocationOwnerPermissions(requiredRole):
                 extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
 
         return func_wrapper
@@ -126,7 +128,8 @@ def checkUser(func):
                 extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
         return func(*args, **kwargs)
 
@@ -180,7 +183,8 @@ def m2mValidation(func):
                 extra={"area": "security"},
             )
             raise falcon.HTTPUnauthorized(
-                "Unauthorized", "The user is not authorized to retrive this data."
+                title="Unauthorized",
+                description="The user is not authorized to retrive this data.",
             )
         return func(*args, **kwargs)
 
