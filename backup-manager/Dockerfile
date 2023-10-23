@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.17
 
 ### Dependencies
 RUN set -ex && \
