@@ -20,7 +20,7 @@ def getContainerCpu(data):
     :param data: docker statistics coded as a dictionary.
     :return: percentage of cpu usage.
     """
-    cpu_count = len(data["cpu_stats"]["cpu_usage"]["percpu_usage"])
+    cpu_count = data["cpu_stats"]["online_cpus"]
 
     cpu_delta = float(data["cpu_stats"]["cpu_usage"]["total_usage"]) - float(
         data["precpu_stats"]["cpu_usage"]["total_usage"]
