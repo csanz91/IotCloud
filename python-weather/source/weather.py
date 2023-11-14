@@ -60,7 +60,16 @@ session.mount("https://", TLSAdapter())
 def getAemetData(url):
     response = session.get(url, headers={"api_key": aemetApiKey})
     result = response.json()
-    assert result["estado"] == 200
+    try:
+        assert result["estado"] == 200
+    except AssertionError:
+        logger.info(f"status code not 200. decoded response: {result}")
+        if result["estado"] == 429:
+            response = session.get(url, headers={"api_key": aemetApiKey})
+            result = response.json()
+            if result["estado"] != 200:
+                raise
+    
     datosUrl = result["datos"]
 
     datosResponse = session.get(datosUrl)
@@ -170,7 +179,7 @@ def getClosestGeocode(postalCodeCoordenates):
     return geocode
 
 
-@cache_disk(seconds=300)
+@cache_disk(seconds=900)
 def getCurrentWeather(stationId):
     """
     Get the current weather from the selected station
