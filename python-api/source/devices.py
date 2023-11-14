@@ -19,11 +19,6 @@ from mqtt import MqttActions, MqttRoles, generateMqttToken
 logger = logging.getLogger(__name__)
 
 
-def notifyDeviceUpdated(mqttclient, locationId, deviceId, action):
-    mqttclient.publish(
-        f"v1/{locationId}/{deviceId}/updatedDevice", action, qos=2)
-
-
 def notifySensorUpdated(mqttclient, locationId, deviceId, sensorId, action):
     mqttclient.publish(
         f"v1/{locationId}/{deviceId}/{sensorId}/updatedSensor", action, qos=2
@@ -96,8 +91,8 @@ class Devices:
                 req.media.get("deviceVersion", None),
                 req.media.get("deviceTargetVersion", None),
             )
-            notifyDeviceUpdated(
-                self.mqttclient, locationId, deviceId, MqttActions.UPDATED
+            notifyLocationUpdated(
+                self.mqttclient, locationId, MqttActions.UPDATED
             )
         except:
             logger.error(
@@ -133,8 +128,8 @@ class Devices:
         try:
             result = dbinterface.deleteDevice(
                 self.db, userId, locationId, deviceId)
-            notifyDeviceUpdated(
-                self.mqttclient, locationId, deviceId, MqttActions.DELETED
+            notifyLocationUpdated(
+                self.mqttclient, locationId, MqttActions.UPDATED
             )
         except:
             logger.error(
@@ -203,8 +198,9 @@ class Sensors:
 
 
 class OrderSensors:
-    def __init__(self, db):
+    def __init__(self, db, mqttclient):
         self.db = db
+        self.mqttclient = mqttclient
 
     @grantLocationOwnerPermissions(Roles.editor)
     def on_post(self, req, resp, userId, locationId):
@@ -213,7 +209,8 @@ class OrderSensors:
             result = dbinterface.orderSensors(
                 self.db, userId, locationId, req.media["newSensorsOrder"]
             )
-
+            notifyLocationUpdated(
+                self.mqttclient, locationId, MqttActions.UPDATED)
         except:
             logger.error(
                 f"Exception. userId: {userId}, locationId: {locationId}, "

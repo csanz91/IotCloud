@@ -174,7 +174,7 @@ app.add_route(
     LocationDevices(db, mqttclient),
 )
 app.add_route(
-    "/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db)
+    "/api/v1/users/{userId}/locations/{locationId}/ordersensors", OrderSensors(db, mqttclient)
 )
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/permissions",
