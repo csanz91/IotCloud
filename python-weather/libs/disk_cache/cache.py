@@ -5,6 +5,9 @@ import pickle
 import collections
 import functools
 import shutil
+import logging
+
+logger = logging.getLogger(__name__)
 
 cacheFolder = "../cache"
 
@@ -33,7 +36,12 @@ def cache_disk(seconds=3600, cache_folder=cacheFolder):
                 modified = os.path.getmtime(filepath)
                 age_seconds = time.time() - modified
                 if seconds == 0 or age_seconds < seconds:
-                    return pickle.load(open(filepath, "rb"))
+                    for retryNum in range(2):
+                        try:
+                            return pickle.load(open(filepath, "rb"))
+                        except EOFError:
+                            logger.error(f"EOFError. retry num {retryNum}")
+                            time.sleep(.2)
 
             # call the decorated function...
             result = f(*args, **kwargs)
