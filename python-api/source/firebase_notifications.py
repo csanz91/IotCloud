@@ -32,7 +32,6 @@ def sendLocationNotification(
     notificationTitleArgs=None,
     notificationBodyArgs=None,
 ):
-
     logger.info("sending notification to: %s" % userToken)
 
     message = firebase_admin.messaging.Message(
@@ -61,11 +60,9 @@ def sendLocationNotification(
         logger.error(
             f"Cannot send the notification for the userToken: {userToken}",
             exc_info=True,
-            extra={"area": "notifications"},
         )
     except:
         logger.error(
             f"Cannot send the notification for the userToken: {userToken}",
             exc_info=True,
-            extra={"area": "notifications"},
         )
