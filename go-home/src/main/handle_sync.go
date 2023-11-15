@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"iotcloud"
-	"model"
+	"home/iotcloud"
+	"home/model"
 	"net/http"
 )
 

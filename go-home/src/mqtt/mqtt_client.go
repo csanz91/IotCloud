@@ -1,14 +1,12 @@
 package mqtt
 
 import (
-	"customlogger"
-	"dockersecret"
 	"errors"
+	"home/customlogger"
+	"home/dockersecret"
+	"os"
 	"strconv"
 	"strings"
-
-	//import the Paho Go MQTT library
-	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -19,7 +17,7 @@ var (
 	logger     = customlogger.GetInstance()
 )
 
-//define a function for the default message handler
+// define a function for the default message handler
 var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
 	logger.Printf("TOPIC: %s\n", msg.Topic())
 	logger.Printf("MSG: %s\n", msg.Payload())

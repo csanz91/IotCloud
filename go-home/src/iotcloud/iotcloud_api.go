@@ -1,10 +1,10 @@
 package iotcloud
 
 import (
-	"customlogger"
-	"dockersecret"
 	"encoding/json"
 	"errors"
+	"home/customlogger"
+	"home/dockersecret"
 	"net/http"
 	"strings"
 	"time"

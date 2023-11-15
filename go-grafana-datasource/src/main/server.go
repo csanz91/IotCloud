@@ -22,8 +22,8 @@ func newServer() *server {
 //
 // If this exists then Grafana emits this when adding the datasource:
 //
-//		Success
-// 		Data source is working
+//	Success
+//	Data source is working
 //
 // otherwise it emits "Unknown error"
 func (s *server) root(w http.ResponseWriter, r *http.Request) {

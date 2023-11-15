@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"model"
+	"home/model"
 	"net/http"
 )
 

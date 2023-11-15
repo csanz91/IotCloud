@@ -1,6 +1,6 @@
 # Accept the Go version for the image to be set as a build argument.
 # Default to Go 1.14
-ARG GO_VERSION=1.14
+ARG GO_VERSION=1.21
 
 # First stage: build the executable.
 FROM golang:${GO_VERSION}-alpine AS builder
@@ -9,19 +9,13 @@ FROM golang:${GO_VERSION}-alpine AS builder
 # Set the working directory outside $GOPATH to enable the support for modules.
 WORKDIR /src
 
-RUN apk add --no-cache git
-
-RUN go get github.com/eclipse/paho.mqtt.golang
-
 # Import the code from the context.
-COPY ./ ./
-
-COPY ./src/ $GOPATH/src/
+COPY ./* ./
 
 # Build the executable to `/app`. Mark the build as statically linked.
 RUN CGO_ENABLED=0 go build \
     -installsuffix 'static' \
-    -o /app ./src/main/.
+    -o /app ./main
 
 RUN chmod +x /app
 

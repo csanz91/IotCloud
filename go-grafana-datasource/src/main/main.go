@@ -1,8 +1,8 @@
 package main
 
 import (
-	"customlogger"
 	"log"
+	"main/customlogger"
 	"net/http"
 )
 

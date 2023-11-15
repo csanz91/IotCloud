@@ -1,9 +1,9 @@
 package dockersecret
 
 import (
-	"customlogger"
 	"encoding/json"
 	"errors"
+	"home/customlogger"
 	"io/ioutil"
 	"os"
 	"path"
