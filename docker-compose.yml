@@ -1,41 +1,5 @@
 version: '3.3'
 services:
-  nginx-proxy:
-    image: nginxproxy/nginx-proxy
-    container_name: nginx-proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/logs:/var/log/nginx
-      - ./nginx/conf:/etc/nginx/conf.d
-      - ./nginx/vhost:/etc/nginx/vhost.d
-      - nginx_dhparam:/etc/nginx/dhparam
-      - nginx_html:/usr/share/nginx/html
-      - nginx_certs:/etc/nginx/certs:ro
-      - /run/user/1000/docker.sock:/tmp/docker.sock:ro # rootless mode
-      # - /var/run/docker.sock:/tmp/docker.sock:ro
-    labels:
-      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
-
-  letsencrypt:
-    image: nginxproxy/acme-companion
-    container_name: nginx-proxy-letsencrypt
-    restart: unless-stopped
-    depends_on:
-      - "nginx-proxy"
-    volumes:
-      - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
-      - nginx_acme:/etc/acme.sh
-      - ./nginx/vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
-      - nginx_dhparam:/etc/nginx/dhparam
-      - nginx_certs:/etc/nginx/certs
-    environment:
-       - DEFAULT_EMAIL=cesarsanz91@gmail.com
-
   api:
     container_name: api
     build: ./python-api
@@ -208,7 +172,7 @@ services:
     hostname: localhost
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
-      - ./nginx/logs:/var/log/nginx:ro
+      - proxy_nginx_logs:/var/log/nginx:ro
       - ./python-modules2/logs/modules.log:/var/log/modules/modules.log:ro
       - ./python-api/logs/server.log:/var/log/api/server.log:ro
       - ./python-monitoring/logs/monitoring.log:/var/log/monitoring/monitoring.log:ro
@@ -217,7 +181,6 @@ services:
       - ./go-home/logs/main.log:/var/log/home/main.log:ro
     depends_on:
      - influxdb
-     - nginx-proxy
 
   ota:
     image: flashspys/nginx-static
@@ -251,11 +214,8 @@ volumes:
   gdrive_config:
   mongodb_data:
   influxdb_data:
-  nginx_acme:
-  nginx_vhost:
-  nginx_dhparam:
-  nginx_html:
-  nginx_certs:
+  proxy_nginx_logs:
+    external: true
 
 secrets:
   modules_secrets:
