@@ -12,6 +12,16 @@ var (
 	logger = customlogger.GetInstance()
 )
 
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	body []byte
+}
+
+func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
+	lrw.body = append(lrw.body, b...)
+	return lrw.ResponseWriter.Write(b)
+}
+
 func handle(w http.ResponseWriter, r *http.Request) {
 	// Save a copy of this request for debugging.
 	/* 	requestDump, err := httputil.DumpRequest(r, true)
@@ -20,13 +30,16 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	   	}
 	   	fmt.Println(string(requestDump)) */
 
+	// Create a custom ResponseWriter
+	lrw := &loggingResponseWriter{ResponseWriter: w}
+
 	// Set the content type of the response
-	w.Header().Set("Content-Type", "application/json")
+	lrw.Header().Set("Content-Type", "application/json")
 
 	// Decode the response
 	dfReq := model.DeviceRequest{}
 	if dfErr := json.NewDecoder(r.Body).Decode(&dfReq); dfErr != nil {
-		model.ReturnAPIErrorProtocolError(w, "Not_Available")
+		model.ReturnAPIErrorProtocolError(lrw, "Not_Available")
 		return
 	}
 
@@ -34,19 +47,23 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	for _, input := range dfReq.Inputs {
 		switch input.Intent {
 		case "action.devices.SYNC":
-			handleDeviceSync(w, r, dfReq, input)
+			handleDeviceSync(lrw, r, dfReq, input)
 		case "action.devices.QUERY":
-			handleDeviceQuery(w, r, dfReq, input)
+			handleDeviceQuery(lrw, r, dfReq, input)
 		case "action.devices.EXECUTE":
-			handleDeviceExecute(w, r, dfReq, input)
+			handleDeviceExecute(lrw, r, dfReq, input)
 		case "action.devices.DISCONNECT":
-			handleDeviceDisconnect(w, r, dfReq, input)
+			handleDeviceDisconnect(lrw, r, dfReq, input)
 		default:
-			model.ReturnAPIErrorNotSupported(w, dfReq.RequestID)
-			returnAPIErrorMessage(w, dfReq.RequestID)
+			model.ReturnAPIErrorNotSupported(lrw, dfReq.RequestID)
+			returnAPIErrorMessage(lrw, dfReq.RequestID)
 			return
 		}
 	}
+
+	// Access the response content for debugging
+	// fmt.Println("Response Body:", string(lrw.body))
+
 }
 
 func main() {

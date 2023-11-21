@@ -79,40 +79,6 @@ func requestedDeviceExist(r *http.Request, devices []model.DeviceModel) error {
 	return nil
 }
 
-func getSensor(r *http.Request, ID string) (iotcloud.Sensor, error) {
-	// Check the devices requested belong to the user
-	authToken, err := getTokenFromHeaders(r)
-	if err != nil {
-		return iotcloud.Sensor{}, errors.New("Auth failure")
-	}
-
-	apiDevices, _, err := iotcloud.GetUserDevices(authToken, false)
-	if err != nil {
-		return iotcloud.Sensor{}, errors.New("The sensor could not be found")
-	}
-
-	deviceID, sensorID := decodeID(ID)
-
-	// Try to match the requested device with one from the user
-	for _, apiDevice := range apiDevices {
-		if apiDevice.DeviceID == deviceID {
-			// Device found, now find the sensor
-			for sensorIndex, sensor := range apiDevice.Sensors {
-				if sensor.ID == sensorID {
-					return sensor, nil
-				}
-				// If all the sensors have been checked and no match
-				// has been found raise an error
-				if sensorIndex == len(apiDevice.Sensors)-1 {
-					return iotcloud.Sensor{}, errors.New("The sensor could not be found")
-				}
-			}
-		}
-	}
-
-	return iotcloud.Sensor{}, errors.New("The device could not be found")
-}
-
 func decodeID(ID string) (string, string) {
 	subIds := strings.Split(ID, "$")
 	deviceID := subIds[0]
@@ -170,16 +136,18 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 			return model.DeviceProperties{}, err
 		}
 
-		analogDataTypeKey, err := getAnalogSensorDataAttr(sensorID)
+		analogDataTypeKey, err := model.GetAnalogSensorDataAttr(sensorID)
 		if err != nil {
 			return model.DeviceProperties{}, err
 		}
 
-		if analogDataTypeKey == "temperature" {
+		if analogDataTypeKey == model.TEMP {
 			deviceProperties.TemperatureAmbientCelsius = value
 			deviceProperties.TemperatureSetpointCelsius = value
-		} else if analogDataTypeKey == "humidity" {
+		} else if analogDataTypeKey == model.HUM {
 			deviceProperties.HumidityAmbientPercent = value
+		} else if analogDataTypeKey == model.CO2 {
+			deviceProperties.CurrentSensorStateData = []model.SensorStateQuery{{Name: "CarbonMonoxideLevel", RawValue: value}}
 		}
 	} else if deviceType == "ledRGB" {
 		// The LED data is encoded in the aux subtopic
@@ -202,23 +170,11 @@ func getDeviceStates(ID, deviceType string) (model.DeviceProperties, error) {
 		// The color has the following format: "00AABBCC"
 		color := auxValues["color"]
 		// Remove the first two hex characters and parse it into an int
-		intColor, err := strconv.ParseUint(color[2:len(color)], 16, 32)
+		intColor, err := strconv.ParseUint(color[2:], 16, 32)
 		if err != nil {
 			intColor = 0
 		}
 		deviceProperties.Color = intColor
 	}
 	return deviceProperties, nil
-}
-
-func getAnalogSensorDataAttr(sensorID string) (string, error) {
-	analogType := sensorID[len(sensorID)-1:]
-	switch analogType {
-	case "T":
-		return "temperature", nil
-	case "H":
-		return "humidity", nil
-	default:
-		return "", errors.New("Device type not supported")
-	}
 }

@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"home/model"
+	"io"
 	"net/http"
 )
 
 func handleDeviceQuery(w http.ResponseWriter, r *http.Request, dfReq model.DeviceRequest, input model.InputModel) {
+
+	var log bytes.Buffer
+	rsp := io.MultiWriter(w, &log)
 
 	if err := requestedDeviceExist(r, input.Payload.Devices); err != nil {
 		model.ReturnAPIErrorDeviceNotFound(w, dfReq.RequestID)
@@ -24,7 +29,7 @@ func handleDeviceQuery(w http.ResponseWriter, r *http.Request, dfReq model.Devic
 		devicesPropertyes[ID] = deviceProperties
 	}
 
-	json.NewEncoder(w).Encode(model.DeviceResponseQuery{
+	json.NewEncoder(rsp).Encode(model.DeviceResponseQuery{
 		RequestID: dfReq.RequestID,
 		Payload: model.ResponsePayloadQuery{
 			Devices: devicesPropertyes,

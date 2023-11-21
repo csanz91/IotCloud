@@ -32,7 +32,7 @@ func handleDeviceSync(w http.ResponseWriter, r *http.Request, dfReq model.Device
 			continue
 		}
 		for _, sensor := range device.Sensors {
-			googleDeviceType, err := model.GetGoogleDeviceType(sensor.Type)
+			googleDeviceType, err := model.GetGoogleDeviceType(sensor.Type, sensor.ID)
 			if err != nil {
 				continue
 			}

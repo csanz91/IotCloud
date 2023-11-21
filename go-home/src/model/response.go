@@ -85,19 +85,37 @@ type OptionElement struct {
 	Names []LocalizedOption `json:"on"`
 }
 
+// SensorStateSync represents the structure of a sensor state
+type SensorStateSync struct {
+	Name                string      `json:"name"`
+	NumericCapabilities NumericCaps `json:"numericCapabilities"`
+}
+
+// SensorState represents the structure of a sensor state
+type SensorStateQuery struct {
+	Name     string  `json:"name"`
+	RawValue float32 `json:"rawValue"`
+}
+
+// NumericCaps represents the numeric capabilities of a sensor state
+type NumericCaps struct {
+	RawValueUnit string `json:"rawValueUnit"`
+}
+
 // DeviceProperties : Struct for a Command execution model
 type DeviceProperties struct {
-	ON                            bool    `json:"on"`
-	Online                        bool    `json:"online"`
-	Brightness                    int     `json:"brightness"`
-	Color                         uint64  `json:"spectrumRgb"`
-	ThermostatMode                string  `json:"thermostatMode"`
-	ThermostatTemperatureSetpoint float32 `json:"thermostatTemperatureSetpoint"`
-	ThermostatTemperatureAmbient  float32 `json:"thermostatTemperatureAmbient"`
-	ThermostatHumidityAmbient     float32 `json:"thermostatHumidityAmbient"`
-	TemperatureSetpointCelsius    float32 `json:"temperatureSetpointCelsius"`
-	TemperatureAmbientCelsius     float32 `json:"temperatureAmbientCelsius"`
-	HumidityAmbientPercent        float32 `json:"humidityAmbientPercent"`
+	ON                            bool               `json:"on"`
+	Online                        bool               `json:"online"`
+	Brightness                    int                `json:"brightness"`
+	Color                         uint64             `json:"spectrumRgb"`
+	ThermostatMode                string             `json:"thermostatMode,omitempty"`
+	ThermostatTemperatureSetpoint float32            `json:"thermostatTemperatureSetpoint,omitempty"`
+	ThermostatTemperatureAmbient  float32            `json:"thermostatTemperatureAmbient,omitempty"`
+	ThermostatHumidityAmbient     float32            `json:"thermostatHumidityAmbient,omitempty"`
+	TemperatureSetpointCelsius    float32            `json:"temperatureSetpointCelsius,omitempty"`
+	TemperatureAmbientCelsius     float32            `json:"temperatureAmbientCelsius,omitempty"`
+	HumidityAmbientPercent        float32            `json:"humidityAmbientPercent,omitempty"`
+	CurrentSensorStateData        []SensorStateQuery `json:"currentSensorStateData,omitempty"`
 }
 
 // DevicePropertyColor : Struct for a Command execution model
