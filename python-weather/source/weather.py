@@ -309,10 +309,10 @@ def getMeasurementFromPostalCode(postalCode, measurement):
     currentTemperature = lastMeasurement[
         measurements[measurement]["observationMeasurementName"]
     ]
-    lastUpdateUtc = datetime.datetime.strptime(
-        lastMeasurement["fint"], "%Y-%m-%dT%H:%M:%S"
+
+    lastUpdateUtcAware = datetime.datetime.strptime(
+        lastMeasurement["fint"], "%Y-%m-%dT%H:%M:%S%z"
     )
-    lastUpdateUtcAware = lastUpdateUtc.replace(tzinfo=datetime.timezone.utc)
     lastUpdate = lastUpdateUtcAware.strftime("%Y-%m-%d %H:%M:%S%z")
 
     # Get the history of the last measurements
