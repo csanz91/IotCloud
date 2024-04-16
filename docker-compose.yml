@@ -210,6 +210,19 @@ services:
       - gdrive_config
       - gdrive_backup_folder
 
+  dynhost-updater:
+    build: ./ovh-dynhost-updater
+    restart: unless-stopped
+    volumes:
+      - ./ovh-dynhost-updater/logs/records.log:/dynhost/records.log
+    environment:
+      HOSTNAME: "secrets_file"
+      IDENTIFIER: "secrets_file"
+      PASSWORD: "secrets_file"
+      LOG_LEVEL: "info"
+    secrets:
+      - dynhost
+
 volumes:
   gdrive_config:
   mongodb_data:
@@ -238,3 +251,5 @@ secrets:
       file: ./backup-manager/secrets/gdrive_config
   gdrive_backup_folder:
       file: ./backup-manager/secrets/gdrive_backup_folder
+  dynhost:
+      file: ./ovh-dynhost-updater/secrets

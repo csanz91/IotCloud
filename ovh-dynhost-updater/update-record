@@ -1,0 +1,71 @@
+#!/bin/bash
+exec 3>&1
+
+# get int value for given log level debug=>10, info=>20, error=>40
+get_log_level_value(){
+    level=20
+    case $1 in
+        debug)
+        level=10
+    ;;
+        info)
+        level=20
+    ;;
+        error)
+        level=40
+    ;;
+    esac
+    echo $level
+}
+
+# functions used to display logs
+log(){
+    log_level_value=$(get_log_level_value $1)
+    if [ "$log_level_value" -ge "$current_level_value" ]
+    then
+    echo "{\"date\": \"$(date +"%Y-%m-%dT%H:%M:%SZ")\", \"level\": \"$1\", \"message\": \"$2\"}" 1>&3
+    fi
+}
+debug(){ log debug "$1"; }
+info(){ log info "$1"; }
+error(){ log error "$1"; }
+
+valid_ipv4() {
+    local ip="$1"
+    [[ "${ip}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || { return 1; }
+    for i in ${ip//./ }; do
+        [[ "${#i}" -gt 1 && "${i:0:1}" == 0 ]] && { return 1; }
+        [[ "${i}" -gt 255 ]] && { return 1; }
+    done
+    return 0
+}
+
+# validate inputs and set defaults
+
+[[ -z "$HOSTNAME" ]] && echo You need to set environment variable HOSTNAME && exit
+[[ -z "$IDENTIFIER" ]] && echo You need to set environment variable IDENTIFIER && exit
+[[ -z "$PASSWORD" ]] && echo You need to set environment variable PASSWORD && exit
+[[ -z "$LOG_LEVEL" ]] && LOG_LEVEL=debug
+
+# set current log level, all logs with a lower level are filtered
+current_level_value=$(get_log_level_value "$LOG_LEVEL")
+
+for host in $(echo "$HOSTNAME" | tr ";" "\n");
+    do
+    # retrieve last known address and current public address
+    OLD_IP_ADDRESS=$(dig +short $host)
+    PUBLIC_IP_ADDRESS=$(dig +short myip.opendns.com @resolver4.opendns.com)
+
+    if valid_ipv4 "${PUBLIC_IP_ADDRESS}" && valid_ipv4 "${OLD_IP_ADDRESS}" && [[ "${PUBLIC_IP_ADDRESS}" ]]; then
+        if [[ "${OLD_IP_ADDRESS}" != "${PUBLIC_IP_ADDRESS}" ]]; then
+            info "IP address changed from '${OLD_IP_ADDRESS}' to '${PUBLIC_IP_ADDRESS}' for host: '${host}'"
+
+            # update DynHost record using OVH API
+            ovh_response=$(curl -sS "http://www.ovh.com/nic/update?system=dyndns&hostname=${host}&myip=${PUBLIC_IP_ADDRESS}" \
+                -H "Authorization: Basic $(echo -n "$IDENTIFIER":"$PASSWORD" | base64)")
+            info "OVH response: ${ovh_response} for host: '${host}'"
+        else
+            debug "No changes detected for host: '${host}'"
+        fi
+    fi
+done

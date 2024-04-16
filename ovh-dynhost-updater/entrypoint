@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Load env variables from the secrets file
+export $(egrep  -v '^#'  /run/secrets/dynhost | xargs) 
+
+# start crond service to schedule update-record peridically
+crond -l 9
+
+# immediately update record at startup
+./update-record > /dynhost/records.log
+
+# display records changelog
+tail -f records.log
