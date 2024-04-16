@@ -51,6 +51,7 @@ maxRetries = 5
 onStatusNumWorkerThreads = 1
 onStateNumWorkerThreads = 1
 onToogleNumWorkerThreads = 1
+onNotificationNumWorkerThreads = 1
 onValueNumWorkerThreads = 1
 onDeviceDataNumWorkerThreads = 1
 
@@ -117,7 +118,6 @@ def stateWorker():
 
 
 def onStateWork(msg):
-
     try:
         msg.payload = msg.payload.decode("utf-8")
         state = utils.decodeBoolean(msg.payload)
@@ -164,7 +164,6 @@ def toogleWorker():
 
 
 def onToogleWork(msg):
-
     try:
         msg.payload = msg.payload.decode("utf-8")
         toogle = msg.payload
@@ -191,6 +190,52 @@ def onToogleWork(msg):
             f"onToogleWork message failed. message: {msg.payload}. Exception: ",
             exc_info=True,
             extra={"area": "toogle"},
+        )
+
+
+####################################
+# Notification message processing
+####################################
+notificationQueue = queue.Queue()
+
+
+def notificationWorker():
+    while True:
+        item = notificationQueue.get()
+        if item is None:
+            notificationQueue.task_done()
+            break
+        onNotificationWork(item)
+        notificationQueue.task_done()
+
+
+def onNotificationWork(msg):
+    try:
+        msg.payload = msg.payload.decode("utf-8")
+        notification = msg.payload
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "notification"},
+        )
+        return
+
+    try:
+        fields = {"notification": notification}
+        tagsToSave = ["locationId", "sensorId"]
+        measurement = "notifications"
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
+    except:
+        logger.error(
+            f"onNotificationWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+            extra={"area": "notification"},
         )
 
 
@@ -281,7 +326,8 @@ def onDeviceDataWork(msg):
             fields = {"version": data}
         case _:
             logger.error(
-                f"Endpoint: '{tags['endpoint']}' not recognized. Topic: {msg.topic}. Ignoring data")
+                f"Endpoint: '{tags['endpoint']}' not recognized. Topic: {msg.topic}. Ignoring data"
+            )
             return
 
     try:
@@ -296,7 +342,7 @@ def onDeviceDataWork(msg):
     except:
         logger.error(
             f"onIPWork message failed. message: {msg.payload}. Exception: ",
-            exc_info=True
+            exc_info=True,
         )
 
 
@@ -363,6 +409,10 @@ def onToogle(client, userdata, msg):
     toogleQueue.put(msg)
 
 
+def onNotification(client, userdata, msg):
+    notificationQueue.put(msg)
+
+
 def onValue(client, userdata, msg):
     valueQueue.put(msg)
 
@@ -390,6 +440,12 @@ def startThreads():
         t.start()
         threads.append(t)
 
+    for i in range(onNotificationNumWorkerThreads):
+        t = Thread(target=notificationWorker)
+        t.name = "Notification%d" % i
+        t.start()
+        threads.append(t)
+
     for i in range(onValueNumWorkerThreads):
         t = Thread(target=valueWorker)
         t.name = "Value%d" % i
@@ -413,6 +469,9 @@ def stopThreads():
     for _ in range(onToogleNumWorkerThreads):
         toogleQueue.put(None)
 
+    for _ in range(onNotificationNumWorkerThreads):
+        notificationQueue.put(None)
+
     for _ in range(onValueNumWorkerThreads):
         valueQueue.put(None)
 
@@ -423,7 +482,9 @@ def stopThreads():
         t.join()
 
 
-logger.info("Starting...",)
+logger.info(
+    "Starting...",
+)
 
 # Influx databse setup
 influxDb = influx.InfluxClient(
@@ -440,6 +501,7 @@ topicHeader = "{version}/+/+/".format(version=version)
 valuesTopic = topicHeader + "+/value"
 stateTopic = topicHeader + "+/state"
 toogleTopic = topicHeader + "+/aux/setToogle"
+notificationTopic = topicHeader + "+/aux/notification"
 statusTopic = topicHeader + "status"
 IPTopic = topicHeader + "ip"
 modelTopic = topicHeader + "model"
@@ -461,6 +523,9 @@ def onConnect(self, mosq, obj, rc):
 
     mqttclient.subscribe(toogleTopic)
     mqttclient.message_callback_add(toogleTopic, onToogle)
+
+    mqttclient.subscribe(notificationTopic)
+    mqttclient.message_callback_add(notificationTopic, onNotification)
 
     mqttclient.subscribe(statusTopic)
     mqttclient.message_callback_add(statusTopic, onStatus)
