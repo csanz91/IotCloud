@@ -1,4 +1,4 @@
 influxdb
-paho-mqtt
+paho-mqtt==1.6.*
 -e libs/influx
 -e libs/docker_secrets
