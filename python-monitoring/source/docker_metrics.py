@@ -87,7 +87,7 @@ def getContainersMetrics():
         containersMetrics[containerName] = {"status": container.status}
         if container.status == "running":
             try:
-                containersMetrics[containerName] = getContainerMetrics(container)
+                containersMetrics[containerName] |= getContainerMetrics(container)
             except KeyError:
                 logger.info("Value not available", exc_info=True)
                 # If a container is booting up, some of the metrics could not be available
