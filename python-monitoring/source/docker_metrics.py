@@ -82,7 +82,7 @@ def getContainerMetrics(container):
 def getContainersMetrics():
 
     containersMetrics = {}
-    for container in dockerClient.containers.list():
+    for container in dockerClient.containers.list(all=True):
         containerName = getContainerName(container)
         containersMetrics[containerName] = {"status": container.status}
         if container.status == "running":
