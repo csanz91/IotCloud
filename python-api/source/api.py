@@ -70,6 +70,7 @@ from m2m import (
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule
 from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
+from energy_api import TariffCost
 
 ##############################################
 # Configuration
@@ -165,6 +166,7 @@ app.add_route("/api/v1/users/{userId}/permissions/{shareId}", LocationPermission
 app.add_route("/api/v1/users/{userId}/bitcoin/current", BitcoinCurrent())
 app.add_route("/api/v1/users/{userId}/bitcoin/historical", BitcoinHistorical())
 app.add_route("/api/v1/users/{userId}/bitcoin", BitcoinPrice())
+app.add_route("/api/v1/users/{userId}/tariffcost", TariffCost(influx_client))
 app.add_route("/api/v1/users/{userId}/firebasetoken", FirebaseUserToken(db))
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}", Locations(db, mqttclient)

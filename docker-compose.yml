@@ -70,6 +70,16 @@ services:
     env_file:
       - 'variables.env'
 
+  energy:
+    container_name: energy
+    build: ./python-energy
+    restart: unless-stopped
+    volumes:
+      - ./python-energy/logs:/app/logs
+      - ./python-energy/source:/app/source
+    env_file:
+      - 'variables.env'
+
   home:
     container_name: home
     build: ./go-home

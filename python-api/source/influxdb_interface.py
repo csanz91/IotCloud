@@ -415,3 +415,23 @@ def getDeviceIP(influxClient, locationId, deviceId):
     ip = list(results.get_points())[0]["IP"]
 
     return ip
+
+
+def getEnergyTariffsCost(influxClient, initialTimestamp, finalTimestamp):
+
+    query = """ SELECT 
+                                    last(Flexi) as cost
+                                FROM "3years"."tariffs_cost" WHERE
+                                    time>=%is AND time<%is
+                                GROUP BY time(1h)
+                                FILL(previous)
+                                """ % (
+        initialTimestamp,
+        finalTimestamp,
+    )
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    valuesList = list(results.get_points())
+    return valuesList
