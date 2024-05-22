@@ -435,3 +435,14 @@ def getEnergyTariffsCost(influxClient, initialTimestamp, finalTimestamp):
 
     valuesList = list(results.get_points())
     return valuesList
+
+
+def saveNotification(influxClient, locationId, extra:  dict, title: str, body: str):
+    dataToWrite = [
+        {
+            "measurement": "notifications",
+            "tags": {"locationId": locationId} | extra,
+            "fields": {"title": title, "body": body},
+        }
+    ]
+    influxClient.write_points(dataToWrite, retention_policy="3years")

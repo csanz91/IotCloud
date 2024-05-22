@@ -77,7 +77,8 @@ class LocationSunSchedule:
 
 
 class SendNotification:
-    def __init__(self, db):
+    def __init__(self, influxdb, db):
+        self.influxdb = influxdb
         self.db = db
 
     @m2mValidation
@@ -88,6 +89,7 @@ class SendNotification:
             notificationTitleArgs = req.media["notificationTitleArgs"]
             notificationBody = req.media["notificationBody"]
             notificationBodyArgs = req.media["notificationBodyArgs"]
+            extra = req.media.get("extra", {})
 
             # Get the user token and the location from the API
             firebaseTokens = dbinterface.getUserFirebaseToken(self.db, locationId)
@@ -100,6 +102,14 @@ class SendNotification:
             notificationBodyInterpolated = [
                 arg % location for arg in notificationBodyArgs
             ]
+
+            influxdb_interface.saveNotification(
+                self.influxdb,
+                locationId,
+                extra,
+                notificationTitle,
+                notificationBody,
+            )
 
             # Send the notification to all the users
             for firebaseToken in firebaseTokens:

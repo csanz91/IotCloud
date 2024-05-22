@@ -38,6 +38,8 @@ def sendLocationNotification(
         android=firebase_admin.messaging.AndroidConfig(
             priority="normal",
             notification=messaging.AndroidNotification(
+                title=notificationTitle,
+                body=notificationBody,
                 title_loc_key=notificationTitle,
                 body_loc_key=notificationBody,
                 title_loc_args=notificationTitleArgs,

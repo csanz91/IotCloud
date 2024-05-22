@@ -245,7 +245,7 @@ app.add_route(
     FindSensor(db),
 )
 app.add_route(
-    "/api/v1/locations/{locationId}/locationnotification", SendNotification(db)
+    "/api/v1/locations/{locationId}/locationnotification", SendNotification(influx_client, db)
 )
 app.add_route("/api/v1/locations/{locationId}/devices", M2MLocationDevices(db))
 app.add_route(

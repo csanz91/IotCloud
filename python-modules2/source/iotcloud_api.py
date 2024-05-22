@@ -1,5 +1,7 @@
 import logging
 import logging.config
+from datetime import datetime
+from zoneinfo import ZoneInfo 
 
 import requests
 from docker_secrets import getDocketSecrets
@@ -133,11 +135,13 @@ class IotCloudApi:
             f"locations/{locationId}/sunschedule", auth=True)
         return sunSchedule
 
-    def notifyLocationOffline(self, locationId, locationName):
+    def notifyLocationOffline(self, locationId: str, locationName: str, timeZone: str):
+
+        user_local_now = datetime.now(tz=ZoneInfo(timeZone))
 
         data = {
-            "notificationTitle": "locationOfflineTitle",
-            "notificationBody": "locationOfflineBody",
+            "notificationTitle": f"{locationName} Offline",
+            "notificationBody": f"{user_local_now.strftime("%d/%m/%Y %H:%M")}: Ningun dispositivo de {locationName} esta conectado al servidor.",
             "notificationTitleArgs": [locationName],
             "notificationBodyArgs": [locationName],
         }
@@ -145,13 +149,16 @@ class IotCloudApi:
         self.post(
             f"locations/{locationId}/locationnotification", data=data, auth=True)
 
-    def sendLocationNotification(self, locationId, notificationTitle, notificationBody):
+    def sendLocationNotification(self, locationId: str, sensorId: str, notificationTitle: str, notificationBody: str, timeZone: str):
+
+        user_local_now = datetime.now(tz=ZoneInfo(timeZone))
 
         data = {
             "notificationTitle": notificationTitle,
-            "notificationBody": notificationBody,
+            "notificationBody": f"{user_local_now.strftime("%d/%m/%Y %H:%M")}: {notificationBody}",
             "notificationTitleArgs": [],
             "notificationBodyArgs": [],
+            "extra": {"sensorId": sensorId}
         }
 
         self.post(

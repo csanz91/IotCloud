@@ -114,7 +114,10 @@ class Location:
                     f"Sending notification for the location: {self.locationId} is offline"
                 )
                 self.api.notifyLocationOffline(
-                    self.locationId, self.locationName)
+                    self.locationId,
+                    self.locationName,
+                    self.timeZone,
+                )
             except:
                 logger.error(
                     f"Error while sending notification for the location: {self.locationId}",
