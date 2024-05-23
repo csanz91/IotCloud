@@ -1,8 +1,10 @@
 import logging
+import time
 
 import falcon
 
 import dbinterface
+import influxdb_interface
 import api_utils
 from mqtt import MqttActions
 from api_utils import checkLocationPermissions, checkUser, checkShareOwner, Roles
@@ -308,3 +310,36 @@ class LocationRoom:
             )
 
         resp.media = api_utils.getResponseModel(result)
+
+
+class LocationNotifications:
+    def __init__(self, db, influxdb):
+        self.db = db
+        self.influxdb = influxdb
+
+    @checkLocationPermissions(Roles.viewer)
+    def on_get(self, req, resp, userId, locationId):
+        try:
+
+            finalTimestamp = req.get_param_as_int("finalTimestamp", default=int(time.time()))
+            initialTimestamp = req.get_param_as_int(
+                "initialTimestamp", default=finalTimestamp - 3600 * 24 * 7
+            )
+
+            rooms = influxdb_interface.getLocationNotifications(
+                self.influxdb,
+                locationId,
+                initialTimestamp,
+                finalTimestamp,
+            )
+        except:
+            logger.error(
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
+                extra={"area": "locations"},
+            )
+            raise falcon.HTTPBadRequest(
+                title="Bad Request", description="The request can not be completed."
+            )
+
+        resp.media = api_utils.getResponseModel(True, rooms)

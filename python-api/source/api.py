@@ -28,6 +28,7 @@ from locations import (
     LocationPermission,
     LocationRooms,
     LocationRoom,
+    LocationNotifications
 )
 from devices import (
     LocationDevices,
@@ -186,6 +187,7 @@ app.add_route("/api/v1/users/{userId}/locations/{locationId}/rooms", LocationRoo
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/rooms/{roomId}", LocationRoom(db)
 )
+app.add_route("/api/v1/users/{userId}/locations/{locationId}/notifications", LocationNotifications(db, influx_client))
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}/devices/{deviceId}",
     Devices(db, mqttclient),

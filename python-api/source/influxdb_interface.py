@@ -446,3 +446,23 @@ def saveNotification(influxClient, locationId, extra:  dict, title: str, body: s
         }
     ]
     influxClient.write_points(dataToWrite, retention_policy="3years")
+
+
+def getLocationNotifications(influxClient, locationId, initialTimestamp, finalTimestamp):
+    query = """ SELECT 
+                    "body", "title", "locationId", "sensorId"
+                    FROM "3years"."notifications" WHERE
+                        locationId='%s' AND 
+                        time>=%is AND time<%is
+                    ORDER BY time DESC
+                    """ % (
+        locationId,
+        initialTimestamp,
+        finalTimestamp,
+    )
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    valuesList = list(results.get_points())
+    return valuesList
