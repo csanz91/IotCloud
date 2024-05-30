@@ -38,14 +38,23 @@ init(influxDb)
 def saveTariffsCost(data: dict[datetime, dict]):
 
     dataToWrite = [
-        {
-            "measurement": "tariffs_cost",
-            "tags": {},
-            "fields": point,
-            "time": time
-        }
+        {"measurement": "tariffs_cost", "tags": {}, "fields": point, "time": time}
         for time, point in data.items()
     ]
 
     influxDb.write_points(dataToWrite, retention_policy="3years")
 
+
+def saveEnergyConsumption(cups: str, data: dict[datetime, dict]):
+
+    dataToWrite = [
+        {
+            "measurement": "energy_consumption",
+            "tags": {"cups": cups},
+            "fields": point,
+            "time": time,
+        }
+        for time, point in data.items()
+    ]
+
+    influxDb.write_points(dataToWrite, retention_policy="3years")

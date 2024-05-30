@@ -2,3 +2,5 @@ influxdb
 requests
 pandas
 xlrd
+-e libs/docker_secrets
+-e libs/ideenergy

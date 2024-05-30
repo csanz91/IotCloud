@@ -79,6 +79,8 @@ services:
       - ./python-energy/source:/app/source
     env_file:
       - 'variables.env'
+secrets:
+      - energy_secrets
 
   home:
     container_name: home
@@ -263,3 +265,5 @@ secrets:
       file: ./backup-manager/secrets/gdrive_backup_folder
   dynhost:
       file: ./ovh-dynhost-updater/secrets
+energy_secrets:
+      file: ./python-energy/secrets
