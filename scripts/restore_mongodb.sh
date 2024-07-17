@@ -7,7 +7,7 @@ backup_source_path="$(realpath "$backup_name")"
 database="data"
 
 echo "Dropping database $database'..."
-docker-compose exec -T mongodb sh -c 'mongosh '$database' --eval "db.dropDatabase()"'
+docker compose exec -T mongodb sh -c 'mongosh '$database' --eval "db.dropDatabase()"'
 
 echo "Restoring backup...'$backup_name'"
-docker-compose run --rm -T backup-manager sh -c 'mongorestore --archive --host mongodb' < "$backup_destination_path/$backup_name"
+docker compose run --rm -T backup-manager sh -c 'mongorestore --archive --host mongodb' < "$backup_destination_path/$backup_name"

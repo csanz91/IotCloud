@@ -10,7 +10,7 @@ echo "Fixing backup '$backup_name'..."
 find "$backup_destination_path/$backup_unzipped_folder" -name '*.manifest.txt' -exec bash -c 'mv "$1" "${1%.manifest.txt}".manifest' - '{}' +
 
 echo "Dropping database $database'..."
-docker-compose exec -T influxdb sh -c 'influx -execute "drop database '$database'"'
+docker compose exec -T influxdb sh -c 'influx -execute "drop database '$database'"'
 
 echo "Restoring backup..."
-docker-compose run --rm -T backup-manager sh -c 'influxd  restore -host influxdb:8088 -db '$database' -portable '/backups/influxdb/$backup_unzipped_folder''
+docker compose run --rm -T backup-manager sh -c 'influxd  restore -host influxdb:8088 -db '$database' -portable '/backups/influxdb/$backup_unzipped_folder''
