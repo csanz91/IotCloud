@@ -2,7 +2,6 @@ import logging
 import signal
 
 from threading import Event
-import time
 
 import docker_metrics
 import host_metrics
@@ -43,6 +42,6 @@ try:
         dockerMetrics = docker_metrics.getContainersMetrics()
         influxdb_interface.saveDockerMetrics(dockerMetrics)
 
-        time.sleep(MONITORING_FREC)
+        exitEvent.wait(MONITORING_FREC)
 finally:
     logger.info("Exiting...")
