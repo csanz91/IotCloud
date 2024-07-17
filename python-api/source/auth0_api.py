@@ -155,6 +155,7 @@ class Auth0Api:
         logger.info(f"User: {username} requests a new password")
         return result
 
+    @autoAuthenticate
     def changePassword(self, userId, password):
         result = self.auth0.users.update(userId, {"password": password})
         logger.info(f"User: {userId} requests to change the password")
