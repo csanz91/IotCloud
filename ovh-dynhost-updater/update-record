@@ -50,22 +50,27 @@ valid_ipv4() {
 # set current log level, all logs with a lower level are filtered
 current_level_value=$(get_log_level_value "$LOG_LEVEL")
 
-for host in $(echo "$HOSTNAME" | tr ";" "\n");
-    do
-    # retrieve last known address and current public address
-    OLD_IP_ADDRESS=$(dig +short $host)
-    PUBLIC_IP_ADDRESS=$(dig +short myip.opendns.com @resolver4.opendns.com)
+# Get the first host from the list to check
+first_host=$(echo "$HOSTNAME" | tr ";" "\n" | head -n1)
 
-    if valid_ipv4 "${PUBLIC_IP_ADDRESS}" && valid_ipv4 "${OLD_IP_ADDRESS}" && [[ "${PUBLIC_IP_ADDRESS}" ]]; then
-        if [[ "${OLD_IP_ADDRESS}" != "${PUBLIC_IP_ADDRESS}" ]]; then
-            info "IP address changed from '${OLD_IP_ADDRESS}' to '${PUBLIC_IP_ADDRESS}' for host: '${host}'"
+# retrieve last known address and current public address for the first host
+OLD_IP_ADDRESS=$(dig +short $first_host @resolver4.opendns.com)
+PUBLIC_IP_ADDRESS=$(dig +short myip.opendns.com @resolver4.opendns.com)
 
+if valid_ipv4 "${PUBLIC_IP_ADDRESS}" && valid_ipv4 "${OLD_IP_ADDRESS}" && [[ "${PUBLIC_IP_ADDRESS}" ]]; then
+    if [[ "${OLD_IP_ADDRESS}" != "${PUBLIC_IP_ADDRESS}" ]]; then
+        info "IP address changed from '${OLD_IP_ADDRESS}' to '${PUBLIC_IP_ADDRESS}'"
+        
+        # If IP has changed, update all hosts
+        for host in $(echo "$HOSTNAME" | tr ";" "\n"); do
+            info "Updating host: '${host}'"
+            
             # update DynHost record using OVH API
             ovh_response=$(curl -sS "http://www.ovh.com/nic/update?system=dyndns&hostname=${host}&myip=${PUBLIC_IP_ADDRESS}" \
                 -H "Authorization: Basic $(echo -n "$IDENTIFIER":"$PASSWORD" | base64)")
             info "OVH response: ${ovh_response} for host: '${host}'"
-        else
-            debug "No changes detected for host: '${host}'"
-        fi
+        done
+    else
+        debug "No changes detected for IP address: ${PUBLIC_IP_ADDRESS}"
     fi
-done
+fi
