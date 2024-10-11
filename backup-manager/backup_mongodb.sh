@@ -1,6 +1,6 @@
 #!/bin/ash
 echo 'Starting MongoDB backup'
-set -e
+. /etc/environment
 
 : ${MONGODB_HOST:?"MONGODB_HOST env variable is required"}
 

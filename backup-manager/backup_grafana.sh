@@ -1,6 +1,6 @@
 #!/bin/ash
 echo 'Starting Grafana backup'
-set -e
+. /etc/environment
 
 grafana_db_path=/grafana.db
 bck_dir=/backups/grafana

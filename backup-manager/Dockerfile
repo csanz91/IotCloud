@@ -1,14 +1,21 @@
-FROM alpine:3.17
+FROM alpine:3.20
 
 ### Dependencies
 RUN set -ex && \
     apk update && \
     apk upgrade && \
     apk add --no-cache \
-    influxdb \
     sqlite \
     mongodb-tools \
-    shadow && \
+    shadow \
+    cronie \
+    && { \
+        echo "http://dl-cdn.alpinelinux.org/alpine/v3.17/main"; \
+        echo "http://dl-cdn.alpinelinux.org/alpine/v3.17/community"; \
+    } > /tmp/repo3.17 \
+    && apk add --no-cache \
+        --repositories-file "/tmp/repo3.17" \
+        influxdb && \ 
     rm -rf /usr/src/* && \
     rm -rf /root/.cache /tmp/* /var/cache/apk/*
 
@@ -27,22 +34,15 @@ RUN chmod +x /bin/backup_mongodb.sh
 COPY backup_grafana.sh /bin/backup_grafana.sh
 RUN chmod +x /bin/backup_grafana.sh
 
-# Upload backups to gdrive script
-COPY upload_to_gdrive.sh /bin/upload_to_gdrive.sh
-RUN chmod +x /bin/upload_to_gdrive.sh
+# run_cron script
+COPY run_cron.sh /bin/run_cron.sh
+RUN chmod +x /bin/run_cron.sh
 
 # Setup crontab
-COPY cron.conf /var/spool/cron/crontabs/backupuser
-RUN chown backupuser:backupuser /var/spool/cron/crontabs/backupuser
+COPY cron.conf /etc/crontabs/backupuser
+RUN chown backupuser:backupuser /etc/crontabs/backupuser
 
-# Download gdrive, extract it and make it executable
-ARG GDRIVE_URL='https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_amd64.tar.gz'
-RUN wget -qO- $GDRIVE_URL | tar -xvz -C .
-RUN mv gdrive /bin/
-RUN chmod +x /bin/gdrive
+RUN crontab -u backupuser /etc/crontabs/backupuser
 
 # Switch to non-root user
-USER backupuser
-
-# Run Cron in foreground
-CMD crond -l 0 -f
+CMD ["./bin/run_cron.sh"]

@@ -1,6 +1,6 @@
 #!/bin/ash
 echo 'Starting InfluxDB backup'
-set -e
+. /etc/environment
 
 : ${INFLUXDB_HOST:?"INFLUXDB_HOST env variable is required"}
 
