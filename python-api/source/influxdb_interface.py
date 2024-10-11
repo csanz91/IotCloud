@@ -417,15 +417,15 @@ def getDeviceIP(influxClient, locationId, deviceId):
     return ip
 
 
-def getEnergyTariffsCost(influxClient, initialTimestamp, finalTimestamp):
+def getEnergyTariffsCostFlexi(influxClient, initialTimestamp, finalTimestamp):
 
     query = """ SELECT 
-                                    last(Flexi) as cost
-                                FROM "3years"."tariffs_cost" WHERE
-                                    time>=%is AND time<%is
-                                GROUP BY time(1h)
-                                FILL(previous)
-                                """ % (
+                    last(Flexi) as cost
+                FROM "3years"."tariffs_cost" WHERE
+                    time>=%is AND time<%is
+                GROUP BY time(1h)
+                FILL(previous)
+                """ % (
         initialTimestamp,
         finalTimestamp,
     )
@@ -434,6 +434,30 @@ def getEnergyTariffsCost(influxClient, initialTimestamp, finalTimestamp):
         return []
 
     valuesList = list(results.get_points())
+    return valuesList
+
+def getEnergyTariffsCostTE(influxClient, initialTimestamp, finalTimestamp):
+
+    hour_fixed_cost = 0.136685 * 3.0 / 24.0 # €/kW y día * kW / 24 horas 
+    kw_cost = 0.073
+    mirubee_correction_factor = 0.965 # Mean correction factor to match the real consumption 
+    sensorId = '202481596676681_004_P'
+
+    query = f""" SELECT 
+                    mean(value) / 1000.0 * {mirubee_correction_factor} * {kw_cost} + {hour_fixed_cost} as cost
+                FROM sensorsData
+                WHERE
+                    sensorId = '{sensorId}'
+                    AND time>={initialTimestamp}s AND time<{finalTimestamp}s
+                GROUP BY time(1h)
+                FILL(none)
+                """    
+    results = influxClient.query(query)
+    if not results:
+        return []
+
+    valuesList = list(results.get_points())
+    valuesList = [v | {'dailyCost': v['cost'] * 24, 'monthlyCost': v['cost'] * 24 * 30} for v in valuesList]
     return valuesList
 
 
@@ -466,3 +490,15 @@ def getLocationNotifications(influxClient, locationId, initialTimestamp, finalTi
 
     valuesList = list(results.get_points())
     return valuesList
+
+def saveLocationTracking(influxClient, trackerid, points):
+    dataToWrite = [
+        {
+            "measurement": "tracking",
+            "tags": {"trackerid": trackerid},
+            "fields": {"latitude": point['latitude'], "longitude": point['longitude']},
+            "time": point['timestamp']
+        }
+        for point in points
+    ]
+    influxClient.write_points(dataToWrite, retention_policy="3years", time_precision="ms")

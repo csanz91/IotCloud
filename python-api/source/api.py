@@ -69,9 +69,10 @@ from m2m import (
     M2MModulesLocations,
 )
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
-from weather_api import Weather, SunSchedule
+from weather_api import Weather, SunSchedule, GarminWind
 from bitcoin.bitcoin_api import BitcoinCurrent, BitcoinHistorical, BitcoinPrice
-from energy_api import TariffCost
+from energy_api import TariffCostFlexi, TariffCostTE
+from tracker import LocationTracker
 
 ##############################################
 # Configuration
@@ -167,7 +168,8 @@ app.add_route("/api/v1/users/{userId}/permissions/{shareId}", LocationPermission
 app.add_route("/api/v1/users/{userId}/bitcoin/current", BitcoinCurrent())
 app.add_route("/api/v1/users/{userId}/bitcoin/historical", BitcoinHistorical())
 app.add_route("/api/v1/users/{userId}/bitcoin", BitcoinPrice())
-app.add_route("/api/v1/users/{userId}/tariffcost", TariffCost(influx_client))
+app.add_route("/api/v1/users/{userId}/tariffcost/flexi", TariffCostFlexi(influx_client))
+app.add_route("/api/v1/users/{userId}/tariffcost/TE", TariffCostTE(influx_client))
 app.add_route("/api/v1/users/{userId}/firebasetoken", FirebaseUserToken(db))
 app.add_route(
     "/api/v1/users/{userId}/locations/{locationId}", Locations(db, mqttclient)
@@ -280,3 +282,7 @@ app.add_route("/api/v1/locations/modulesEnabled", M2MModulesLocations(db))
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())
 app.add_route("/api/v1/mqtt/acl", MqttAcl(db))
+
+app.add_route("/api/v1/weather/wind", GarminWind())
+
+app.add_route("/api/v1/tracking/{trackerid}", LocationTracker(influx_client))

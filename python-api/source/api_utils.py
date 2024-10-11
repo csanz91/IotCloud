@@ -189,3 +189,20 @@ def m2mValidation(func):
         return func(*args, **kwargs)
 
     return func_wrapper
+
+def getToken(req):
+    try:
+        headerParts = req.auth.split()
+    except:
+        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
+        raise falcon.HTTPBadRequest("Bad Request", "The request can not be completed.")
+
+    if len(headerParts) == 2 and headerParts[0] == "Bearer":
+        token = headerParts[1]
+    else:
+        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
+        raise falcon.HTTPBadRequest(
+            "Bad Request", "Invalid Authorization header format."
+        )
+
+    return token

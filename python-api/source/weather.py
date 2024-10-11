@@ -25,3 +25,13 @@ def getTimeZone(postalCode):
     r = requests.get(f"{weatherServiceUrl}/postalcode/{postalCode}/timezone")
     result = r.json()
     return result["data"]
+
+def getWind(latitude, longitude):
+    postData = {"latitude": latitude, "longitude": longitude}
+    r = requests.post(
+        f"{weatherServiceUrl}/wind", json=postData
+    )
+    if r.status_code != 200:
+        raise Exception(f"API request failed (status code: {r.status_code}). "
+                  f"Error: {r.text}")
+    return r.json()

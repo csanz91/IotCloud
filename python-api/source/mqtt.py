@@ -5,7 +5,7 @@ import falcon
 import jwt
 
 import api_utils
-from api_utils import Roles
+from api_utils import Roles, getToken
 import dbinterface
 from docker_secrets import getDocketSecrets
 
@@ -55,24 +55,6 @@ def raiseUnauthorized():
         title="Unauthorized",
         description="The user is not authorized to access this topic.",
     )
-
-
-def getToken(req):
-    try:
-        headerParts = req.auth.split()
-    except:
-        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
-        raise falcon.HTTPBadRequest("Bad Request", "The request can not be completed.")
-
-    if len(headerParts) == 2 and headerParts[0] == "Bearer":
-        token = headerParts[1]
-    else:
-        logger.error("Exception. params: %s" % (req.headers), exc_info=True)
-        raise falcon.HTTPBadRequest(
-            "Bad Request", "Invalid Authorization header format."
-        )
-
-    return token
 
 
 class MqttAuth:
