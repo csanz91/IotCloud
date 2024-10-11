@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.12.4
 
 # Create app directory
 WORKDIR /app
@@ -6,7 +6,7 @@ WORKDIR /app
 # Install app dependencies
 COPY ./requirements.txt ./
 COPY ./libs ./libs
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Bundle app source
 COPY ./ /app
@@ -17,4 +17,6 @@ RUN mkdir -p /app/logs
 
 WORKDIR /app/source
 EXPOSE 5003
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
+
 CMD ["gunicorn", "--worker-tmp-dir", "/dev/shm", "--workers", "1", "--threads", "2", "-b", "0.0.0.0:5003", "api:app"]
