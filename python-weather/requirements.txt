@@ -2,5 +2,5 @@ falcon
 gunicorn
 requests
 python-dateutil
--e libs/docker_secrets
--e libs/disk_cache
+git+https://github.com/csanz91/disk_cache
+git+https://github.com/csanz91/docker_secrets

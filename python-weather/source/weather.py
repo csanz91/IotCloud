@@ -12,7 +12,7 @@ import datetime
 from stations_list import stationsList
 from location_list import locationsList
 from geocodes_list import geocodesList
-from cache import cache_disk
+from disk_cache import disk_cache
 from docker_secrets import getDocketSecrets
 import utils
 
@@ -82,7 +82,7 @@ def getAemetData(url):
 ######################################
 
 
-@cache_disk(seconds=0)
+@disk_cache(seconds=0)
 def getLocationFromPostalCode(postalCode):
     """
     Get the postal code and the location name
@@ -112,7 +112,7 @@ def getLocationFromPostalCode(postalCode):
     return postalCodeCoordenates, locationName
 
 
-@cache_disk(seconds=0)
+@disk_cache(seconds=0)
 def getTimeZone(postalCodeCoordenates, timestamp=None):
     """
     Get the time zone data from the coordenates
@@ -157,7 +157,7 @@ def getTimeZone(postalCodeCoordenates, timestamp=None):
     return result
 
 
-@cache_disk(seconds=0)
+@disk_cache(seconds=0)
 def getClosestStationId(postalCodeCoordenates):
     """Get the closest station to our coordenates
     """
@@ -168,7 +168,7 @@ def getClosestStationId(postalCodeCoordenates):
     return stationId
 
 
-@cache_disk(seconds=0)
+@disk_cache(seconds=0)
 def getClosestGeocode(postalCodeCoordenates):
     """Get the closest geocode to our coordenates
     """
@@ -179,7 +179,7 @@ def getClosestGeocode(postalCodeCoordenates):
     return geocode
 
 
-@cache_disk(seconds=900)
+@disk_cache(seconds=900)
 def getCurrentWeather(stationId):
     """
     Get the current weather from the selected station
@@ -191,7 +191,7 @@ def getCurrentWeather(stationId):
     return currentWeatherData
 
 
-@cache_disk(seconds=0)
+@disk_cache(seconds=0)
 def getLocationId(locationName):
     """
     Get the predicted weather for today
@@ -225,7 +225,7 @@ def getLocationId(locationName):
     raise ValueError("The location name could not be found")
 
 
-@cache_disk(seconds=3600)
+@disk_cache(seconds=3600)
 def getTodayPredictedWeather(locationId):
 
     predictedWeather = getAemetData(
@@ -236,7 +236,7 @@ def getTodayPredictedWeather(locationId):
     return weatherForToday
 
 
-@cache_disk(seconds=3600 * 12)
+@disk_cache(seconds=3600 * 12)
 def getTodaySunSchedule(locationId):
     """
     From the locationId get the sunrise and the sunset,
@@ -260,7 +260,7 @@ def getTodaySunSchedule(locationId):
     return timestamp, dateToMinutes(sunrise), dateToMinutes(sunset)
 
 
-@cache_disk(seconds=60)
+@disk_cache(seconds=60)
 def getLatestAlertsURLForArea(area):
     """
     From the area code (first two numbers
