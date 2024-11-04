@@ -1,9 +1,9 @@
 import requests
 from datetime import datetime, timedelta
-from cache import cache_disk, clear_cache
+from disk_cache import disk_cache, clear_cache
 
 
-@cache_disk(seconds=300)
+@disk_cache(seconds=300)
 def getCurrentPrice():
 
     response = requests.get("https://api.coindesk.com/v1/bpi/currentprice/EUR.json")
@@ -12,7 +12,7 @@ def getCurrentPrice():
     return float(price.replace(",", ""))
 
 
-@cache_disk(seconds=300)
+@disk_cache(seconds=300)
 def getHistoricalPrice():
     today = datetime.now()
     weekAgo = today - timedelta(days=6)

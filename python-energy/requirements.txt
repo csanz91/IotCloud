@@ -2,5 +2,5 @@ influxdb
 requests
 pandas
 xlrd
--e libs/docker_secrets
+git+https://github.com/csanz91/docker_secrets
 -e libs/ideenergy

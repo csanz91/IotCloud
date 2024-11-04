@@ -4,9 +4,9 @@ pyjwt[crypto]
 pymongo
 falcon-auth
 auth0-python
--e libs/influx
--e libs/docker_secrets
--e libs/disk_cache
+git+https://github.com/csanz91/disk_cache
+git+https://github.com/csanz91/docker_secrets
 python-dateutil
 firebase_admin
 paho-mqtt==1.6.*
+influxdb

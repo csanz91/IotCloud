@@ -1,4 +1,4 @@
 paho-mqtt==1.6.*
 python-dateutil
 requests
--e libs/docker_secrets
+git+https://github.com/csanz91/docker_secrets
