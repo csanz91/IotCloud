@@ -148,6 +148,20 @@ class IotCloudApi:
 
         self.post(
             f"locations/{locationId}/locationnotification", data=data, auth=True)
+        
+    def notifyLocationBackOnline(self, locationId: str, locationName: str, timeZone: str):
+
+        user_local_now = datetime.now(tz=ZoneInfo(timeZone))
+
+        data = {
+            "notificationTitle": f"{locationName} Online",
+            "notificationBody": f"{user_local_now.strftime("%d/%m/%Y %H:%M")}: La ubicacion {locationName} vuelve a estar conectada.",
+            "notificationTitleArgs": [locationName],
+            "notificationBodyArgs": [locationName],
+        }
+
+        self.post(
+            f"locations/{locationId}/locationnotification", data=data, auth=True)
 
     def sendLocationNotification(self, locationId: str, sensorId: str, notificationTitle: str, notificationBody: str, timeZone: str):
 

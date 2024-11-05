@@ -101,6 +101,12 @@ class Location:
 
         if devicesStatus:
             self.offlineInitialTimestamp = currentTimestamp
+            if self.notificationSent:
+                self.api.notifyLocationBackOnline(
+                    self.locationId,
+                    self.locationName,
+                    self.timeZone,
+                )
             self.notificationSent = False
 
         elif (
