@@ -1,4 +1,4 @@
-version: '3.3'
+name: iotcloud
 services:
   api:
     container_name: api
@@ -64,8 +64,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./python-monitoring/logs:/app/logs
-      - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/data:/mnt/data:ro
+      # - /run/user/1000/docker.sock:/var/run/docker.sock:ro # rootless mode
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/hostname:/app/hostname:ro
     env_file:
       - 'variables.env'
@@ -79,7 +80,7 @@ services:
       - ./python-energy/source:/app/source
     env_file:
       - 'variables.env'
-secrets:
+    secrets:
       - energy_secrets
 
   home:
@@ -265,5 +266,5 @@ secrets:
       file: ./backup-manager/secrets/gdrive_backup_folder
   dynhost:
       file: ./ovh-dynhost-updater/secrets
-energy_secrets:
+  energy_secrets:
       file: ./python-energy/secrets
