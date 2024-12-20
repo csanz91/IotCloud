@@ -236,6 +236,17 @@ services:
     secrets:
       - dynhost
 
+  python-automations:
+    container_name: automations
+    build: ./python-automations
+    env_file:
+      - 'variables.env'
+    restart: unless-stopped
+    volumes:
+      - ./python-automations/logs:/app/logs
+    secrets:
+      - automations_secrets
+
 volumes:
   gdrive_config:
   mongodb_data:
@@ -268,3 +279,5 @@ secrets:
       file: ./ovh-dynhost-updater/secrets
   energy_secrets:
       file: ./python-energy/secrets
+automations_secrets:
+      file: ./python-automations/secrets

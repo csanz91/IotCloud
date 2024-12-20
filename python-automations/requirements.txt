@@ -1,0 +1,3 @@
+paho-mqtt
+requests
+git+https://github.com/csanz91/docker_secrets
