@@ -18,15 +18,16 @@ class Notifier(Sensor):
         self,
         baseTopic: str,
         sensorId: str,
+        sensorName: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
         locationData: LocationDataManager,
     ) -> None:
-        super().__init__(baseTopic, sensorId, metadata, mqttclient, locationData)
+        super().__init__(baseTopic, sensorId, sensorName, metadata, mqttclient, locationData)
 
         self.state = False
 
-        self.setSensorData(metadata, mqttclient)
+        self.setSensorData(sensorName, metadata, mqttclient)
 
         self.api = locationData.api
         self.locationId = locationData.locationId
@@ -48,13 +49,14 @@ class Notifier(Sensor):
         mqttclient.unsubscribe(self.notificationTopic)
 
     def onDeviceNotification(self, mqttclient: MqttClient, userdata, msg) -> None:
+        logger.info(f"{self.sensorName}: {msg.payload.decode('utf-8').format(sensor_name=self.sensorName)}")
         try:
             self.api.sendLocationNotification(
                 self.locationId,
                 self.sensorId,
-                "Notification from the device",
-                msg.payload.decode("utf-8"),
+                self.sensorName,
+                msg.payload.decode("utf-8").format(sensor_name=self.sensorName),
                 self.timeZone,
             )
         except:
-            logger.error(f"It was not possible to send the notification: {msg.payload}")
+            logger.error(f"It was not possible to send the notification: {msg.payload}", exc_info=True)

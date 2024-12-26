@@ -69,6 +69,7 @@ class Device:
         self,
         sensorId: str,
         sensorType: str,
+        sensorName: str,
         metadata: typing.Dict,
         mqttClient: MqttClient,
     ):
@@ -76,16 +77,16 @@ class Device:
 
         sensorType = sensorType.lower()
         if sensorType in Switch.SENSOR_TYPES:
-            sensor = Switch(baseTopic, sensorId, metadata,
+            sensor = Switch(baseTopic, sensorId, sensorName, metadata,
                             mqttClient, self.locationData)
         elif sensorType in Thermostat.SENSOR_TYPES:
-            sensor = Thermostat(baseTopic, sensorId, metadata,
+            sensor = Thermostat(baseTopic, sensorId, sensorName, metadata,
                                 mqttClient, self.locationData)
         elif sensorType in Toogle.SENSOR_TYPES:
-            sensor = Toogle(baseTopic, sensorId, metadata,
+            sensor = Toogle(baseTopic, sensorId, sensorName, metadata,
                             mqttClient, self.locationData)
         elif sensorType in Notifier.SENSOR_TYPES:
-            sensor = Notifier(baseTopic, sensorId, metadata,
+            sensor = Notifier(baseTopic, sensorId, sensorName, metadata,
                               mqttClient, self.locationData)
         else:
             logger.info(f"Sensor type {sensorType} not supported.")
@@ -100,14 +101,15 @@ class Device:
         for sensorData in sensorsData:
             sensorId = sensorData["sensorId"]
             sensorType = sensorData["sensorType"]
+            sensorName = sensorData["sensorName"]
             metadata = sensorData["sensorMetadata"]
 
             try:
                 with self.sensorsLock:
                     sensor = self.sensors[sensorId]
-                    sensor.setSensorData(metadata, mqttclient)
+                    sensor.setSensorData(sensorName, metadata, mqttclient)
             except KeyError:
-                self.addSensor(sensorId, sensorType, metadata, mqttclient)
+                self.addSensor(sensorId, sensorType, sensorName, metadata, mqttclient)
 
     @retryFunc
     def updateSensor(self, sensorId: str, mqttclient: MqttClient, api: IotCloudApi):
@@ -123,8 +125,9 @@ class Device:
             return
 
         metadata = sensorData["sensorMetadata"]
+        sensorName = sensorData["sensorName"]
         with self.sensorsLock:
-            sensor.setSensorData(metadata, mqttclient)
+            sensor.setSensorData(sensorName, metadata, mqttclient)
 
     def onSensorUpdated(self, mqttclient: MqttClient, userdata, msg):
         action = msg.payload.decode("utf-8")

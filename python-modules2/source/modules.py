@@ -1,5 +1,6 @@
 import logging
 import logging.config
+from logging import handlers
 import time
 from threading import Thread, Lock, Event
 import typing
@@ -14,7 +15,7 @@ from utils import MqttActions, retryFunc
 
 # Logging setup
 logger = logging.getLogger()
-handler = logging.handlers.RotatingFileHandler(
+handler = handlers.RotatingFileHandler(
     "../logs/modules.log", mode="a", maxBytes=1024 * 1024 * 10, backupCount=2
 )
 formatter = logging.Formatter(

@@ -21,15 +21,16 @@ class Switch(Sensor, Timer, Schedule):
         self,
         baseTopic: str,
         sensorId: str,
+        sensorName: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
         locationData: LocationDataManager
     ) -> None:
-        super().__init__(baseTopic, sensorId, metadata, mqttclient, locationData)
+        super().__init__(baseTopic, sensorId, sensorName, metadata, mqttclient, locationData)
 
         self.state = False
 
-        self.setSensorData(metadata, mqttclient)
+        self.setSensorData(sensorName, metadata, mqttclient)
 
         # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"

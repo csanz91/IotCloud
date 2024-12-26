@@ -33,11 +33,12 @@ class Thermostat(Sensor, Timer, Schedule):
         self,
         baseTopic: str,
         sensorId: str,
+        sensorName: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
         locationData: LocationDataManager
     ) -> None:
-        super().__init__(baseTopic, sensorId, metadata, mqttclient, locationData)
+        super().__init__(baseTopic, sensorId, sensorName, metadata, mqttclient, locationData)
 
         # Runtime variables
         self.state = False
@@ -62,7 +63,7 @@ class Thermostat(Sensor, Timer, Schedule):
         self.startHeatingfilterTime = 0
         self.stopHeatingfilterTime = 0
 
-        self.setSensorData(metadata, mqttclient)
+        self.setSensorData(sensorName, metadata, mqttclient)
 
         # Set up the relevant MQTT topics
         self.stateTopic = f"{baseTopic}{sensorId}/state"
@@ -113,8 +114,8 @@ class Thermostat(Sensor, Timer, Schedule):
             mqttclient.subscribe(tempRefTopic)
         self.tempReferences[tempRefTopic] = factor
 
-    def setSensorData(self, metadata: typing.Dict, mqttclient: MqttClient) -> None:
-        super().setSensorData(metadata, mqttclient)
+    def setSensorData(self, sensorName, metadata: typing.Dict, mqttclient: MqttClient) -> None:
+        super().setSensorData(sensorName, metadata, mqttclient)
         try:
             self.hysteresisHigh = utils.parseFloat(metadata["hysteresisHigh"])
         except:

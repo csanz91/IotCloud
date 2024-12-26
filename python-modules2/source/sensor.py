@@ -17,6 +17,7 @@ class Sensor:
         self,
         baseTopic: str,
         sensorId: str,
+        sensorName: str,
         metadata: typing.Dict,
         mqttclient: MqttClient,
         locationData: LocationDataManager
@@ -24,6 +25,7 @@ class Sensor:
         super().__init__()
         self.baseTopic = baseTopic
         self.sensorId = sensorId
+        self.sensorName = sensorName
         self.metadata = metadata
 
         logger.info(f"Created sensor with id: {self.sensorId}")
@@ -34,8 +36,9 @@ class Sensor:
     def unsubscribe(self, mqttclient: MqttClient) -> None:
         pass
 
-    def setSensorData(self, metadata: typing.Dict, mqttclient: MqttClient) -> None:
+    def setSensorData(self, sensorName: str, metadata: typing.Dict, mqttclient: MqttClient) -> None:
         logger.debug(f"Setting sensor data for {self.sensorId}, metadata: {metadata}", )
+        self.sensorName = sensorName
         self.metadata = metadata
 
     def run(self, mqttclient: MqttClient, locationData: LocationDataManager) -> None:
