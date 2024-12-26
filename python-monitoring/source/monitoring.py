@@ -39,6 +39,12 @@ try:
         hostMetrics = host_metrics.getHostMetrics()
         influxdb_interface.saveHostMetrics(hostMetrics)
 
+        netMetrics = host_metrics.getNetMetrics()
+        influxdb_interface.saveNetMetrics(netMetrics)
+
+        diskMetrics = host_metrics.getDiskMetrics()
+        influxdb_interface.saveDiskMetrics(diskMetrics)
+
         dockerMetrics = docker_metrics.getContainersMetrics()
         influxdb_interface.saveDockerMetrics(dockerMetrics)
 

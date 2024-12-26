@@ -75,3 +75,31 @@ def saveDockerMetrics(containersMetrics):
         for name, metrics in containersMetrics.items()
     ]
     influxDb.write_points(dataToWrite, retention_policy="monitoring_raw")
+
+
+def saveNetMetrics(data):
+
+    dataToWrite = [
+        {
+            "measurement": "network_monitoring",
+            "tags": {"host": utils.getHostname(), "nic": nic},
+            "fields": metrics,
+        }
+        for nic, metrics in data.items()
+    ]
+
+    influxDb.write_points(dataToWrite, retention_policy="monitoring_raw")
+
+
+def saveDiskMetrics(data):
+
+    dataToWrite = [
+        {
+            "measurement": "disk_monitoring",
+            "tags": {"host": utils.getHostname(), "disk": disk},
+            "fields": metrics,
+        }
+        for disk, metrics in data.items()
+    ]
+
+    influxDb.write_points(dataToWrite, retention_policy="monitoring_raw")
