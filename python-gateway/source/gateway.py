@@ -1,4 +1,5 @@
 import logging
+from logging import handlers
 import logging.config
 import os
 import queue
@@ -17,7 +18,7 @@ import utils
 
 # Logging setup
 logger = logging.getLogger()
-handler = logging.handlers.RotatingFileHandler(
+handler = handlers.RotatingFileHandler(
     "../logs/influx_gateway.log", mode="a", maxBytes=1024 * 1024 * 10, backupCount=2
 )
 formatter = logging.Formatter(
@@ -53,6 +54,7 @@ onStateNumWorkerThreads = 1
 onToogleNumWorkerThreads = 1
 onValueNumWorkerThreads = 1
 onDeviceDataNumWorkerThreads = 1
+onPresenceNumWorkerThreads = 1
 
 ####################################
 # Status message processing
@@ -299,6 +301,53 @@ def onDeviceDataWork(msg):
         )
 
 
+####################################
+# Presence message processing
+####################################
+presenceQueue = queue.Queue()
+
+def presenceWorker():
+    while True:
+        item = presenceQueue.get()
+        if item is None:
+            presenceQueue.task_done()
+            break
+        onPresenceWork(item)
+        presenceQueue.task_done()
+
+def onPresenceWork(msg):
+    try:
+        msg.payload = msg.payload.decode("utf-8")
+        presence = utils.decodeBoolean(msg.payload)
+        tags = utils.getTags(msg.topic)
+    except:
+        logger.error(
+            f'The message: "{msg.payload}" cannot be processed. Topic: "{msg.topic}" is malformed. Ignoring data',
+            extra={"area": "presence"},
+        )
+        return
+
+    try:
+        fields = {"presence": presence}
+        tagsToSave = ["locationId", "sensorId"]
+        measurement = "sensorsData"
+        influxDb.writeData(
+            measurement,
+            utils.selectTags(tagsToSave, tags),
+            fields,
+            retentionPolicy="3years",
+        )
+    except:
+        logger.error(
+            f"onPresenceWork message failed. message: {msg.payload}. Exception: ",
+            exc_info=True,
+            extra={"area": "presence"},
+        )
+
+def onPresence(client, userdata, msg):
+    presenceQueue.put(msg)
+
+
 def init(influxDb):
     """
     From the docs: If you attempt to create a retention policy identical to one that
@@ -401,6 +450,12 @@ def startThreads():
         t.start()
         threads.append(t)
 
+    for i in range(onPresenceNumWorkerThreads):
+        t = Thread(target=presenceWorker)
+        t.name = "Presence%d" % i
+        t.start()
+        threads.append(t)
+
 
 def stopThreads():
     for _ in range(onStatusNumWorkerThreads):
@@ -417,6 +472,9 @@ def stopThreads():
 
     for _ in range(onDeviceDataNumWorkerThreads):
         deviceDataQueue.put(None)
+
+    for _ in range(onPresenceNumWorkerThreads):
+        presenceQueue.put(None)
 
     for t in threads:
         t.join()
@@ -445,6 +503,7 @@ statusTopic = topicHeader + "status"
 IPTopic = topicHeader + "ip"
 modelTopic = topicHeader + "model"
 versionTopic = topicHeader + "version"
+presenceTopic = topicHeader + "+/aux/presence"
 
 # Setup MQTT client
 mqttclient = mqtt.Client()
@@ -472,6 +531,9 @@ def onConnect(self, mosq, obj, rc):
     mqttclient.message_callback_add(IPTopic, onDeviceData)
     mqttclient.message_callback_add(modelTopic, onDeviceData)
     mqttclient.message_callback_add(versionTopic, onDeviceData)
+
+    mqttclient.subscribe(presenceTopic)
+    mqttclient.message_callback_add(presenceTopic, onPresence)
 
     thermostat_gw.onConnect(mqttclient, influxDb)
     totalizer_gw.onConnect(mqttclient, influxDb)
