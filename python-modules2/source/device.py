@@ -60,7 +60,7 @@ class Device:
     def onDeviceStatus(self, mqttclient: MqttClient, userdata, msg) -> None:
         try:
             self.status = decodeStatus(msg.payload)
-            logger.info(
+            logger.debug(
                 f"Device {self.deviceId} status changed to {self.status}")
         except:
             logger.error(f"The status received: {msg.payload} is not valid")
