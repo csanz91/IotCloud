@@ -277,5 +277,5 @@ secrets:
       file: ./ovh-dynhost-updater/secrets
   energy_secrets:
       file: ./python-energy/secrets
-automations_secrets:
+  automations_secrets:
       file: ./python-automations/secrets
