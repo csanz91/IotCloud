@@ -1,5 +1,6 @@
 import logging
 from actions.action import Action
+from devices_types import Switch
 from devices import (
     living_room_light,
     living_room_center_light,
@@ -7,14 +8,15 @@ from devices import (
     living_room_presence_center,
     light_sensor,
     activate_central_light_stream,
+    enable_madrid_automations,
 )
 from events import EventStream
 
 logger = logging.getLogger()
 
 class ActivateCentralLight(Action):
-    def __init__(self, name: str, streams: list[EventStream]):
-        super().__init__(name, streams)
+    def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
+        super().__init__(name, streams, enable_switch=enable_switch)
         self.trigger_flag = False
 
     def action(self, event_stream: EventStream):
@@ -31,5 +33,5 @@ class ActivateCentralLight(Action):
             living_room_center_light.set_state(False)
 
 activate_central_light = ActivateCentralLight(
-    "Activate Living Central Light", [activate_central_light_stream]
+    "Activate Living Central Light", [activate_central_light_stream], enable_switch=enable_madrid_automations
 )

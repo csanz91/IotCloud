@@ -1,5 +1,6 @@
 import logging
 from actions.action import Action
+from devices_types import Switch
 from devices import (
     living_room_light,
     living_room_presence,
@@ -9,14 +10,15 @@ from devices import (
     # bathroom_light,
     # kitchen_light,
     deactivate_living_room_stream,
+    enable_madrid_automations,
 )
 from events import EventStream
 
 logger = logging.getLogger()
 
 class DeactivateLivingRoom(Action):
-    def __init__(self, name: str, streams: list[EventStream]):
-        super().__init__(name, streams)
+    def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
+        super().__init__(name, streams, enable_switch=enable_switch)
         self.trigger_flag = False
 
     def action(self, event_stream: EventStream):
@@ -31,8 +33,7 @@ class DeactivateLivingRoom(Action):
         if not self.trigger_flag and not presence:
             self.trigger_flag = True
             living_room_light.set_state(False)
-            logger.info(f"{self.name}: Living room deactivated")
 
 deactivate_living_room = DeactivateLivingRoom(
-    "Deactivate Living Room", [deactivate_living_room_stream]
+    "Deactivate Living Room", [deactivate_living_room_stream], enable_switch=enable_madrid_automations
 )

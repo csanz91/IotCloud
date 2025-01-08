@@ -21,7 +21,7 @@ handler = handlers.RotatingFileHandler(
 formatter = logging.Formatter(
     "%(asctime)s <%(levelname).1s> %(funcName)s:%(lineno)s: %(message)s"
 )
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 

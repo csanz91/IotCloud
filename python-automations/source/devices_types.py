@@ -22,6 +22,7 @@ class Switch:
         self.name = name
         self.topic = topic
         self.state = False
+        self.status = False
         self.mqtt_client = mqtt_client
         self.event_streams = event_streams or []
 
@@ -29,6 +30,10 @@ class Switch:
         topic = f"{self.topic}/state"
         self.mqtt_client.subscribe(topic)
         self.mqtt_client.message_callback_add(topic, self.on_device_state)
+
+        status_topic = "/".join(self.topic.split("/")[:-1]) + "/status"
+        self.mqtt_client.subscribe(status_topic)
+        self.mqtt_client.message_callback_add(status_topic, self.on_device_status)
 
     def set_state(self, state: bool):
         self.mqtt_client.publish(f"{self.topic}/setState", state, qos=1, retain=False)
@@ -41,9 +46,24 @@ class Switch:
             if new_state != self.state:
                 self.state = new_state
                 for stream in self.event_streams:
-                    stream.notify(source=self.name)
+                    stream.notify(source=self)
         except Exception:
             logger.error(f"The state received: {msg.payload} is not valid")
+
+    def on_device_status(
+        self, mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage
+    ) -> None:
+        try:
+            new_status = utils.decodeStatus(msg.payload)
+            self.status = new_status
+            if not new_status:
+                self.state = False
+
+            for stream in self.event_streams:
+                stream.notify(source=self)
+
+        except Exception:
+            logger.error(f"The status received: {msg.payload} is not valid")
 
 
 class AnalogSensor:
@@ -72,7 +92,7 @@ class AnalogSensor:
             if new_value != self.value:
                 self.value = new_value
                 for stream in self.event_streams:
-                    stream.notify(source=self.name)
+                    stream.notify(source=self)
         except Exception:
             logger.error(f"The value received: {msg.payload} is not valid")
 
@@ -103,7 +123,7 @@ class DigitalSensor:
             if new_state != self.state:
                 self.state = new_state
                 for stream in self.event_streams:
-                    stream.notify(source=self.name)
+                    stream.notify(source=self)
         except:
             logger.error(f"The value received: {msg.payload} is not valid")
 
@@ -118,7 +138,7 @@ class NotifierSensor(DigitalSensor):
         try:
             message = msg.payload.decode()
             for stream in self.event_streams:
-                stream.notify(source=f"{self.name}:{message}")
+                stream.notify(source=self)
         except:
             logger.error(f"Error processing message: {msg.payload}")
 
