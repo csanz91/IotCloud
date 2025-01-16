@@ -39,6 +39,7 @@ light_sensor = devices_types.AnalogSensor(
     event_streams=[
         activate_living_room_stream,
         clock_brightness_stream,
+        control_office_light_stream
     ],
 )
 all_devices.append(light_sensor)
@@ -53,6 +54,7 @@ living_room_presence = devices_types.DigitalSensor(
         deactivate_living_room_stream,
         clock_brightness_stream,
         occupancy_stream_in,
+        flow_control_stream,
     ],
 )
 all_devices.append(living_room_presence)
@@ -81,7 +83,7 @@ all_devices.append(living_room_presence_center)
 
 office_presence = devices_types.DigitalSensor(
     "Office Presence",
-    "v1/5ca4784d931b1502f377c92d/e9261190bebc11efb5c3d5853ddfd4d6/2cf43279-f068_002_S/aux/presence",
+    "v1/5ca4784d931b1502f377c92d/e9261190bebc11efb5c3d5853ddfd4d6/2cf43279-f068_002_S/state",
     mqttclient,
     event_streams=[
         occupancy_stream_in,
@@ -102,6 +104,17 @@ office_presence_2 = devices_types.DigitalSensor(
     ],
 )
 all_devices.append(office_presence_2)
+
+office_presence_PIR = devices_types.DigitalSensor(
+    "Bedroom Presence",
+    "v1/5ca4784d931b1502f377c92d/6b787410cacc11ef93d45fb898747fd2/20000500-ba1e_Presence2/state",
+    mqttclient,
+    event_streams=[
+        control_office_light_stream,
+        flow_control_stream,
+    ],
+)
+all_devices.append(office_presence_PIR)
 
 bedroom_presence = devices_types.DigitalSensor(
     "Bedroom Presence",
@@ -143,13 +156,13 @@ office_light = devices_types.Switch(
 )
 all_devices.append(office_light)
 
-office_light_brightness = devices_types.AnalogSensor(
-    "Office Light Brightness",
-    "v1/5ca4784d931b1502f377c92d/e9261190bebc11efb5c3d5853ddfd4d6/2cf43279-f068_003_L/value",
-    mqttclient,
-    event_streams=[control_office_light_stream],
-)
-all_devices.append(office_light_brightness)
+# office_light_brightness = devices_types.AnalogSensor(
+#     "Office Light Brightness",
+#     "v1/5ca4784d931b1502f377c92d/e9261190bebc11efb5c3d5853ddfd4d6/2cf43279-f068_003_L/value",
+#     mqttclient,
+#     event_streams=[control_office_light_stream],
+# )
+# all_devices.append(office_light_brightness)
 
 bathroom_light = devices_types.Switch(
     "Bathroom Light",

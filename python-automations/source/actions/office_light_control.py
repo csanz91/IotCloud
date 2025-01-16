@@ -3,9 +3,12 @@ from actions.action import Action
 from devices_types import Switch
 from devices import (
     office_light,
-    office_light_brightness,
+    light_sensor as office_light_brightness,
+    living_room_light,
     control_office_light_stream,
-    office_presence as office_presence,
+    office_presence,
+    office_presence_2,
+    office_presence_PIR,
     living_room_presence_center,
     bedroom_presence,
     bathroom_light,
@@ -26,10 +29,11 @@ class OfficeLightControl(Action):
         self.enable_switch = enable_switch
 
     def action(self, event_stream: EventStream):
-        is_dark = office_light_brightness.value < 1.0
-        is_very_bright = office_light_brightness.value > 8.0
-        is_present = office_presence.state
-
+        is_dark = office_light_brightness.value < 1.0 or living_room_light.state
+        is_very_bright = office_light_brightness.value > 8.0 and not living_room_light.state
+        is_present = (
+            (office_presence.state or office_presence_2.state) and office_presence_PIR.state
+        )
         presence_in_other_rooms = living_room_presence_center.state or bedroom_presence.state or bathroom_light.state
 
         # Reset manual off flag when room becomes empty
