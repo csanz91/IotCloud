@@ -123,23 +123,21 @@ class Alarm(Action):
                 if house_occupancy_tracker.is_occupied:
                     vacuum_state = self.vac.status().state
                     logger.info(f"{self.name}: Vacuum state: {vacuum_state}")
-                    if vacuum_state in [
+                    if vacuum_state not in [
                         "Returning home",
                         "Cleaning",
                         "Zoned cleaning",
                         "Going to target",
                     ]:
-                        continue
-
-                    logger.debug(f"{self.name}: House is occupied, not arming alarm")
-                    return
+                        logger.debug(f"{self.name}: House is occupied, not arming alarm")
+                        return
 
                 time_since_occupancy = (
                     current_time - house_occupancy_tracker.last_occupied_time
                 )
                 # If the house is empty
                 if time_since_occupancy > 300:
-                    self.arm_alarm("Door opened and house empty for 10 minutes")
+                    self.arm_alarm("Door opened and house empty for 5 minutes")
                     return
 
             time.sleep(self.CHECK_INTERVAL)
