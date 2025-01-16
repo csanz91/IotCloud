@@ -7,6 +7,16 @@ import datetime
 logger = logging.getLogger()
 
 
+def getTags(topic):
+    subtopics = topic.split("/")
+    return {
+        "locationId": subtopics[1],
+        "deviceId": subtopics[2],
+        "sensorId": subtopics[3],
+        "endpoint": subtopics[-1],
+    }
+
+
 def decodeBoolean(value: bytes):# -> bool | Any:
     decoded_value = value.decode()
     assert decoded_value.lower() in ["true", "false"]

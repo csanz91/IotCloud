@@ -11,7 +11,10 @@ from events import EventStream
 logger = logging.getLogger(__name__)
 
 
-class Switch:
+class Sensor:
+    # Static dictionary to track shared status callbacks
+    _status_callbacks = {}
+
     def __init__(
         self,
         name: str,
@@ -21,52 +24,71 @@ class Switch:
     ):
         self.name = name
         self.topic = topic
-        self.state = False
+        self._state = False
         self.status = False
         self.mqtt_client = mqtt_client
         self.event_streams = event_streams or []
 
     def subscribe(self):
+        tags = utils.getTags(self.topic)
+        status_topic = f"v1/{tags['locationId']}/{tags['deviceId']}/status"
+
+        # Check if we already have a callback for this status topic
+        if status_topic not in Sensor._status_callbacks:
+            self.mqtt_client.subscribe(status_topic)
+            self.mqtt_client.message_callback_add(status_topic, self._shared_status_callback)
+            Sensor._status_callbacks[status_topic] = []
+
+        # Add this instance to the callbacks list
+        Sensor._status_callbacks[status_topic].append(self)
+
+    @staticmethod
+    def _shared_status_callback(mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage) -> None:
+        # Find all sensors that share this topic and notify them
+        topic = msg.topic
+        if topic in Sensor._status_callbacks:
+            for sensor in Sensor._status_callbacks[topic]:
+                try:
+                    new_status = utils.decodeStatus(msg.payload)
+                    sensor.status = new_status
+
+                    for stream in sensor.event_streams:
+                        stream.notify(source=sensor)
+
+                except Exception:
+                    logger.error(f"The status received: {msg.payload} is not valid")
+
+
+class Switch(Sensor):
+
+    def subscribe(self):
+        super().subscribe()
+
         topic = f"{self.topic}/state"
         self.mqtt_client.subscribe(topic)
-        self.mqtt_client.message_callback_add(topic, self.on_device_state)
+        self.mqtt_client.message_callback_add(topic, self.on_state)
 
-        status_topic = "/".join(self.topic.split("/")[:-1]) + "/status"
-        self.mqtt_client.subscribe(status_topic)
-        self.mqtt_client.message_callback_add(status_topic, self.on_device_status)
+    @property
+    def state(self) -> bool:
+        return self._state and self.status
 
     def set_state(self, state: bool):
         self.mqtt_client.publish(f"{self.topic}/setState", state, qos=1, retain=False)
 
-    def on_device_state(
+    def on_state(
         self, mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage
     ) -> None:
         try:
-            new_state = utils.decodeBoolean(msg.payload)
-            if new_state != self.state:
-                self.state = new_state
+            new_state = utils.decodeBoolean(msg.payload) and self.status
+            if new_state != self._state:
+                self._state = new_state
                 for stream in self.event_streams:
                     stream.notify(source=self)
-        except Exception:
-            logger.error(f"The state received: {msg.payload} is not valid")
-
-    def on_device_status(
-        self, mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage
-    ) -> None:
-        try:
-            new_status = utils.decodeStatus(msg.payload)
-            self.status = new_status
-            if not new_status:
-                self.state = False
-
-            for stream in self.event_streams:
-                stream.notify(source=self)
-
-        except Exception:
-            logger.error(f"The status received: {msg.payload} is not valid")
+        except:
+            logger.error(f"The state received: {msg.payload} is not valid", exc_info=True)
 
 
-class AnalogSensor:
+class AnalogSensor(Sensor):
     def __init__(
         self,
         name: str,
@@ -74,13 +96,11 @@ class AnalogSensor:
         mqtt_client: mqtt.Client,
         event_streams: Optional[list[EventStream]] = None,
     ):
-        self.name = name
-        self.topic = topic
-        self.value = 0
-        self.mqtt_client = mqtt_client
-        self.event_streams = event_streams or []
+        super().__init__(name, topic, mqtt_client, event_streams)
+        self.value = 0.0
 
     def subscribe(self):
+        super().subscribe()
         self.mqtt_client.subscribe(self.topic)
         self.mqtt_client.message_callback_add(self.topic, self.on_value)
 
@@ -97,31 +117,23 @@ class AnalogSensor:
             logger.error(f"The value received: {msg.payload} is not valid")
 
 
-class DigitalSensor:
-    def __init__(
-        self,
-        name: str,
-        topic: str,
-        mqtt_client: mqtt.Client,
-        event_streams: Optional[list[EventStream]] = None,
-    ):
-        self.name = name
-        self.topic = topic
-        self.state = False
-        self.mqtt_client = mqtt_client
-        self.event_streams = event_streams or []
-
+class DigitalSensor(Sensor):
     def subscribe(self):
+        super().subscribe()
         self.mqtt_client.subscribe(self.topic)
         self.mqtt_client.message_callback_add(self.topic, self.on_state)
+
+    @property
+    def state(self) -> bool:
+        return self._state and self.status
 
     def on_state(
         self, mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage
     ) -> None:
         try:
-            new_state = utils.decodeBoolean(msg.payload)
-            if new_state != self.state:
-                self.state = new_state
+            new_state = utils.decodeBoolean(msg.payload) and self.status
+            if new_state != self._state:
+                self._state = new_state
                 for stream in self.event_streams:
                     stream.notify(source=self)
         except:
@@ -129,14 +141,19 @@ class DigitalSensor:
 
 
 class NotifierSensor(DigitalSensor):
-    def __init__(self, name: str, topic: str, mqtt_client: mqtt.Client, event_streams: Optional[list[EventStream]] = None):
+    def __init__(
+        self,
+        name: str,
+        topic: str,
+        mqtt_client: mqtt.Client,
+        event_streams: Optional[list[EventStream]] = None,
+    ):
         super().__init__(name, topic, mqtt_client, event_streams)
 
     def on_state(
         self, mqttclient: mqtt.Client, userdata, msg: mqtt.MQTTMessage
     ) -> None:
         try:
-            message = msg.payload.decode()
             for stream in self.event_streams:
                 stream.notify(source=self)
         except:
