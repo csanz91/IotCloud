@@ -34,10 +34,11 @@ class OfficeLightControl(Action):
         is_present = (
             (office_presence.state or office_presence_2.state) and office_presence_PIR.state
         )
+        not_present = not office_presence.state and not office_presence_2.state
         presence_in_other_rooms = living_room_presence_center.state or bedroom_presence.state or bathroom_light.state
 
         # Reset manual off flag when room becomes empty
-        if not is_present and presence_in_other_rooms:
+        if not_present and presence_in_other_rooms:
             self.activate_light_executed = False
             self.deactivate_light_executed = False
             if office_light.state:
