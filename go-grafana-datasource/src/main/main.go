@@ -19,10 +19,11 @@ func main() {
 	// Startup the server
 	// initialize routes, and start http server
 	http.HandleFunc("/", cors(s.root))
-	http.HandleFunc("/search", cors(s.search))
+	http.HandleFunc("/variable", cors(s.search))
 	http.HandleFunc("/tag-keys", cors(s.tagKeys))
 	http.HandleFunc("/tag-values", cors(s.tagValues))
 	http.HandleFunc("/query", cors(s.query))
+	http.HandleFunc("/metrics", cors(s.metrics))  // Add new metrics endpoint
 	http.HandleFunc("/ok", cors(s.ok))
 	if err := http.ListenAndServe(":5002", nil); err != nil {
 		log.Fatal(err)

@@ -1,6 +1,7 @@
 package iotcloud
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"main/customlogger"
@@ -49,31 +50,9 @@ func init() {
 	}
 }
 
-func getUserInfo(token string) (UserInfo, error) {
-
-	req, err := http.NewRequest("GET", authURL+"userinfo", nil)
-	if err != nil {
-		return UserInfo{}, err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	response, err := http.DefaultClient.Do(req)
-	if err != nil || response.StatusCode != http.StatusOK {
-		logger.Printf("The HTTP request failed with error %s\n", err)
-		logger.Printf("Status code %v\n", response.StatusCode)
-		return UserInfo{}, errors.New("The HTTP request failed")
-	}
-	dfReq := UserInfo{}
-	if dfErr := json.NewDecoder(response.Body).Decode(&dfReq); dfErr != nil {
-		logger.Printf("The HTTP request cannot be decoded %s\n", dfErr)
-		return UserInfo{}, errors.New("The HTTP request cannot be decoded")
-	}
-	return dfReq, nil
-}
-
 func GetTokenFromHeaders(r *http.Request) (string, error) {
-	// Retrieve the auth token. And get the token from the header 'Bearer 1234567'
-	fullToken := r.Header.Get("Authorization")
-	authToken := fullToken[strings.LastIndex(fullToken, " ")+1:]
+	// Retrieve the auth token. And get the token from the header
+	authToken := r.Header.Get("X-Id-Token")
 	if authToken == "" {
 		return "", errors.New("The token could not be retrieved")
 	}
@@ -167,25 +146,48 @@ func getDevices(userID string, disableCache bool) ([]Device, error) {
 
 }
 
+type JWTClaims struct {
+	Sub string `json:"sub"`
+}
+
 func GetUserID(token string) (string, error) {
 	currentTimestamp := time.Now().Unix()
-	// Try to get the devices first from the cache
+	// Try to get the user ID first from the cache
 	if tokenCached, ok := tokensCache[token]; ok {
 		// If the cache is not expired
 		if tokenCached.timestamp > currentTimestamp-cacheMaxTime {
 			return tokenCached.UserID, nil
 		}
 	}
-	userInfo, err := getUserInfo(token)
+
+	// Decode JWT token
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return "", errors.New("invalid token format")
+	}
+
+	// Decode the claims (second part of the token)
+	claimJSON, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return "", err
 	}
 
+	var claims JWTClaims
+	if err := json.Unmarshal(claimJSON, &claims); err != nil {
+		return "", err
+	}
+
+	if claims.Sub == "" {
+		return "", errors.New("no sub claim in token")
+	}
+
+	// Cache the result
 	tokensCache[token] = tokenCacheModel{
 		timestamp: currentTimestamp,
-		UserID:    userInfo.Sub,
+		UserID:    claims.Sub,
 	}
-	return userInfo.Sub, nil
+
+	return claims.Sub, nil
 }
 
 func GetTags(r *http.Request, locationID string) (TagsData, error) {
@@ -476,6 +478,80 @@ func GetLocationDeviceStatus(userID, locationID, deviceID, from, to string) ([][
 	return nil, errors.New("It was not possible to retrieve the data")
 }
 
+// NotificationData represents a single notification entry
+type NotificationData struct {
+    Time       string `json:"time"`
+    Body       string `json:"body"`
+    Title      string `json:"title"`
+    LocationID string `json:"locationId"`
+    SensorID   string `json:"sensorId"`
+}
+
+// APINotificationResponse represents the API response for notifications
+type APINotificationResponse struct {
+    Result bool              `json:"result"`
+    Data   []NotificationData `json:"data"`
+}
+
+// GetLocationNotifications retrieves notifications for a location
+func GetLocationNotifications(userID, locationID, from, to string) ([][]interface{}, error) {
+    postData := map[string]interface{}{
+        "from": from,
+        "to":   to,
+    }
+    postDataStr, err := json.Marshal(postData)
+    if err != nil {
+        logger.Println("Cannot serialize the post data")
+        return nil, err
+    }
+
+    maxRetries := 2
+    for numRetries := 0; numRetries < maxRetries; numRetries++ {
+        payload := strings.NewReader(string(postDataStr))
+        req, err := http.NewRequest("POST", apiURL+"users/"+userID+"/locations/"+locationID+"/m2mnotifications", payload)
+        if err != nil {
+            return nil, err
+        }
+        req.Header.Set("Authorization", "Bearer "+apiAuth.AccessToken)
+        req.Header.Add("content-type", "application/json")
+        response, err := http.DefaultClient.Do(req)
+        if err != nil || response.StatusCode != http.StatusOK {
+            if response.StatusCode == http.StatusUnauthorized {
+                newToken, err := GetAPIToken()
+                if err != nil {
+                    break
+                }
+                apiAuth = newToken
+                continue
+            }
+            logger.Printf("The HTTP request failed with error %s\n", err)
+            logger.Printf("Status code %v\n", response.StatusCode)
+            continue
+        }
+
+        dfReq := APINotificationResponse{}
+        if dfErr := json.NewDecoder(response.Body).Decode(&dfReq); dfErr != nil {
+            logger.Printf("The HTTP request cannot be decoded %s\n", dfErr)
+            continue
+        }
+
+        // Convert notifications to [][]interface{}
+        result := make([][]interface{}, len(dfReq.Data))
+        for i, notification := range dfReq.Data {
+            result[i] = []interface{}{
+                notification.Time,
+                notification.Title,
+                notification.Body,
+                notification.LocationID,
+                notification.SensorID,
+            }
+        }
+        return result, nil
+    }
+
+    return nil, errors.New("It was not possible to retrieve the notifications")
+}
+
 func getUserTags(userID, locationID string, disableCache bool) (TagsData, error) {
 
 	currentTimestamp := time.Now().Unix()
@@ -483,6 +559,7 @@ func getUserTags(userID, locationID string, disableCache bool) (TagsData, error)
 	if tagsCached, ok := tagsCache[userID+locationID]; ok {
 		// If the cache is not expired
 		if !disableCache && tagsCached.timestamp > currentTimestamp-cacheMaxTime {
+			logger.Println("Returning tags from cache")
 			return tagsCached.Tags, nil
 		}
 	}

@@ -3,11 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"main/iotcloud"
 	"main/model"
 	"net/http"
-	"net/http/httputil"
 )
 
 type tagKeyResponse struct {
@@ -38,11 +36,11 @@ func (s *server) tagKeys(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) tagValues(w http.ResponseWriter, r *http.Request) {
 
-	requestDump, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(string(requestDump))
+	// requestDump, err := httputil.DumpRequest(r, true)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(string(requestDump))
 
 	if (*r).Method == "OPTIONS" {
 		return
@@ -50,7 +48,7 @@ func (s *server) tagValues(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Get the requested key
 	var q bytes.Buffer
-	_, err = q.ReadFrom(r.Body)
+	_, err := q.ReadFrom(r.Body)
 	if err != nil {
 		model.ReturnAPIErrorProtocolError(w)
 		return

@@ -126,7 +126,7 @@ services:
       - ./grafana/config:/etc/grafana
       - ./grafana/log:/var/log/grafana
     environment:
-      - GF_INSTALL_PLUGINS=simpod-json-datasource 0.2.6
+      - GF_INSTALL_PLUGINS=simpod-json-datasource
       - GF_AUTH_GENERIC_OAUTH_CLIENT_ID__FILE=/run/secrets/grafana_secrets_clientId
       - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE=/run/secrets/grafana_secrets_clientSecret
       - VIRTUAL_HOST=grafana.iotcloud.es

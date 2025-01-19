@@ -68,6 +68,7 @@ from m2m import (
     M2MLocationDevicesStatusStats,
     M2MLocationDeviceStatus,
     M2MModulesLocations,
+    M2MLocationNotifications,
 )
 from mqtt import MqttAuth, MqttAcl, MqttSuperUser
 from weather_api import Weather, SunSchedule, GarminWind
@@ -279,6 +280,11 @@ app.add_route(
     M2MLocationDeviceStatus(influx_client, db),
 )
 app.add_route("/api/v1/locations/modulesEnabled", M2MModulesLocations(db))
+
+app.add_route(
+    "/api/v1/users/{userId}/locations/{locationId}/m2mnotifications",
+    M2MLocationNotifications(influx_client, db),
+)
 
 app.add_route("/api/v1/mqtt/auth", MqttAuth())
 app.add_route("/api/v1/mqtt/superuser", MqttSuperUser())

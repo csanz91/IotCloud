@@ -484,3 +484,37 @@ class M2MModulesLocations:
             )
 
         resp.media = getResponseModel(True, locations)
+
+
+class M2MLocationNotifications:
+    def __init__(self, influxdb, mongodb):
+        self.influxdb = influxdb
+        self.db = mongodb
+
+    @m2mValidation
+    def on_post(self, req, resp, userId, locationId):
+        # First check if the user
+        grantedRole = dbinterface.selectUserLocationRole(self.db, userId, locationId)
+        if grantedRole < api_utils.Roles.viewer:
+            raise falcon.HTTPUnauthorized(
+                title="Unauthorized",
+                description="The user is not authorized to retrieve this data.",
+            )
+
+        try:
+            fromDate = calendar.timegm(parse(req.media["from"]).timetuple())
+            toDate = calendar.timegm(parse(req.media["to"]).timetuple())
+            data = influxdb_interface.getLocationNotifications(
+                self.influxdb, locationId, fromDate, toDate
+            )
+
+        except:
+            logger.error(
+                f"Exception. userId: {userId}, locationId: {locationId}",
+                exc_info=True,
+            )
+            raise falcon.HTTPBadRequest(
+               title="Bad Request", description="The request can not be completed."
+            )
+
+        resp.media = getResponseModel(True, data)

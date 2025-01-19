@@ -9,6 +9,7 @@ const (
 	LocationDeviceStatusStats  = "locationDeviceStatusStats"
 	Status                     = "status"
 	Totalizer                  = "totalizer"
+	Notifications			   = "notifications"
 	LocationID                 = "LocationID"
 	DeviceID                   = "DeviceID"
 	SensorID                   = "SensorID"

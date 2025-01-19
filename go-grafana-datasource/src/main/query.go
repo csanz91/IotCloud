@@ -24,14 +24,11 @@ type Tag struct {
 }
 
 // query is a `/query` request from Grafana.
-//
-// All JSON-related structs were generated from the JSON examples
-// of the "SimpleJson" data source documentation
-// using [JSON-to-Go](https://mholt.github.io/json-to-go/),
-// with a little tweaking afterwards.
 type query struct {
-	PanelID int `json:"panelId"`
-	Range   struct {
+	App         string `json:"app"`
+	RequestID   string `json:"requestId"`
+	Timezone    string `json:"timezone"`
+	Range       struct {
 		From string `json:"from"`
 		To   string `json:"to"`
 		Raw  struct {
@@ -39,21 +36,36 @@ type query struct {
 			To   string `json:"to"`
 		} `json:"raw"`
 	} `json:"range"`
-	RangeRaw struct {
+	Interval      string `json:"interval"`
+	IntervalMs    int    `json:"intervalMs"`
+	Targets       []target `json:"targets"`
+	MaxDataPoints int    `json:"maxDataPoints"`
+	ScopedVars   map[string]Tag `json:"scopedVars"`
+	StartTime    int64  `json:"startTime"`
+	RangeRaw     struct {
 		From string `json:"from"`
 		To   string `json:"to"`
 	} `json:"rangeRaw"`
-	Interval   string `json:"interval"`
-	IntervalMs int    `json:"intervalMs"`
-	Targets    []struct {
-		Target string `json:"target"`
-		RefID  string `json:"refId"`
-		Type   string `json:"type"`
-	} `json:"targets"`
-	AdhocFilters  []adhocFilters `json:"adhocFilters"`
-	Format        string         `json:"format"`
-	MaxDataPoints int            `json:"maxDataPoints"`
-	ScopedVars    map[string]Tag `json:"scopedVars"`
+	DashboardUID   string `json:"dashboardUID"`
+	PanelID        int    `json:"panelId"`
+	PanelPluginID  string `json:"panelPluginId"`
+}
+
+type target struct {
+	Data       string `json:"data"`
+	Datasource struct {
+		Type string `json:"type"`
+		UID  string `json:"uid"`
+	} `json:"datasource"`
+	EditorMode string `json:"editorMode"`
+	Hide       bool   `json:"hide"`
+	RefID      string `json:"refId"`
+	Target     string `json:"target"`
+	Type       string `json:"type"`
+	Payload    struct {
+		LocationID string `json:"locationID"`
+		SensorID   string `json:"sensorId"`
+	} `json:"payload"`
 }
 
 // column is used in tableResponse.
@@ -79,6 +91,12 @@ type tableResponse struct {
 
 func (s *server) query(w http.ResponseWriter, r *http.Request) {
 
+	// requestDump, err := httputil.DumpRequest(r, true)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(string(requestDump))
+
 	if (*r).Method == "OPTIONS" {
 		return
 	}
@@ -89,6 +107,7 @@ func (s *server) query(w http.ResponseWriter, r *http.Request) {
 		a := "11"
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("{\"error\": \" Unauthorized: " + a + "\"}"))
+		logger.Println(err)
 		return
 	}
 	// 2. Get the user ID
@@ -115,111 +134,87 @@ func (s *server) query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Retrieve the queried device
-	d, err := getDeviceFromFilter(query.ScopedVars)
-	if err != nil {
-		writeError(w, err, "Parameters error")
+	// Update for first target
+	if len(query.Targets) == 0 {
+		writeError(w, errors.New("no targets specified"), "Parameters error")
 		return
 	}
-	d.UserID = userID
+
+	// Validate locationID
+	if query.Targets[0].Payload.LocationID == "" {
+		writeError(w, errors.New("The location ID is required"), "Parameters error")
+		return
+	}
 
 	// 5. Retrieve and return the data
 	switch query.Targets[0].Type {
 	case "timeseries":
-		s.sendTimeseries(w, query, d)
+		s.sendTimeseries(w, query, userID)
 	case "table":
-		s.sendTable(w, query, d)
+		s.sendTable(w, query, userID)
 	default:
 		http.Error(w, "Fall Through", http.StatusNotImplemented)
 	}
 }
 
-func getDeviceFromFilter(filters map[string]Tag) (model.Device, error) {
+func getDataPointsFromTarget(target string, q *query, userID string) ([][]interface{}, error) {
+	locationID := q.Targets[0].Payload.LocationID
+	sensorID := q.Targets[0].Payload.SensorID
 
-	d := model.Device{}
-	if value, ok := filters[model.LocationID]; ok {
-		d.LocationID = value.Value.(string)
-	} else {
-		return model.Device{}, errors.New("The location ID is required")
-	}
-	if value, ok := filters[model.SensorID]; ok {
-		d.SensorID = value.Value.(string)
-	} else {
-		return model.Device{}, errors.New("The sensor ID is required")
-	}
-
-	return d, nil
-}
-
-func getDataPointsFromTarget(target string, q *query, device model.Device) ([][]interface{}, error) {
 	switch target {
 	case model.Analog:
-		datapoints, err := iotcloud.GetSensorData(
-			device.UserID,
-			device.LocationID,
-			device.SensorID,
+		return iotcloud.GetSensorData(
+			userID,
+			locationID,
+			sensorID,
 			q.Range.From,
 			q.Range.To,
 			q.MaxDataPoints)
-		if err != nil {
-			return nil, err
-		}
-		return datapoints, nil
 	case model.SensorActions:
-		datapoints, err := iotcloud.GetSensorActionData(
-			device.UserID,
-			device.LocationID,
-			device.SensorID,
+		return iotcloud.GetSensorActionData(
+			userID,
+			locationID,
+			sensorID,
 			q.Range.From,
 			q.Range.To)
-		if err != nil {
-			return nil, err
-		}
-		return datapoints, nil
 	case model.LocationActions:
-		datapoints, err := iotcloud.GetLocationActionData(
-			device.UserID,
-			device.LocationID,
+		return iotcloud.GetLocationActionData(
+			userID,
+			locationID,
 			q.Range.From,
 			q.Range.To)
-		if err != nil {
-			return nil, err
-		}
-		return datapoints, nil
 	case model.LocationDevicesStatusStats:
-		datapoints, err := iotcloud.GetLocationDevicesStatusData(
-			device.UserID,
-			device.LocationID,
+		return iotcloud.GetLocationDevicesStatusData(
+			userID,
+			locationID,
 			q.Range.From,
 			q.Range.To)
-		if err != nil {
-			return nil, err
-		}
-		return datapoints, nil
 	case model.LocationDeviceStatusStats:
-		datapoints, err := iotcloud.GetLocationDeviceStatus(
-			device.UserID,
-			device.LocationID,
-			device.DeviceID,
+		return iotcloud.GetLocationDeviceStatus(
+			userID,
+			locationID,
+			q.Targets[0].Payload.SensorID,
 			q.Range.From,
 			q.Range.To)
-		if err != nil {
-			return nil, err
-		}
-		return datapoints, nil
+	case model.Notifications:
+		return iotcloud.GetLocationNotifications(
+			userID,
+			locationID,
+			q.Range.From,
+			q.Range.To)
 	}
 	return nil, errors.New("Undefined target")
 }
 
 // sendTimeseries creates and writes a JSON response to a request for time series data.
-func (s *server) sendTimeseries(w http.ResponseWriter, q *query, device model.Device) {
+func (s *server) sendTimeseries(w http.ResponseWriter, q *query, userID string) {
 
 	response := []timeseriesResponse{}
 
 	for _, t := range q.Targets {
 		target := t.Target
 
-		datapoints, err := getDataPointsFromTarget(target, q, device)
+		datapoints, err := getDataPointsFromTarget(target, q, userID)
 		if err != nil {
 			writeError(w, err, "Cannot get metric for target "+target)
 			return
@@ -240,7 +235,7 @@ func (s *server) sendTimeseries(w http.ResponseWriter, q *query, device model.De
 
 }
 
-func getColumnsFromTarget(target string, q *query, device model.Device) ([]column, error) {
+func getColumnsFromTarget(target string) ([]column, error) {
 
 	switch target {
 	case model.LocationActions:
@@ -299,25 +294,41 @@ func getColumnsFromTarget(target string, q *query, device model.Device) ([]colum
 			},
 		}
 		return columns, nil
+	case model.Notifications:
+		columns := []column{
+			{
+				Text: "Time",
+				Type: "time",
+			},
+			{
+				Text: "Title",
+				Type: "string",
+			},
+			{
+				Text: "Message",
+				Type: "string",
+			},
+		}
+		return columns, nil
 	}
 	return nil, errors.New("Undefined target")
 }
 
 // sendTable creates and writes a JSON response to a request for table data
-func (s *server) sendTable(w http.ResponseWriter, q *query, device model.Device) {
+func (s *server) sendTable(w http.ResponseWriter, q *query, userID string) {
 
 	response := []tableResponse{}
 
 	for _, t := range q.Targets {
 		target := t.Target
 
-		datapoints, err := getDataPointsFromTarget(target, q, device)
+		datapoints, err := getDataPointsFromTarget(target, q, userID)
 		if err != nil {
 			writeError(w, err, "Cannot get metric for target "+target)
 			return
 		}
 
-		columns, err := getColumnsFromTarget(target, q, device)
+		columns, err := getColumnsFromTarget(target)
 		if err != nil {
 			writeError(w, err, "Cannot get metric for target "+target)
 			return

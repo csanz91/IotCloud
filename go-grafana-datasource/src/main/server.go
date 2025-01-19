@@ -28,6 +28,11 @@ func newServer() *server {
 // otherwise it emits "Unknown error"
 func (s *server) root(w http.ResponseWriter, r *http.Request) {
 	logger.Printf("%v: %v", r.URL.Path, r.Method)
+	// requestDump, err := httputil.DumpRequest(r, true)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(string(requestDump))
 	fmt.Fprintf(w, "ok\n")
 }
 
