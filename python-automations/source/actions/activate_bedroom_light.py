@@ -7,8 +7,9 @@ from devices import (
     bedroom_auto,
     light_sensor,
     bedroom_light_stream,
-    enable_madrid_automations,
+    living_room_light,
 )
+from config import BEDROOM_DARK_THRESHOLD
 from events import EventStream
 
 logger = logging.getLogger()
@@ -23,7 +24,7 @@ class ActivateBedroom(Action):
         self.enable_switch = enable_switch
 
     def action(self, event_stream: EventStream):
-        is_dark = light_sensor.value < 20.0
+        is_dark = light_sensor.value < BEDROOM_DARK_THRESHOLD or living_room_light.state
         is_present = bedroom_presence.state
 
         # Reset manual off flag when room becomes empty

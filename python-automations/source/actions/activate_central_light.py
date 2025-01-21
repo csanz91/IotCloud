@@ -10,6 +10,7 @@ from devices import (
     activate_central_light_stream,
     enable_madrid_automations,
 )
+from config import LIVING_ROOM_DARK_THRESHOLD
 from events import EventStream
 
 logger = logging.getLogger()
@@ -20,7 +21,7 @@ class ActivateCentralLight(Action):
         self.trigger_flag = False
 
     def action(self, event_stream: EventStream):
-        is_dark = light_sensor.value < 1.5
+        is_dark = light_sensor.value < LIVING_ROOM_DARK_THRESHOLD
         state = living_room_presence_center.state and not living_room_light.state and is_dark
 
         if not living_room_presence_center.state and not living_room_light.state and not living_room_presence.state:

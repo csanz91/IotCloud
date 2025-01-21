@@ -15,6 +15,7 @@ from devices import (
     enable_madrid_automations,
 )
 from events import EventStream
+from config import OFFICE_DARK_THRESHOLD, OFFICE_VERY_BRIGHT_THRESHOLD
 
 logger = logging.getLogger()
 
@@ -29,8 +30,8 @@ class OfficeLightControl(Action):
         self.enable_switch = enable_switch
 
     def action(self, event_stream: EventStream):
-        is_dark = office_light_brightness.value < 1.0 or living_room_light.state
-        is_very_bright = office_light_brightness.value > 8.0 and not living_room_light.state
+        is_dark = office_light_brightness.value < OFFICE_DARK_THRESHOLD or living_room_light.state
+        is_very_bright = office_light_brightness.value > OFFICE_VERY_BRIGHT_THRESHOLD and not living_room_light.state
         is_present = (
             (office_presence.state or office_presence_2.state) and office_presence_PIR.state
         )

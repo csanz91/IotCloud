@@ -16,6 +16,7 @@ from devices import (
     flow_control_stream,
     home_alone,
 )
+from config import FLOW_CONTROL_DEFAULT_DELAY, FLOW_CONTROL_LIVING_ROOM_DELAY
 from events import EventStream
 
 logger = logging.getLogger()
@@ -25,7 +26,9 @@ class FlowControl(Action):
     def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
         super().__init__(name, streams, enable_switch=enable_switch)
 
-    def reactivate(self, presence, light: Switch, delay: float = 10):
+    def reactivate(
+        self, presence, light: Switch, delay: float = FLOW_CONTROL_DEFAULT_DELAY
+    ):
         # Reactivate the light if the presence is still there
         def activate_lights():
             if presence.state:
@@ -57,7 +60,11 @@ class FlowControl(Action):
         ):
             living_room_center_light.set_state(False)
             living_room_light.set_state(False)
-            self.reactivate(living_room_presence, living_room_light, delay=8)
+            self.reactivate(
+                living_room_presence,
+                living_room_light,
+                delay=FLOW_CONTROL_LIVING_ROOM_DELAY,
+            )
             self.reactivate(living_room_presence_center, living_room_center_light)
             logger.info(f"{self.name}: Living room light turned off")
 

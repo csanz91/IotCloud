@@ -7,6 +7,7 @@ from devices import (
     clock_brightness_stream,
     enable_madrid_automations,
 )
+from config import CLOCK_MIN_BRIGHTNESS, CLOCK_MAX_BRIGHTNESS, CLOCK_BRIGHTNESS_SCALE
 from events import EventStream
 
 
@@ -18,7 +19,9 @@ class ClockBrightnessControl(Action):
         brightness = 0
         presence = living_room_presence.state
         if presence:
-            brightness = 0.05 + (light_sensor.value / 1000) * (0.7 - 0.05)
+            brightness = CLOCK_MIN_BRIGHTNESS + (
+                light_sensor.value / CLOCK_BRIGHTNESS_SCALE
+            ) * (CLOCK_MAX_BRIGHTNESS - CLOCK_MIN_BRIGHTNESS)
             brightness = max(0, min(brightness, 100))
 
         clock.set_brightness(brightness)

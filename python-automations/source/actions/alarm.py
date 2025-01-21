@@ -13,6 +13,13 @@ from devices import (
 )
 from actions.house_occupancy_tracker import house_occupancy_tracker
 from events import EventStream
+from config import (
+    VACUUM_ACTIVE_STATES,
+    ALARM_AUTO_ARM_DELAY,
+    ALARM_PRESENCE_CHECK_TIMEOUT,
+    ALARM_DOOR_DELAY,
+    ALARM_EMPTY_HOUSE_DELAY,
+)
 from docker_secrets import getDocketSecrets
 from miio.integrations.vacuum import RoborockVacuum
 from miio.integrations.vacuum.roborock.vacuum import ROCKROBO_V1
@@ -21,6 +28,7 @@ logger = logging.getLogger()
 
 class Alarm(Action):
     CHECK_INTERVAL = 5
+    ALARM_PRESENCE_CHECK_SLEEP = 10
 
     def __init__(self, name: str, streams: list[EventStream]):
         super().__init__(name, streams)
@@ -52,8 +60,9 @@ class Alarm(Action):
                 time_since_occupancy = (
                     current_time - house_occupancy_tracker.last_occupied_time
                 )
-                if time_since_occupancy > 3600 * 10:  # 10 hours
-                    self.arm_alarm("House empty for 10 hours")
+                if time_since_occupancy > ALARM_AUTO_ARM_DELAY:  # 10 hours
+                    hours = ALARM_AUTO_ARM_DELAY // 3600
+                    self.arm_alarm(f"House empty for {hours} hours")
                     continue
             time.sleep(self.CHECK_INTERVAL)
 
@@ -90,7 +99,7 @@ class Alarm(Action):
 
     def check_known_presence(self):
         start_time = time.time()
-        while time.time() - start_time < 180:  # 3 minutes
+        while time.time() - start_time < ALARM_PRESENCE_CHECK_TIMEOUT:  # 3 minutes
             cesar_home = cesar_presence.getPresence()
             pieri_home = pieri_presence.getPresence()
 
@@ -103,7 +112,7 @@ class Alarm(Action):
                 logger.info(f"{self.name}: Known device detected, canceling alarm check")
                 return True
 
-            time.sleep(10)
+            time.sleep(self.ALARM_PRESENCE_CHECK_SLEEP)
         logger.warning(f"{self.name}: No known presence detected after 3 minutes")
         return False  # No presence detected within timeout
 
@@ -117,18 +126,13 @@ class Alarm(Action):
             logger.debug(
                 f"{self.name}: Time since door was opened: {time_since_door_was_opened}"
             )
-            if time_since_door_was_opened >= 90:
+            if time_since_door_was_opened >= ALARM_DOOR_DELAY:
                 # If the house is still occupied dont arm the alarm
                 logger.debug(f"House ocupancy: {house_occupancy_tracker.is_occupied}")
                 if house_occupancy_tracker.is_occupied:
                     vacuum_state = self.vac.status().state
                     logger.info(f"{self.name}: Vacuum state: {vacuum_state}")
-                    if vacuum_state not in [
-                        "Returning home",
-                        "Cleaning",
-                        "Zoned cleaning",
-                        "Going to target",
-                    ]:
+                    if vacuum_state not in VACUUM_ACTIVE_STATES:
                         logger.debug(f"{self.name}: House is occupied, not arming alarm")
                         return
 
@@ -136,8 +140,10 @@ class Alarm(Action):
                     current_time - house_occupancy_tracker.last_occupied_time
                 )
                 # If the house is empty
-                if time_since_occupancy > 300:
-                    self.arm_alarm("Door opened and house empty for 5 minutes")
+                if time_since_occupancy > ALARM_EMPTY_HOUSE_DELAY:
+                    self.arm_alarm(
+                        f"Door opened and house empty for {ALARM_EMPTY_HOUSE_DELAY} minutes"
+                    )
                     return
 
             time.sleep(self.CHECK_INTERVAL)
