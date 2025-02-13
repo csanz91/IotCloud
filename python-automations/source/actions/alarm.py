@@ -141,9 +141,8 @@ class Alarm(Action):
                 )
                 # If the house is empty
                 if time_since_occupancy > ALARM_EMPTY_HOUSE_DELAY:
-                    self.arm_alarm(
-                        f"Door opened and house empty for {ALARM_EMPTY_HOUSE_DELAY} minutes"
-                    )
+                    duration_in_minutes = ALARM_EMPTY_HOUSE_DELAY // 60
+                    self.arm_alarm(f"Door opened and house empty for {duration_in_minutes} minutes")
                     return
 
             time.sleep(self.CHECK_INTERVAL)
