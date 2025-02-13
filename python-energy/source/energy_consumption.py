@@ -4,7 +4,7 @@ import logging
 import logging.config
 
 from docker_secrets import getDocketSecrets
-from ideenergy import HistoricalConsumption, get_session, RequestFailedError, Client
+from ideenergy import get_session, RequestFailedError, Client
 import pandas as pd
 
 
@@ -42,7 +42,7 @@ async def _get_energy_consumption(
         return consumption
 
     except RequestFailedError:
-        logger.error(f"Request failed.", exc_info=True)
+        logger.error("Request failed.", exc_info=True)
     finally:
         await session.close()
 

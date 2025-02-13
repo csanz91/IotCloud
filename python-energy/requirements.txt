@@ -3,4 +3,4 @@ requests
 pandas
 xlrd
 git+https://github.com/csanz91/docker_secrets
--e libs/ideenergy
+libs/ideenergy

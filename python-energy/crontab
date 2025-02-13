@@ -1,0 +1,10 @@
+# Set environment variables
+PYTHONPATH=/app/source:/app/libs
+INFLUXDB_HOST=influxdb
+INFLUXDB_DB=iothub
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Run energy consumption check at 5 am every day
+0 5 * * * cd /app/source && /usr/local/bin/python3 energy.py >> /app/logs/cron.log 2>&1
+# Empty line at end of file is required for cron

@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 import logging.config
 import os
+from zoneinfo import ZoneInfo
 
 import influxdb
 
@@ -33,6 +34,19 @@ influxDb = influxdb.InfluxDBClient(
 
 # Initialize the database
 init(influxDb)
+
+
+def getLastTimestamp() -> datetime:
+    """Get the last timestamp from the energy_consumption measurement"""
+    query = 'SELECT * FROM "3years"."energy_consumption" ORDER BY time DESC LIMIT 1'
+    result = influxDb.query(query)
+    points = list(result.get_points())
+
+    if not points:
+        # If no data exists, return a date far in the past
+        return datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Madrid"))
+
+    return datetime.fromisoformat(points[0]["time"].replace("Z", "+00:00")).astimezone(ZoneInfo("Europe/Madrid"))
 
 
 def saveTariffsCost(data: dict[datetime, dict]):

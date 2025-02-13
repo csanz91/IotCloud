@@ -1,13 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
-import signal
+import logging.handlers
 
-from threading import Event
 from zoneinfo import ZoneInfo
 
-import pandas as pd
-
-import energy_tariffs
 import energy_consumption
 import influxdb_interface
 
@@ -22,49 +18,45 @@ logger.setLevel(logging.INFO)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-exitEvent = Event()
-
-
-def exit_gracefully(signum, frame):
-    exitEvent.set()
-
-
-signal.signal(signal.SIGINT, exit_gracefully)
-signal.signal(signal.SIGTERM, exit_gracefully)
-
 tz = ZoneInfo(key="Europe/Madrid")
-
-MONITORING_FREC = 3600 * 8  # seconds
-PAST_DAYS = 2
 
 logger.info("Starting...")
 
-try:
-    while not exitEvent.is_set():
 
-        # Get the current date
+def main():
+    logger.info("Starting energy consumption check...")
+    try:
+        # Get the last saved timestamp and current date
         current_date = datetime.now(tz=tz)
-        start_date = current_date - timedelta(days=PAST_DAYS)
-        end_date = current_date + timedelta(days=2)
+        start_date = influxdb_interface.getLastTimestamp()
+        end_date = current_date
 
-        # Save the tariffs cost
-        tariffs: pd.DataFrame = energy_tariffs.get_indexed_tariffs_cost(
-            start_date, end_date, tz
-        )
-        influxdb_interface.saveTariffsCost(tariffs.to_dict(orient="index"))
+        logger.info(f"Checking energy consumption from {start_date} to {end_date}")
 
         # Save the energy consumption
         consumption = energy_consumption.get_energy_consumption(start_date, end_date)
         if consumption.empty:
             logger.error("Unable to retrieve the consumption data")
-            continue
+            return
 
         cups = consumption.iloc[0]["cups"]
         consumption.drop(columns="cups", inplace=True)
 
+        logger.info(f"Saving energy consumption for {cups}")
+        logger.info(f"Got {len(consumption)} rows")
+
         influxdb_interface.saveEnergyConsumption(
             cups, consumption.to_dict(orient="index")
         )
-        exitEvent.wait(MONITORING_FREC)
-finally:
-    logger.info("Exiting...")
+
+        last_measurment_saved = influxdb_interface.getLastTimestamp()
+        logger.info(f"Last measurement saved: {last_measurment_saved}")
+        
+    except Exception as e:
+        logger.error(f"Error during execution: {e}", exc_info=True)
+    finally:
+        logger.info("Finished energy consumption check")
+
+
+if __name__ == "__main__":
+    main()
