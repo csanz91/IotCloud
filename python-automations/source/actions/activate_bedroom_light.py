@@ -8,6 +8,7 @@ from devices import (
     light_sensor,
     bedroom_light_stream,
     living_room_light,
+    bed_led,
 )
 from config import BEDROOM_DARK_THRESHOLD
 from events import EventStream
@@ -24,7 +25,10 @@ class ActivateBedroom(Action):
         self.enable_switch = enable_switch
 
     def action(self, event_stream: EventStream):
-        is_dark = light_sensor.value < BEDROOM_DARK_THRESHOLD or living_room_light.state
+        is_dark = (
+            light_sensor.value < BEDROOM_DARK_THRESHOLD
+            or living_room_light.recent_state
+        )
         is_present = bedroom_presence.state
 
         # Reset manual off flag when room becomes empty
@@ -32,6 +36,9 @@ class ActivateBedroom(Action):
             self.activate_light_executed = False
             if bedroom_light.state:
                 bedroom_light.set_state(False)
+
+            if bed_led.value > 0:
+                bed_led.set_brightness(0)
 
         # Turn on light conditions
         if is_present and is_dark and not self.activate_light_executed:

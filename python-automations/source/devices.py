@@ -17,6 +17,7 @@ control_office_light_stream = EventStream("Control Office Light")
 bedroom_light_stream = EventStream("Control Bedroom Light")
 flow_control_stream = EventStream("Control Flow")
 alarm_armed_stream = EventStream("Alarm Armed")
+bed_brightness_stream = EventStream("Bedroom Brightness")
 teruel_presence_stream = EventStream("Teruel Presence")
 
 # Device creation
@@ -39,7 +40,7 @@ light_sensor = devices_types.AnalogSensor(
     event_streams=[
         activate_living_room_stream,
         clock_brightness_stream,
-        control_office_light_stream
+        control_office_light_stream,
     ],
 )
 all_devices.append(light_sensor)
@@ -189,9 +190,9 @@ kitchen_light = devices_types.Switch(
 )
 all_devices.append(kitchen_light)
 
-clock = devices_types.Clock(
+clock = devices_types.BrightnessDevice(
     "Clock",
-    "v1/5ca4784d931b1502f377c92d/92339c90259a11eca7bcf303922fb2ff/2cf43251-230e_001/aux/setBrightness",
+    "v1/5ca4784d931b1502f377c92d/92339c90259a11eca7bcf303922fb2ff/2cf43251-230e_001",
     mqttclient,
 )
 
@@ -241,6 +242,27 @@ home_alone = devices_types.Switch(
 )
 all_devices.append(home_alone)
 
+bed_led = devices_types.BrightnessDevice(
+    "Bedroom LED",
+    "v1/5ca4784d931b1502f377c92d/1c64c6e0ca6c11ef8c983d3c5d9aede6/202481596676681_002_LED",
+    mqttclient,
+)
+all_devices.append(bed_led)
+
+bed_brightness = devices_types.AnalogSensor(
+    "Bedroom Brightness Control",
+    "v1/5ca4784d931b1502f377c92d/c26450c0dd4911ef847811885ea8c0f3/40000000-0000_001_E/value",
+    mqttclient,
+    event_streams=[bed_brightness_stream],
+    notify_same_value=True,
+)
+all_devices.append(bed_brightness)
+
+living_room_api = devices_types.APIOrderDevice(
+    "living_room_light_api",
+    event_streams=[activate_living_room_stream, clock_brightness_stream],
+)
+all_devices.append(living_room_api)
 
 #################### TERUEL ####################
 

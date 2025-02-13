@@ -61,6 +61,17 @@ class Sensor:
 
 class Switch(Sensor):
 
+    def __init__(
+        self,
+        name: str,
+        topic: str,
+        mqtt_client: mqtt.Client,
+        event_streams: Optional[list[EventStream]] = None,
+    ):
+        super().__init__(name, topic, mqtt_client, event_streams)
+
+        self._state_timestamp = 0
+
     def subscribe(self):
         super().subscribe()
 
@@ -71,6 +82,10 @@ class Switch(Sensor):
     @property
     def state(self) -> bool:
         return self._state and self.status
+    
+    @property
+    def recent_state(self) -> bool:
+        return self.state or time.time() - self._state_timestamp < 6
 
     def set_state(self, state: bool):
         self.mqtt_client.publish(f"{self.topic}/setState", state, qos=1, retain=False)
@@ -82,6 +97,7 @@ class Switch(Sensor):
             new_state = utils.decodeBoolean(msg.payload) and self.status
             if new_state != self._state:
                 self._state = new_state
+                self._state_timestamp = time.time()
                 for stream in self.event_streams:
                     stream.notify(source=self)
         except:
@@ -95,9 +111,11 @@ class AnalogSensor(Sensor):
         topic: str,
         mqtt_client: mqtt.Client,
         event_streams: Optional[list[EventStream]] = None,
+        notify_same_value: bool = False,
     ):
         super().__init__(name, topic, mqtt_client, event_streams)
         self.value = 0.0
+        self.notify_same_value = notify_same_value
 
     def subscribe(self):
         super().subscribe()
@@ -109,7 +127,7 @@ class AnalogSensor(Sensor):
     ) -> None:
         try:
             new_value = utils.parseFloat(msg.payload)
-            if new_value != self.value:
+            if new_value != self.value or self.notify_same_value:
                 self.value = new_value
                 for stream in self.event_streams:
                     stream.notify(source=self)
@@ -163,14 +181,25 @@ class NotifierSensor(DigitalSensor):
         self.mqtt_client.publish(self.topic, message, qos=2, retain=False)
 
 
-class Clock:
-    def __init__(self, name: str, topic: str, mqtt_client: mqtt.Client):
-        self.name = name
-        self.topic = topic
+class BrightnessDevice(AnalogSensor):
+
+    def __init__(
+        self,
+        name: str,
+        topic: str,
+        mqtt_client: mqtt.Client,
+        event_streams: Optional[list[EventStream]] = None,
+    ):
+        super().__init__(name, topic, mqtt_client, event_streams)
+        self.topic = f"{topic}/aux/brightness"
+        self.set_brightness_topic = f"{topic}/aux/setBrightness"
         self.mqtt_client = mqtt_client
+        self.state = True
 
     def set_brightness(self, brightness: float):
-        self.mqtt_client.publish(self.topic, brightness, qos=2, retain=False)
+        self.mqtt_client.publish(
+            self.set_brightness_topic, brightness, qos=2, retain=False
+        )
 
 
 class PiholeAPIClient:
@@ -240,3 +269,52 @@ class Presence:
 
     def getPresence(self) -> float | None:
         return self.pihole_client.is_device_home(self.host_name)
+
+
+# Global registry to track all API order devices
+api_order_devices: dict[str, 'APIOrderDevice'] = {}
+
+class APIOrderDevice:
+    """
+    Device that listens to orders via an API endpoint.
+    Each instance represents a specific device that can receive orders.
+    
+    Attributes:
+        name: Device identifier used in API calls
+        event_streams: List of EventStream instances for notifications
+        last_action: Stores the last action received
+    """
+    def __init__(self, name: str, event_streams: Optional[list[EventStream]] = None):
+        self.name = name
+        self.event_streams = event_streams or []
+        self.last_action: str | None = None
+        # Register this device in the global registry
+        api_order_devices[name] = self
+
+    def subscribe(self):
+        pass
+
+    @staticmethod
+    def process_order(device_name: str, action: str) -> bool:
+        """
+        Process an order received via API
+        
+        Args:
+            device_name: Name of the target device
+            action: Action to perform (toggle, activate, deactivate)
+            
+        Returns:
+            bool: True if order was processed, False if device not found
+        """
+        if device_name not in api_order_devices:
+            return False
+            
+        device = api_order_devices[device_name]
+        if action not in ["toggle", "activate", "deactivate"]:
+            return False
+
+        device.last_action = action
+        # Notify event streams
+        for stream in device.event_streams:
+            stream.notify(source=device)
+        return True

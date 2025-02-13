@@ -9,6 +9,8 @@ import actions
 import os
 import pkgutil
 import importlib
+from api import start_api_server
+import threading
 
 actions_dir = os.path.dirname(actions.__file__)
 for _, module_name, _ in pkgutil.iter_modules([actions_dir]):
@@ -53,6 +55,10 @@ mqttclient.on_connect = onConnect
 # Connect and start the MQTT client loop
 mqttclient.connect("mosquitto")
 mqttclient.loop_start()
+
+# Start API server in a separate thread
+api_thread = threading.Thread(target=start_api_server, daemon=True)
+api_thread.start()
 
 logger.info("Starting...")
 
