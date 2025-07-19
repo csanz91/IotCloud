@@ -13,13 +13,13 @@ from stations_list import stationsList
 from location_list import locationsList
 from geocodes_list import geocodesList
 from disk_cache import disk_cache
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import utils
 
 logger = logging.getLogger(__name__)
 
-googleApiKey = getDocketSecrets("googleApiKey")
-aemetApiKey = getDocketSecrets("aemetApiKey")
+googleApiKey = get_docker_secrets("googleApiKey")
+aemetApiKey = get_docker_secrets("aemetApiKey")
 
 measurements = {
     "temperature": {
