@@ -53,10 +53,13 @@ def getContainerNet(data):
     tx_bytes = 0
     rx_bytes = 0
 
-    for interfaceData in data["networks"].values():
-        tx_bytes += interfaceData["tx_bytes"]
-        rx_bytes += interfaceData["rx_bytes"]
-
+    try:
+        for interfaceData in data["networks"].values():
+            tx_bytes += interfaceData["tx_bytes"]
+            rx_bytes += interfaceData["rx_bytes"]
+    except KeyError:
+        return None, None
+        
     return tx_bytes, rx_bytes
 
 
