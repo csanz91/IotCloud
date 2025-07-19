@@ -7,7 +7,7 @@ import signal
 from threading import Event, Thread
 import time
 
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import paho.mqtt.client as mqtt
 
 import influx
@@ -507,7 +507,7 @@ presenceTopic = topicHeader + "+/aux/presence"
 
 # Setup MQTT client
 mqttclient = mqtt.Client()
-token = getDocketSecrets("mqtt_token")
+token = get_docker_secrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 
 
