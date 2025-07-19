@@ -4,18 +4,18 @@ from datetime import datetime
 from zoneinfo import ZoneInfo 
 
 import requests
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 logger = logging.getLogger()
 
 
 class IotCloudApi:
 
-    iotcloudApiUrl = getDocketSecrets("api_url")
-    client_id = getDocketSecrets("api_client_id")
-    client_secret = getDocketSecrets("api_client_secret")
-    auth_url = getDocketSecrets("auth_url")
-    audience = getDocketSecrets("api_audience")
+    iotcloudApiUrl = get_docker_secrets("api_url")
+    client_id = get_docker_secrets("api_client_id")
+    client_secret = get_docker_secrets("api_client_secret")
+    auth_url = get_docker_secrets("auth_url")
+    audience = get_docker_secrets("api_audience")
 
     accessToken = ""
 

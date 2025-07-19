@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 import logging.config
 
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 from ideenergy import get_session, RequestFailedError, Client
 import pandas as pd
 
@@ -23,9 +23,9 @@ async def _get_energy_consumption(
 ):
 
     if not username:
-        username = getDocketSecrets("username")
+        username = get_docker_secrets("username")
     if not password:
-        password = getDocketSecrets("password")
+        password = get_docker_secrets("password")
 
     session = await get_session()
     client = Client(

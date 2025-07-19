@@ -7,7 +7,7 @@ import typing
 import signal
 
 import paho.mqtt.client as mqtt
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 from location import Location
 from iotcloud_api import IotCloudApi
@@ -95,7 +95,7 @@ api = IotCloudApi()
 
 # Setup MQTT client
 mqttclient = mqtt.Client(userdata={"api": api})
-token = getDocketSecrets("mqtt_token")
+token = get_docker_secrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 updatedLocationTopic = "v1/+/updatedLocation"
 
