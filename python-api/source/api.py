@@ -18,7 +18,7 @@ import falcon_auth0
 from pymongo import MongoClient
 import paho.mqtt.client as mqtt
 
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import influx
 from user_management import Login, RecoverPassword, UserManagement
 from auth0_api import Auth0Api
@@ -83,9 +83,9 @@ from tracker import LocationTracker
 
 cfg = {
     "alg": ["RS256"],
-    "audience": getDocketSecrets("auth0_audience"),
-    "domain": getDocketSecrets("auth0_full_domain"),
-    "jwks_uri": getDocketSecrets("auth0_jwks_uri"),
+    "audience": get_docker_secrets("auth0_audience"),
+    "domain": get_docker_secrets("auth0_full_domain"),
+    "jwks_uri": get_docker_secrets("auth0_jwks_uri"),
 }
 
 claims = {
@@ -134,7 +134,7 @@ def onConnect(self, mosq, obj, rc):
 
 
 mqttclient = mqtt.Client()
-token = getDocketSecrets("mqtt_token")
+token = get_docker_secrets("mqtt_token")
 mqttclient.username_pw_set(token, "_")
 mqttclient.on_connect = onConnect
 

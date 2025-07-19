@@ -7,10 +7,10 @@ import jwt
 import api_utils
 from api_utils import Roles, getToken
 import dbinterface
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 logger = logging.getLogger(__name__)
-secret = getDocketSecrets("mqtt_auth_secret")
+secret = get_docker_secrets("mqtt_auth_secret")
 
 
 class MqttActions:

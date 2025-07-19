@@ -3,11 +3,11 @@ import logging
 import falcon
 
 from api_utils import checkUser, getToken
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 import weather
 
-secret = getDocketSecrets("wind_auth_secret")
+secret = get_docker_secrets("wind_auth_secret")
 
 logger = logging.getLogger(__name__)
 

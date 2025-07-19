@@ -2,12 +2,12 @@ import logging
 import requests
 import threading
 
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import dbinterface
 
 logger = logging.getLogger(__name__)
 
-googleHomegraphKey = getDocketSecrets("google_homegraph_key")
+googleHomegraphKey = get_docker_secrets("google_homegraph_key")
 
 
 def resync(db, userId, locationId):

@@ -3,21 +3,21 @@ import json
 
 import firebase_admin
 from firebase_admin import messaging
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 logger = logging.getLogger(__name__)
 
 firebaseCredentials = {
-    "type": getDocketSecrets("type"),
-    "project_id": getDocketSecrets("project_id"),
-    "private_key_id": getDocketSecrets("private_key_id"),
-    "private_key": getDocketSecrets("private_key"),
-    "client_email": getDocketSecrets("client_email"),
-    "client_id": getDocketSecrets("client_id"),
-    "auth_uri": getDocketSecrets("auth_uri"),
-    "token_uri": getDocketSecrets("token_uri"),
-    "auth_provider_x509_cert_url": getDocketSecrets("auth_provider_x509_cert_url"),
-    "client_x509_cert_url": getDocketSecrets("client_x509_cert_url"),
+    "type": get_docker_secrets("type"),
+    "project_id": get_docker_secrets("project_id"),
+    "private_key_id": get_docker_secrets("private_key_id"),
+    "private_key": get_docker_secrets("private_key"),
+    "client_email": get_docker_secrets("client_email"),
+    "client_id": get_docker_secrets("client_id"),
+    "auth_uri": get_docker_secrets("auth_uri"),
+    "token_uri": get_docker_secrets("token_uri"),
+    "auth_provider_x509_cert_url": get_docker_secrets("auth_provider_x509_cert_url"),
+    "client_x509_cert_url": get_docker_secrets("client_x509_cert_url"),
 }
 
 cred = firebase_admin.credentials.Certificate(firebaseCredentials)

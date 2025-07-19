@@ -4,7 +4,7 @@ from auth0.authentication import GetToken
 from auth0.authentication.database import Database
 from auth0.management import Auth0
 from auth0 import exceptions
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,14 @@ def autoAuthenticate(method):
 
 
 class Auth0Api:
-    domain = getDocketSecrets("auth0_domain")
-    non_interactive_client_id = getDocketSecrets("auth0_non_interactive_client_id")
-    application_client_id = getDocketSecrets("auth0_application_client_id")
-    non_interactive_client_secret = getDocketSecrets(
+    domain = get_docker_secrets("auth0_domain")
+    non_interactive_client_id = get_docker_secrets("auth0_non_interactive_client_id")
+    application_client_id = get_docker_secrets("auth0_application_client_id")
+    non_interactive_client_secret = get_docker_secrets(
         "auth0_non_interactive_client_secret"
     )
-    interactive_client_secret = getDocketSecrets("auth0_interactive_client_secret")
-    audience = getDocketSecrets("auth0_audience")
+    interactive_client_secret = get_docker_secrets("auth0_interactive_client_secret")
+    audience = get_docker_secrets("auth0_audience")
     connection = "Username-Password-Authentication"
 
     def __init__(self):

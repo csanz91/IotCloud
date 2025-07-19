@@ -3,10 +3,10 @@ import logging
 import falcon
 
 from api_utils import getResponseModel, getToken
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import influxdb_interface
 
-secret = getDocketSecrets("wind_auth_secret")
+secret = get_docker_secrets("wind_auth_secret")
 
 logger = logging.getLogger(__name__)
 
