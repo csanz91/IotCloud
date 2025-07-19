@@ -1,7 +1,8 @@
 from mqtt_setup import mqttclient
 from events import EventStream
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 import devices_types
+from zones import Zone
 
 # Create devices list to track all devices that need subscriptions
 all_devices = []
@@ -19,12 +20,15 @@ flow_control_stream = EventStream("Control Flow")
 alarm_armed_stream = EventStream("Alarm Armed")
 bed_brightness_stream = EventStream("Bedroom Brightness")
 teruel_presence_stream = EventStream("Teruel Presence")
+teruel_puerta_abajo_stream = EventStream("Teruel Puerta Abajo")
+teruel_puerta_arriba_stream = EventStream("Teruel Puerta Arriba")
+camera_alarm_stream = EventStream("Camera Alarm")
 
 # Device creation
 living_room_light = devices_types.Switch(
     "Living Room Light",
     "v1/5ca4784d931b1502f377c92d/e7c11470597011e99689411d0bd5e2e4/b4e62d55-444c_switch",
-    mqttclient,
+    mqtt_client=mqttclient,
     event_streams=[
         occupancy_stream_in,
         activate_central_light_stream,
@@ -93,29 +97,6 @@ office_presence = devices_types.DigitalSensor(
     ],
 )
 all_devices.append(office_presence)
-
-office_presence_2 = devices_types.DigitalSensor(
-    "Bedroom Presence",
-    "v1/5ca4784d931b1502f377c92d/6b787410cacc11ef93d45fb898747fd2/20000500-ba1e_Presence/state",
-    mqttclient,
-    event_streams=[
-        occupancy_stream_in,
-        control_office_light_stream,
-        flow_control_stream,
-    ],
-)
-all_devices.append(office_presence_2)
-
-office_presence_PIR = devices_types.DigitalSensor(
-    "Bedroom Presence",
-    "v1/5ca4784d931b1502f377c92d/6b787410cacc11ef93d45fb898747fd2/20000500-ba1e_Presence2/state",
-    mqttclient,
-    event_streams=[
-        control_office_light_stream,
-        flow_control_stream,
-    ],
-)
-all_devices.append(office_presence_PIR)
 
 bedroom_presence = devices_types.DigitalSensor(
     "Bedroom Presence",
@@ -264,31 +245,113 @@ living_room_api = devices_types.APIOrderDevice(
 )
 all_devices.append(living_room_api)
 
+
+# Zones
+living_room_zone = Zone(
+    "Living Room",
+    lights=[living_room_light, living_room_center_light],
+    presence_sensors=[living_room_presence, living_room_presence_center]
+)
+
+office_zone = Zone(
+    "Office",
+    lights=[office_light],
+    presence_sensors=[office_presence]
+)
+
+bedroom_zone = Zone(
+    "Bedroom",
+    lights=[bedroom_light],
+    presence_sensors=[bedroom_presence]
+)
+
+bathroom_zone = Zone(
+    "Bathroom",
+    lights=[bathroom_light],
+    presence_sensors=[living_room_presence, living_room_presence_center, office_presence, bedroom_presence]
+)
+
+kitchen_zone = Zone(
+    "Kitchen",
+    lights=[kitchen_light],
+    presence_sensors=[living_room_presence, living_room_presence_center]
+)
+
+all_zones = [living_room_zone, office_zone, bedroom_zone]
+
 #################### TERUEL ####################
+
+teruel_puerta_arriba_light = devices_types.Switch(
+    "Luz Puerta Arriba",
+    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_002_S",
+    mqttclient,
+    event_streams=[teruel_presence_stream],
+)
+all_devices.append(teruel_puerta_arriba_light)
+
+teruel_puerta_arriba_brightness = devices_types.AnalogSensor(
+    "Luz Puerta Arriba",
+    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-8933_003_L/value",
+    mqttclient,
+    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
+)
+all_devices.append(teruel_puerta_arriba_brightness)
 
 teruel_puerta_arriba_notifier = devices_types.NotifierSensor(
     "Presencia",
-    "v1/5bedea0022c1b20009d9ef29/30874e50c20a11ef8e1943a1a1329898/bcddc29e-1200_001_N/aux/notification",
+    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_001_N/aux/notification",
     mqttclient,
 )
 teruel_puerta_arriba_presence = devices_types.DigitalSensor(
     "Puerta Arriba",
-    "v1/5bedea0022c1b20009d9ef29/30874e50c20a11ef8e1943a1a1329898/bcddc29e-1200_002_S/aux/presence",
+    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_002_S/aux/presence",
     mqttclient,
-    event_streams=[teruel_presence_stream],
+    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
 )
 all_devices.append(teruel_puerta_arriba_presence)
 
+teruel_puerta_arriba_presence_PIR = devices_types.DigitalSensor(
+    "Presencia Puerta Abajo PIR",
+    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_Presence PIR/state",
+    mqttclient,
+    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
+)
+all_devices.append(teruel_puerta_arriba_presence_PIR)
+
+teruel_puerta_abajo_light = devices_types.Switch(
+    "Luz Puerta Abajo",
+    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_002_S",
+    mqttclient,
+    event_streams=[teruel_presence_stream],
+)
+all_devices.append(teruel_puerta_abajo_light)
+
+teruel_puerta_abajo_brightness = devices_types.AnalogSensor(
+    "Luz Puerta Abajo",
+    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_003_L/value",
+    mqttclient,
+    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
+)
+all_devices.append(teruel_puerta_abajo_brightness)
+
 teruel_puerta_abajo_notifier = devices_types.NotifierSensor(
     "Presencia",
-    "v1/5bedea0022c1b20009d9ef29/8c41a020c20911ef8e1943a1a1329898/bcddc224-8933_001_N/aux/notification",
+    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_001_N/aux/notification",
     mqttclient,
 )
 teruel_puerta_abajo_presence = devices_types.DigitalSensor(
-    "Puerta Abajo",
-    "v1/5bedea0022c1b20009d9ef29/8c41a020c20911ef8e1943a1a1329898/bcddc224-8933_002_S/aux/presence",
+    "Presencia Puerta Abajo",
+    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_Presence/state",
     mqttclient,
-    event_streams=[teruel_presence_stream],
+    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
+)
+all_devices.append(teruel_puerta_abajo_presence)
+
+teruel_puerta_abajo_presence_PIR = devices_types.DigitalSensor(
+    "Presencia Puerta Abajo PIR",
+    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_Presence PIR/state",
+    mqttclient,
+    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
 )
 all_devices.append(teruel_puerta_abajo_presence)
 
@@ -300,11 +363,6 @@ teruel_alarm = devices_types.Switch(
 )
 all_devices.append(teruel_alarm)
 
-pihole_url = getDocketSecrets("pihole_url")
-api_token = getDocketSecrets("api_token")
-pihole_client = devices_types.PiholeAPIClient(pihole_url, api_token)
-
-cesar_presence = devices_types.Presence("Cesar Presence", "Pixel-8.lan", pihole_client)
-pieri_presence = devices_types.Presence(
-    "Pieri Presence", "iPhonedePierina.lan", pihole_client
-)
+pihole_url = get_docker_secrets("pihole_url")
+pihole_password = get_docker_secrets("pihole_password")
+pihole_client = devices_types.PiholeAPIClient(pihole_url, pihole_password)

@@ -11,7 +11,7 @@ from devices import (
     living_room_center_light,
     living_room_light,
     office_light,
-    office_presence_2,
+    office_presence,
     kitchen_light,
     flow_control_stream,
     home_alone,
@@ -156,7 +156,7 @@ class FlowControl(Action):
             and office_light.state
         ):
             office_light.set_state(False)
-            self.reactivate(office_presence_2, office_light)
+            self.reactivate(office_presence, office_light)
             logger.info(f"{self.name}: Office light turned off")
 
         # From office to bedroom
@@ -166,7 +166,7 @@ class FlowControl(Action):
             and office_light.state
         ):
             office_light.set_state(False)
-            self.reactivate(office_presence_2, office_light)
+            self.reactivate(office_presence, office_light)
             logger.info(f"{self.name}: Office light turned off")
 
         # From office to bathroom
@@ -176,7 +176,7 @@ class FlowControl(Action):
             and office_light.state
         ):
             office_light.set_state(False)
-            self.reactivate(office_presence_2, office_light)
+            self.reactivate(office_presence, office_light)
             logger.info(f"{self.name}: Office light turned off")
 
 

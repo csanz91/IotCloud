@@ -3,8 +3,7 @@ import threading
 import time
 from actions.action import Action
 from devices import (
-    cesar_presence,
-    pieri_presence,
+    pihole_client,
     notifier,
     door_activation_stream,
     occupancy_stream,
@@ -19,16 +18,19 @@ from config import (
     ALARM_PRESENCE_CHECK_TIMEOUT,
     ALARM_DOOR_DELAY,
     ALARM_EMPTY_HOUSE_DELAY,
+    KNOWN_HOSTNAMES,
 )
-from docker_secrets import getDocketSecrets
+from docker_secrets import get_docker_secrets
 from miio.integrations.vacuum import RoborockVacuum
 from miio.integrations.vacuum.roborock.vacuum import ROCKROBO_V1
 
 logger = logging.getLogger()
 
+
 class Alarm(Action):
     CHECK_INTERVAL = 5
     ALARM_PRESENCE_CHECK_SLEEP = 10
+    MIN_PRESENCE_DURATION = 30  # Minimum seconds of continuous presence to disarm alarm
 
     def __init__(self, name: str, streams: list[EventStream]):
         super().__init__(name, streams)
@@ -40,8 +42,8 @@ class Alarm(Action):
         self.last_door_time = time.time()
         self.lock = threading.Lock()
 
-        token = getDocketSecrets(name="roborock_token")
-        ip = getDocketSecrets(name="roborock_ip")
+        token = get_docker_secrets(name="roborock_token")
+        ip = get_docker_secrets(name="roborock_ip")
         self.vac = RoborockVacuum(ip, token, model=ROCKROBO_V1)
 
         check_thread = threading.Thread(target=self.periodic_check)
@@ -75,11 +77,17 @@ class Alarm(Action):
 
     def check_alarm(self):
         try:
-            known_presence = self.check_known_presence()
-            if not known_presence:
-                self.send_alarm()
+            # Check for sustained presence before disarming
+            sustained_presence = self.check_sustained_presence()
+            if not sustained_presence:
+                known_presence = self.check_known_presence()
+                if not known_presence:
+                    self.send_alarm()
+                else:
+                    self.disarm_alarm("Known presence detected")
             else:
-                self.disarm_alarm("Known presence detected")
+                logger.info(f"{self.name}: False alarm - NOT sustained presence detected")
+                self.disarm_alarm("Sustained occupancy detected")
         finally:
             self.checking = False
 
@@ -97,20 +105,53 @@ class Alarm(Action):
             logger.warning(f"{self.name}: Alarm triggered")
             notifier.send_notification("🚨 Alarm triggered")
 
+    def check_sustained_presence(self):
+        """
+        Check if there has been sustained presence for the minimum duration.
+        Returns True only if occupancy has been continuous for MIN_PRESENCE_DURATION seconds.
+        """
+        if not house_occupancy_tracker.is_occupied:
+            logger.info(f"{self.name}: House is not occupied")
+            return False
+
+        # Check how long the house has been continuously occupied
+        current_time = time.time()
+        continuous_occupancy_duration = (
+            current_time - house_occupancy_tracker.last_occupied_time
+        )
+
+        # If occupancy just started, we need to wait and monitor for sustained presence
+        if continuous_occupancy_duration < self.MIN_PRESENCE_DURATION:
+            logger.info(f"{self.name}: Checking for sustained presence...")
+            start_time = time.time()
+
+            while time.time() - start_time < self.MIN_PRESENCE_DURATION:
+                if not house_occupancy_tracker.is_occupied:
+                    logger.info(f"{self.name}: Presence lost during sustained check")
+                    return False
+                time.sleep(1)  # Check every second
+
+            logger.info(
+                f"{self.name}: Sustained presence confirmed for {self.MIN_PRESENCE_DURATION} seconds"
+            )
+            return True
+        else:
+            # House has been occupied for longer than minimum duration
+            logger.info(
+                f"{self.name}: House already occupied for {continuous_occupancy_duration:.1f} seconds"
+            )
+            return True
+
     def check_known_presence(self):
         start_time = time.time()
         while time.time() - start_time < ALARM_PRESENCE_CHECK_TIMEOUT:  # 3 minutes
-            cesar_home = cesar_presence.getPresence()
-            pieri_home = pieri_presence.getPresence()
-
-            logger.debug(
-                f"{self.name}: Checking presence - "
-                f"Cesar: {cesar_home}, Pieri: {pieri_home}"
-            )
-
-            if cesar_home or pieri_home:
-                logger.info(f"{self.name}: Known device detected, canceling alarm check")
-                return True
+            pihole_client.refresh_last_seen_devices()
+            for hostname in KNOWN_HOSTNAMES:
+                if pihole_client.is_device_home(hostname):
+                    logger.info(
+                        f"{self.name}: Known device detected, canceling alarm check"
+                    )
+                    return True
 
             time.sleep(self.ALARM_PRESENCE_CHECK_SLEEP)
         logger.warning(f"{self.name}: No known presence detected after 3 minutes")
@@ -133,7 +174,9 @@ class Alarm(Action):
                     vacuum_state = self.vac.status().state
                     logger.info(f"{self.name}: Vacuum state: {vacuum_state}")
                     if vacuum_state not in VACUUM_ACTIVE_STATES:
-                        logger.debug(f"{self.name}: House is occupied, not arming alarm")
+                        logger.debug(
+                            f"{self.name}: House is occupied, not arming alarm"
+                        )
                         return
 
                 time_since_occupancy = (
@@ -142,7 +185,9 @@ class Alarm(Action):
                 # If the house is empty
                 if time_since_occupancy > ALARM_EMPTY_HOUSE_DELAY:
                     duration_in_minutes = ALARM_EMPTY_HOUSE_DELAY // 60
-                    self.arm_alarm(f"Door opened and house empty for {duration_in_minutes} minutes")
+                    self.arm_alarm(
+                        f"Door opened and house empty for {duration_in_minutes} minutes"
+                    )
                     return
 
             time.sleep(self.CHECK_INTERVAL)
@@ -173,15 +218,17 @@ class Alarm(Action):
             self.disarmed_by_user = False
 
         with self.lock:
-            should_check = self.armed and house_occupancy_tracker.is_occupied and not self.checking
+            should_check = (
+                self.armed and house_occupancy_tracker.is_occupied and not self.checking
+            )
 
         if should_check:
             self.checking = True
+            logger.info(f"{self.name}: Checking for alarm")
+            logger.info(f"House occupancy: {house_occupancy_tracker.is_occupied}")
             check_thread = threading.Thread(target=self.check_alarm)
             check_thread.daemon = True
             check_thread.start()
 
 
-alarm = Alarm(
-    "Alarm", [door_activation_stream, occupancy_stream, alarm_armed_stream]
-)
+alarm = Alarm("Alarm", [door_activation_stream, occupancy_stream, alarm_armed_stream])

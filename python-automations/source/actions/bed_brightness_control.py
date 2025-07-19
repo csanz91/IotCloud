@@ -20,7 +20,6 @@ class BedBrightnessControl(Action):
     def action(self, event_stream: EventStream):
         brightness_diff = bed_brightness.value
         brightness = bed_led.value
-        logger.info(f"Current brightness: {brightness}")
         if brightness_diff == 255:
             if brightness == 0:
                 new_brightness = 0.8
@@ -29,8 +28,6 @@ class BedBrightnessControl(Action):
         else:
             new_brightness = brightness + brightness_diff / 100.0
         new_brightness = max(0, min(new_brightness, 1.0))
-
-        logger.info(f"New brightness: {new_brightness}")
 
         bed_led.set_brightness(new_brightness)
 

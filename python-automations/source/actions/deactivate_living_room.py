@@ -16,6 +16,7 @@ from events import EventStream
 
 logger = logging.getLogger()
 
+
 class DeactivateLivingRoom(Action):
     def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
         super().__init__(name, streams, enable_switch=enable_switch)
@@ -34,6 +35,9 @@ class DeactivateLivingRoom(Action):
             self.trigger_flag = True
             living_room_light.set_state(False)
 
+
 deactivate_living_room = DeactivateLivingRoom(
-    "Deactivate Living Room", [deactivate_living_room_stream], enable_switch=enable_madrid_automations
+    "Deactivate Living Room",
+    [deactivate_living_room_stream],
+    enable_switch=enable_madrid_automations,
 )

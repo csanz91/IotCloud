@@ -11,6 +11,8 @@ from devices import (
 )
 from events import EventStream
 
+from actions import is_night_time
+
 logger = logging.getLogger()
 
 
@@ -20,7 +22,6 @@ class ActivateLivingRoom(Action):
         self.trigger_flag = False
 
     def action(self, event_stream: EventStream):
-
         source = event_stream.source
         if isinstance(source, APIOrderDevice):
             if source.last_action == "toggle":
@@ -39,7 +40,9 @@ class ActivateLivingRoom(Action):
             return
 
         threshold = 1.5
-        is_dark = light_sensor.value < threshold or living_room_center_light.state
+        is_dark = (
+            light_sensor.value < threshold or living_room_center_light.state
+        ) and is_night_time()
 
         if not self.trigger_flag and presence and is_dark:
             living_room_light.set_state(True)

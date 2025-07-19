@@ -25,7 +25,10 @@ def decodeBoolean(value: bytes):# -> bool | Any:
 
 
 def decodeStatus(value: bytes):
-    decoded_value = value.decode()
+    decoded_value = value.decode().strip()
+    # handle repr wrapper like b'offline'
+    if decoded_value.startswith("b'") and decoded_value.endswith("'"):
+        decoded_value = decoded_value[2:-1]
     assert decoded_value.lower() in ["online", "offline"]
     status = decoded_value.lower() == "online"
     return status

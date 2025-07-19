@@ -13,13 +13,13 @@ from devices import (
 from config import BEDROOM_DARK_THRESHOLD
 from events import EventStream
 
+from actions import is_night_time
+
 logger = logging.getLogger()
 
-class ActivateBedroom(Action):
 
-    def __init__(
-        self, name: str, streams: list[EventStream], enable_switch: Switch
-    ):
+class ActivateBedroom(Action):
+    def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
         super().__init__(name, streams)
         self.activate_light_executed = False
         self.enable_switch = enable_switch
@@ -28,7 +28,7 @@ class ActivateBedroom(Action):
         is_dark = (
             light_sensor.value < BEDROOM_DARK_THRESHOLD
             or living_room_light.recent_state
-        )
+        ) and is_night_time()
         is_present = bedroom_presence.state
 
         # Reset manual off flag when room becomes empty

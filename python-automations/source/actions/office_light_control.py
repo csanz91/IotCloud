@@ -7,23 +7,22 @@ from devices import (
     living_room_light,
     control_office_light_stream,
     office_presence,
-    office_presence_2,
-    office_presence_PIR,
     living_room_presence_center,
     bedroom_presence,
     bathroom_light,
+    kitchen_light,
     enable_madrid_automations,
 )
 from events import EventStream
 from config import OFFICE_DARK_THRESHOLD, OFFICE_VERY_BRIGHT_THRESHOLD
 
+from actions import is_night_time
+
 logger = logging.getLogger()
 
-class OfficeLightControl(Action):
 
-    def __init__(
-        self, name: str, streams: list[EventStream], enable_switch: Switch
-    ):
+class OfficeLightControl(Action):
+    def __init__(self, name: str, streams: list[EventStream], enable_switch: Switch):
         super().__init__(name, streams)
         self.activate_light_executed = False
         self.deactivate_light_executed = False
@@ -33,13 +32,19 @@ class OfficeLightControl(Action):
         is_dark = (
             office_light_brightness.value < OFFICE_DARK_THRESHOLD
             or living_room_light.recent_state
+        ) and is_night_time()
+        is_very_bright = (
+            office_light_brightness.value > OFFICE_VERY_BRIGHT_THRESHOLD
+            and not living_room_light.state
         )
-        is_very_bright = office_light_brightness.value > OFFICE_VERY_BRIGHT_THRESHOLD and not living_room_light.state
-        is_present = (
-            (office_presence.state or office_presence_2.state) and office_presence_PIR.state
+        is_present = office_presence.state
+        not_present = not office_presence.state
+        presence_in_other_rooms = (
+            living_room_presence_center.state
+            or bedroom_presence.state
+            or bathroom_light.state
+            or kitchen_light.state
         )
-        not_present = not office_presence.state and not office_presence_2.state
-        presence_in_other_rooms = living_room_presence_center.state or bedroom_presence.state or bathroom_light.state
 
         # Reset manual off flag when room becomes empty
         if not_present and presence_in_other_rooms:
@@ -60,5 +65,7 @@ class OfficeLightControl(Action):
 
 
 office_light_control = OfficeLightControl(
-    "Office Light Control", [control_office_light_stream], enable_switch=enable_madrid_automations
+    "Office Light Control",
+    [control_office_light_stream],
+    enable_switch=enable_madrid_automations,
 )

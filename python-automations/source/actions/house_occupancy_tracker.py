@@ -3,13 +3,8 @@ from actions.action import Action
 from devices import (
     living_room_presence,
     living_room_presence_center,
-    living_room_light,
-    bedroom_light,
     bedroom_presence,
-    office_presence_2 as office_presence,
-    office_light,
-    bathroom_light,
-    kitchen_light,
+    office_presence,
     occupancy_stream_in,
     occupancy_stream,
 )
@@ -34,15 +29,15 @@ class HouseOccupancyTracker(Action):
             self.last_occupied_time = time.time()
 
         # Check if any light is on
-        any_light_on = (
-            living_room_light.state
-            or bedroom_light.state
-            or office_light.state
-            or bathroom_light.state
-            or kitchen_light.state
-        )
+        # any_light_on = (
+        #     living_room_light.state
+        #     or bedroom_light.state
+        #     or office_light.state
+        #     or bathroom_light.state
+        #     or kitchen_light.state
+        # )
 
-        new_occupied_state = presence or any_light_on
+        new_occupied_state = presence# or any_light_on
         if new_occupied_state != self.is_occupied:
             self.is_occupied = new_occupied_state
             occupancy_stream.notify(self.name)

@@ -7,6 +7,7 @@ OFFICE_DARK_THRESHOLD = 2.5
 OFFICE_VERY_BRIGHT_THRESHOLD = 8.0
 LIVING_ROOM_DARK_THRESHOLD = 1.5
 BEDROOM_DARK_THRESHOLD = 2.5
+TERUEL_DARK_THRESHOLD = 2.5
 
 # Time intervals (in seconds)
 ALARM_PRESENCE_CHECK_TIMEOUT = 180  # 3 minutes
@@ -28,5 +29,10 @@ VACUUM_ACTIVE_STATES = [
     "Returning home",
     "Cleaning",
     "Zoned cleaning",
-    "Going to target"
+    "Going to target",
+]
+
+KNOWN_HOSTNAMES = [
+    "Pixel-8.lan",
+    "iPhonedePierina.lan",
 ]
