@@ -158,6 +158,10 @@ services:
     expose:
       - "8086"
       - "8088"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     restart: unless-stopped
 
   mosquitto:
