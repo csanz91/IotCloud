@@ -7,6 +7,8 @@ from devices import (
     office_presence,
     occupancy_stream_in,
     occupancy_stream,
+    bathroom_presence,
+    kitchen_presence,
 )
 from events import EventStream
 
@@ -24,6 +26,8 @@ class HouseOccupancyTracker(Action):
             or living_room_presence_center.state
             or bedroom_presence.state
             or office_presence.state
+            or bathroom_presence.state
+            or kitchen_presence.state
         )
         if presence:
             self.last_occupied_time = time.time()
@@ -37,7 +41,7 @@ class HouseOccupancyTracker(Action):
         #     or kitchen_light.state
         # )
 
-        new_occupied_state = presence# or any_light_on
+        new_occupied_state = presence  # or any_light_on
         if new_occupied_state != self.is_occupied:
             self.is_occupied = new_occupied_state
             occupancy_stream.notify(self.name)

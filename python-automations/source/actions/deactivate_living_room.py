@@ -5,10 +5,10 @@ from devices import (
     living_room_light,
     living_room_presence,
     living_room_presence_center,
-    # bedroom_light,
-    # office_light,
-    # bathroom_light,
-    # kitchen_light,
+    bathroom_presence,
+    office_presence,
+    kitchen_presence,
+    bedroom_presence,
     deactivate_living_room_stream,
     enable_madrid_automations,
 )
@@ -24,6 +24,12 @@ class DeactivateLivingRoom(Action):
 
     def action(self, event_stream: EventStream):
         presence = living_room_presence.state or living_room_presence_center.state
+        presence_in_other_rooms = (
+            bathroom_presence.state
+            or office_presence.state
+            or kitchen_presence.state
+            or bedroom_presence.state
+        )
         # other_lights_on = bedroom_light.state or office_light.state or bathroom_light.state or kitchen_light.state
 
         if presence:
@@ -31,7 +37,7 @@ class DeactivateLivingRoom(Action):
             return
 
         # if not self.trigger_flag and not presence and other_lights_on:
-        if not self.trigger_flag and not presence:
+        if not self.trigger_flag and presence_in_other_rooms and not presence:
             self.trigger_flag = True
             living_room_light.set_state(False)
 

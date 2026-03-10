@@ -1,13 +1,15 @@
-from mqtt_setup import mqttclient
-from events import EventStream
-from docker_secrets import get_docker_secrets
 import devices_types
+from docker_secrets import get_docker_secrets
+from events import EventStream
+from mqtt_setup import mqttclient
 from zones import Zone
 
 # Create devices list to track all devices that need subscriptions
 all_devices = []
 
 activate_living_room_stream = EventStream("Activate Living Room")
+activate_bathroom_stream = EventStream("Activate Bathroom")
+activate_kitchen_stream = EventStream("Activate Kitchen")
 activate_central_light_stream = EventStream("Activate Central Light")
 deactivate_living_room_stream = EventStream("Deactivate Living Room")
 clock_brightness_stream = EventStream("Clock Brightness")
@@ -82,6 +84,9 @@ living_room_presence_center = devices_types.DigitalSensor(
         occupancy_stream_in,
         control_office_light_stream,
         flow_control_stream,
+        activate_bathroom_stream,
+        activate_kitchen_stream,
+        activate_living_room_stream,
     ],
 )
 all_devices.append(living_room_presence_center)
@@ -94,6 +99,8 @@ office_presence = devices_types.DigitalSensor(
         occupancy_stream_in,
         control_office_light_stream,
         flow_control_stream,
+        activate_bathroom_stream,
+        deactivate_living_room_stream,
     ],
 )
 all_devices.append(office_presence)
@@ -106,6 +113,8 @@ bedroom_presence = devices_types.DigitalSensor(
         occupancy_stream_in,
         bedroom_light_stream,
         control_office_light_stream,
+        activate_bathroom_stream,
+        deactivate_living_room_stream,
     ],
 )
 all_devices.append(bedroom_presence)
@@ -123,7 +132,6 @@ bedroom_light = devices_types.Switch(
     "v1/5ca4784d931b1502f377c92d/21a5dc40c9bb11efa617b1415820b92f/fc00803d-fc3f_Switch1",
     mqttclient,
     event_streams=[
-        deactivate_living_room_stream,
         occupancy_stream_in,
         flow_control_stream,
     ],
@@ -148,32 +156,59 @@ all_devices.append(office_light)
 
 bathroom_light = devices_types.Switch(
     "Bathroom Light",
-    "v1/5ca4784d931b1502f377c92d/b3b95b20b49511ee8374bbb5750c2833/2cf43214-6d41_BathroomLight",
+    "v1/5ca4784d931b1502f377c92d/916b6e20708a11f09bfeb940134d3a0e/2cf43214-6d41_001_S",
     mqttclient,
-    event_streams=[
-        deactivate_living_room_stream,
-        occupancy_stream_in,
-        control_office_light_stream,
-        flow_control_stream,
-    ],
+    event_streams=[],
 )
 all_devices.append(bathroom_light)
 
-kitchen_light = devices_types.Switch(
-    "Kitchen Light",
-    "v1/5ca4784d931b1502f377c92d/bdff5490b78311eea32dc905b74984d4/807d3a32-e1a5_KitchenLight",
+bathroom_presence = devices_types.DigitalSensor(
+    "Bathroom Presence",
+    "v1/5ca4784d931b1502f377c92d/916b6e20708a11f09bfeb940134d3a0e/2cf43214-6d41_Presence/state",
     mqttclient,
     event_streams=[
+        activate_bathroom_stream,
+        occupancy_stream_in,
+        control_office_light_stream,
+        flow_control_stream,
         deactivate_living_room_stream,
+    ],
+)
+all_devices.append(bathroom_presence)
+
+kitchen_light = devices_types.Switch(
+    "Kitchen Light",
+    "v1/5ca4784d931b1502f377c92d/dca6b2d0708c11f09bfeb940134d3a0e/807d3a32-e1a5_KitchenLight",
+    mqttclient,
+    event_streams=[
         occupancy_stream_in,
         flow_control_stream,
     ],
 )
 all_devices.append(kitchen_light)
 
+kitchen_presence = devices_types.DigitalSensor(
+    "Kitchen Presence",
+    "v1/5ca4784d931b1502f377c92d/dca6b2d0708c11f09bfeb940134d3a0e/807d3a32-e1a5_KitchenPresence/state",
+    mqttclient,
+    event_streams=[
+        activate_kitchen_stream,
+        occupancy_stream_in,
+        flow_control_stream,
+        deactivate_living_room_stream,
+    ],
+)
+all_devices.append(kitchen_presence)
+
 clock = devices_types.BrightnessDevice(
     "Clock",
     "v1/5ca4784d931b1502f377c92d/92339c90259a11eca7bcf303922fb2ff/2cf43251-230e_001",
+    mqttclient,
+)
+
+temp_box = devices_types.BrightnessDevice(
+    "Temperature Box",
+    "v1/5ca4784d931b1502f377c92d/59f5ba00ef5b11ea8dc031f13c3780b7/18fe349d-6861_001_T",
     mqttclient,
 )
 
@@ -191,6 +226,8 @@ enable_madrid_automations = devices_types.Switch(
         activate_living_room_stream,
         activate_central_light_stream,
         deactivate_living_room_stream,
+        activate_bathroom_stream,
+        activate_kitchen_stream,
         clock_brightness_stream,
         control_office_light_stream,
     ],
@@ -250,118 +287,16 @@ all_devices.append(living_room_api)
 living_room_zone = Zone(
     "Living Room",
     lights=[living_room_light, living_room_center_light],
-    presence_sensors=[living_room_presence, living_room_presence_center]
+    presence_sensors=[living_room_presence, living_room_presence_center],
 )
 
-office_zone = Zone(
-    "Office",
-    lights=[office_light],
-    presence_sensors=[office_presence]
-)
+office_zone = Zone("Office", lights=[office_light], presence_sensors=[office_presence])
 
-bedroom_zone = Zone(
-    "Bedroom",
-    lights=[bedroom_light],
-    presence_sensors=[bedroom_presence]
-)
+bedroom_zone = Zone("Bedroom", lights=[bedroom_light], presence_sensors=[bedroom_presence])
 
-bathroom_zone = Zone(
-    "Bathroom",
-    lights=[bathroom_light],
-    presence_sensors=[living_room_presence, living_room_presence_center, office_presence, bedroom_presence]
-)
-
-kitchen_zone = Zone(
-    "Kitchen",
-    lights=[kitchen_light],
-    presence_sensors=[living_room_presence, living_room_presence_center]
-)
 
 all_zones = [living_room_zone, office_zone, bedroom_zone]
 
-#################### TERUEL ####################
-
-teruel_puerta_arriba_light = devices_types.Switch(
-    "Luz Puerta Arriba",
-    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_002_S",
-    mqttclient,
-    event_streams=[teruel_presence_stream],
-)
-all_devices.append(teruel_puerta_arriba_light)
-
-teruel_puerta_arriba_brightness = devices_types.AnalogSensor(
-    "Luz Puerta Arriba",
-    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-8933_003_L/value",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
-)
-all_devices.append(teruel_puerta_arriba_brightness)
-
-teruel_puerta_arriba_notifier = devices_types.NotifierSensor(
-    "Presencia",
-    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_001_N/aux/notification",
-    mqttclient,
-)
-teruel_puerta_arriba_presence = devices_types.DigitalSensor(
-    "Puerta Arriba",
-    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_002_S/aux/presence",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
-)
-all_devices.append(teruel_puerta_arriba_presence)
-
-teruel_puerta_arriba_presence_PIR = devices_types.DigitalSensor(
-    "Presencia Puerta Abajo PIR",
-    "v1/5bedea0022c1b20009d9ef29/b2e8b3a0f10511ef914d9bea511ff647/bcddc29e-1200_Presence PIR/state",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_arriba_stream],
-)
-all_devices.append(teruel_puerta_arriba_presence_PIR)
-
-teruel_puerta_abajo_light = devices_types.Switch(
-    "Luz Puerta Abajo",
-    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_002_S",
-    mqttclient,
-    event_streams=[teruel_presence_stream],
-)
-all_devices.append(teruel_puerta_abajo_light)
-
-teruel_puerta_abajo_brightness = devices_types.AnalogSensor(
-    "Luz Puerta Abajo",
-    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_003_L/value",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
-)
-all_devices.append(teruel_puerta_abajo_brightness)
-
-teruel_puerta_abajo_notifier = devices_types.NotifierSensor(
-    "Presencia",
-    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_001_N/aux/notification",
-    mqttclient,
-)
-teruel_puerta_abajo_presence = devices_types.DigitalSensor(
-    "Presencia Puerta Abajo",
-    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_Presence/state",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
-)
-all_devices.append(teruel_puerta_abajo_presence)
-
-teruel_puerta_abajo_presence_PIR = devices_types.DigitalSensor(
-    "Presencia Puerta Abajo PIR",
-    "v1/5bedea0022c1b20009d9ef29/ac7b0430f0fd11ef914d9bea511ff647/bcddc224-8933_Presence PIR/state",
-    mqttclient,
-    event_streams=[teruel_presence_stream, teruel_puerta_abajo_stream],
-)
-all_devices.append(teruel_puerta_abajo_presence)
-
-teruel_alarm = devices_types.Switch(
-    "Notificaciones Presencia Habilitadas",
-    "v1/5bedea0022c1b20009d9ef29/676d9ea8f0ca77be211fe4a4/202481596676681_001_Teruel",
-    mqttclient,
-    event_streams=[teruel_presence_stream],
-)
-all_devices.append(teruel_alarm)
 
 pihole_url = get_docker_secrets("pihole_url")
 pihole_password = get_docker_secrets("pihole_password")

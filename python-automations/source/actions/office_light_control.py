@@ -9,8 +9,8 @@ from devices import (
     office_presence,
     living_room_presence_center,
     bedroom_presence,
-    bathroom_light,
-    kitchen_light,
+    bathroom_presence,
+    kitchen_presence,
     enable_madrid_automations,
 )
 from events import EventStream
@@ -32,18 +32,23 @@ class OfficeLightControl(Action):
         is_dark = (
             office_light_brightness.value < OFFICE_DARK_THRESHOLD
             or living_room_light.recent_state
-        ) and is_night_time()
+        ) or is_night_time()
         is_very_bright = (
             office_light_brightness.value > OFFICE_VERY_BRIGHT_THRESHOLD
             and not living_room_light.state
+        )
+        presence_in_prev_rooms = (
+            living_room_presence_center.state
+            or bedroom_presence.state
+            or bathroom_presence.state
         )
         is_present = office_presence.state
         not_present = not office_presence.state
         presence_in_other_rooms = (
             living_room_presence_center.state
             or bedroom_presence.state
-            or bathroom_light.state
-            or kitchen_light.state
+            or bathroom_presence.state
+            or kitchen_presence.state
         )
 
         # Reset manual off flag when room becomes empty
@@ -54,7 +59,12 @@ class OfficeLightControl(Action):
                 office_light.set_state(False)
 
         # Turn on light conditions
-        if is_present and is_dark and not self.activate_light_executed:
+        if (
+            is_present
+            and is_dark
+            and not self.activate_light_executed
+            and presence_in_prev_rooms
+        ):
             office_light.set_state(True)
             self.activate_light_executed = True
 

@@ -24,7 +24,7 @@ class ActivateCentralLight(Action):
         self.trigger_flag = False
 
     def action(self, event_stream: EventStream):
-        is_dark = (light_sensor.value < LIVING_ROOM_DARK_THRESHOLD) and is_night_time()
+        is_dark = (light_sensor.value < LIVING_ROOM_DARK_THRESHOLD) or is_night_time()
         state = (
             living_room_presence_center.state
             and not living_room_light.state

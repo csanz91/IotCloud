@@ -6,7 +6,7 @@ Configuration constants for home automation system
 OFFICE_DARK_THRESHOLD = 2.5
 OFFICE_VERY_BRIGHT_THRESHOLD = 8.0
 LIVING_ROOM_DARK_THRESHOLD = 1.5
-BEDROOM_DARK_THRESHOLD = 2.5
+BEDROOM_DARK_THRESHOLD = 7.0
 TERUEL_DARK_THRESHOLD = 2.5
 
 # Time intervals (in seconds)
